@@ -18,8 +18,7 @@ const Layout = () => {
      return (
           <div>
                <main
-                    className={`${!sidebarCollapsed ? "w-[calc(100%-17rem)]" : "w-[calc(100%-5rem)]"
-                         } transition-all duration-500 ease-in-out ml-auto`}
+               // className={`${!sidebarCollapsed ? "w-[calc(100%-17rem)]" : "w-[calc(100%-5rem)]"} transition-all duration-500 ease-in-out ml-auto`}
                >
                     <Outlet />
                </main>

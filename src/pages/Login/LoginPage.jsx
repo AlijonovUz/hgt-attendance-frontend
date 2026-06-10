@@ -1,6 +1,12 @@
+import { useLanguage } from "../../Context/LanguageContext"
+
 const LoginPage = () => {
+  const { t } = useLanguage()
+
   return (
-    <div>LoginPage</div>
+    <div>
+      {t("login_page_title")}
+    </div>
   )
 }
 
