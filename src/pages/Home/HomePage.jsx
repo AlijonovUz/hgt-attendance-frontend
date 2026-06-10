@@ -9,6 +9,9 @@ const HomePage = () => {
   return (
     <div>
       {t("home_page_title")}
+      <DatePicker
+        showTime={true}
+      />
     </div>
   )
 }

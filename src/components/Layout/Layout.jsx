@@ -7,16 +7,21 @@ const Layout = () => {
      const accessToken = localStorage.getItem("access");
      const navigate = useNavigate();
 
-     useEffect(() => {
-          if (!accessToken) {
-               navigate("/login", { replace: true });
-          } else {
+     // useEffect(() => {
+     //      if (!accessToken) {
+     //           navigate("/login", { replace: true });
+     //      } else {
                navigate("/", { replace: true });
-          }
-     }, [accessToken, navigate]);
+     //      }
+     // }, [accessToken, navigate]);
 
      return (
           <div>
+
+               {/* 
+                   ===================== bu yerda sidebar va header bo'ladi. ========================
+               */}
+
                <main
                // className={`${!sidebarCollapsed ? "w-[calc(100%-17rem)]" : "w-[calc(100%-5rem)]"} transition-all duration-500 ease-in-out ml-auto`}
                >
