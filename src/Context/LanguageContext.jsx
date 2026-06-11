@@ -152,6 +152,44 @@ export const translations = {
           ru: "Темная"
      },
 
+     // sidebar
+     mainPage: {
+          uz: "Asosiy sahifa",
+          cy: "Асосий саҳифа",
+          en: "Homepage",
+          ru: "Главная страница"
+     },
+     employeeRestr: {
+          uz: "Xodimlar reestri",
+          cy: "Ходимлар реэстри",
+          en: "Employee Register",
+          ru: "Реестр работников"
+     },
+     reports: {
+          uz: "Hisobotlar",
+          cy: "Ҳисоботлар",
+          en: "Reports",
+          ru: "Отчеты"
+     },
+     geozone: {
+          uz: "Geozonalar",
+          cy: "Геозоналар",
+          en: "Geozones",
+          ru: "Геозоны"
+     },
+     settings: {
+          uz: "Sozlamalar",
+          cy: "Созламалар",
+          en: "Settings",
+          ru: "Настройки"
+     },
+     help: {
+          uz: "Yordam",
+          cy: "Ёрдам",
+          en: "Help",
+          ru: "Помощь"
+     },
+
 
      // home page
      home_page_title: {

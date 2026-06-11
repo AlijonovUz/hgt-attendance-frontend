@@ -3,6 +3,6 @@ import referencesSlice from './slices/referencesSlice';
 
 export const store = configureStore({
   reducer: {
-    counter: referencesSlice,
+    references: referencesSlice,
   },
 });
