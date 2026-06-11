@@ -201,9 +201,13 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                     {/* User Profile */}
                     <div className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#252525] rounded-lg transition-colors duration-150 overflow-hidden">
                          {/* Avatar */}
-                         <div className="flex-shrink-0 w-8 h-8 rounded-md bg-gradient-to-br from-[#85a6db] to-[#bfadea] flex items-center justify-center text-white text-xs font-semibold uppercase select-none">
-                              {currentUser?.full_name?.split(" ").slice(0, 2).map(n => n.charAt(0)) ?? "?"}
-                         </div>
+                         {currentUser.face_image ? (
+                              <img src={currentUser?.face_image} alt="user avatar" className="w-8 h-8 rounded-md object-cover" />
+                         ) : (
+                              <div className="flex-shrink-0 w-8 h-8 rounded-md bg-gradient-to-br from-[#85a6db] to-[#bfadea] flex items-center justify-center text-white text-xs font-semibold uppercase select-none">
+                                   {currentUser?.full_name?.split(" ").slice(0, 2).map(n => n.charAt(0)) ?? "?"}
+                              </div>
+                         )}
 
                          <div className={`
                               flex items-center gap-1 flex-1 min-w-0
