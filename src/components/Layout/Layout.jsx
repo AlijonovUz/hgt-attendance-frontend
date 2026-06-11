@@ -10,8 +10,6 @@ const Layout = () => {
      useEffect(() => {
           if (!accessToken) {
                navigate("/login", { replace: true });
-          } else {
-               navigate("/");
           }
      }, [accessToken, navigate]);
 
