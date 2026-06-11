@@ -11,7 +11,7 @@ const Layout = () => {
           if (!accessToken) {
                navigate("/login", { replace: true });
           } else {
-               navigate("/", { replace: true });
+               navigate("/");
           }
      }, [accessToken, navigate]);
 

@@ -3,7 +3,8 @@ import { useLanguage } from "../../Context/LanguageContext"
 import { useTheme } from "../../Context/ThemeContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { useNavigate } from "react-router-dom"
-import { Eye, EyeOff, ShieldAlert, ChevronDown, Check, GalleryVerticalEnd } from "lucide-react"
+import { Eye, EyeOff, ShieldAlert, ChevronDown, Check, GalleryVerticalEnd, SunMedium, Moon } from "lucide-react"
+import { CgSpinnerTwo } from "react-icons/cg"
 
 const LoginPage = () => {
   const { t, language, setLanguage } = useLanguage()
@@ -14,6 +15,8 @@ const LoginPage = () => {
     full_name: "",
     password: ""
   })
+
+  const [loading, setLoading] = useState(false)
 
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(false)
@@ -26,13 +29,13 @@ const LoginPage = () => {
   useEffect(() => {
     let interval = null;
     const blockUntil = localStorage.getItem('blockUntil')
-    
+
     if (blockUntil) {
       const targetTime = parseInt(blockUntil, 10)
       if (targetTime > Date.now()) {
         setIsBlocked(true)
         setRemainingTime(Math.ceil((targetTime - Date.now()) / 1000))
-        
+
         interval = setInterval(() => {
           const now = Date.now()
           if (targetTime <= now) {
@@ -51,7 +54,7 @@ const LoginPage = () => {
         setAttempts(0)
       }
     }
-    
+
     return () => clearInterval(interval)
   }, [isBlocked])
 
@@ -70,10 +73,13 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
+
     if (!form.full_name.trim() || !form.password.trim()) {
       setEmptyError(true)
       return
     }
+
+    setLoading(true)
 
     // DEMO logic for UI states based on requirements
     if (form.password === "error" || form.full_name === "error") {
@@ -84,8 +90,10 @@ const LoginPage = () => {
       if (newAttempts >= 5) {
         setIsBlocked(true)
         localStorage.setItem('blockUntil', (Date.now() + 15 * 60 * 1000).toString())
+        setLoading(false)
       } else {
         setError(true)
+        setLoading(false)
       }
       return
     }
@@ -93,9 +101,10 @@ const LoginPage = () => {
     try {
       const res = await axiosAPI.post("users/auth/login/", form)
       if (res.status === 200) {
-        localStorage.setItem("access", res.data?.access || "")
-        localStorage.setItem("refresh", res.data?.refresh || "")
+        localStorage.setItem("access", res.data?.data?.access || "")
+        localStorage.setItem("refresh", res.data?.data?.refresh || "")
         localStorage.setItem('loginAttempts', '0')
+        setLoading(false)
         navigate("/")
       }
     } catch (err) {
@@ -110,6 +119,9 @@ const LoginPage = () => {
       } else {
         setError(true)
       }
+    }
+    finally {
+      setLoading(false)
     }
   }
 
@@ -126,11 +138,9 @@ const LoginPage = () => {
 
         {/* Top Header */}
         <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-10">
-          <div className="flex items-center gap-2 font-semibold text-[15px]">
-            <div className="w-6 h-6 bg-login-logo rounded-md flex items-center justify-center">
-              <GalleryVerticalEnd color="#fff" size={16} />
-            </div>
-            HGT Tahlil
+          <div className="flex items-center gap-2 font-semibold text-[20px]">
+            <img src="/logo.svg" alt="logo" className="w-10 h-10 object-cover" />
+            Davomat
           </div>
 
           <div className="flex items-center gap-3">
@@ -169,17 +179,19 @@ const LoginPage = () => {
 
             {/* Theme Toggle */}
             <div className="flex p-1 transition-colors bg-login-pill-bg rounded-lg">
-              <button 
+              <button
                 onClick={() => setTheme('light')}
-                className={`px-3 py-1.5 cursor-pointer text-sm rounded-md font-medium transition-colors ${theme === 'light' ? 'bg-login-left-bg text-login-text-primary shadow-sm' : 'text-login-text-secondary hover:text-login-text-primary bg-transparent'}`}
+                className={`px-3 h-9 cursor-pointer flex items-center gap-2 text-sm rounded-md font-medium transition-colors ${theme === 'light' ? 'bg-login-left-bg text-login-text-primary shadow-sm' : 'text-login-text-secondary hover:text-login-text-primary bg-transparent'}`}
               >
                 {t('light_theme')}
+                <SunMedium size={16} />
               </button>
-              <button 
+              <button
                 onClick={() => setTheme('dark')}
-                className={`px-3 py-1.5 cursor-pointer text-sm rounded-md font-medium transition-colors ${theme === 'dark' ? 'bg-login-left-bg text-login-text-primary shadow-sm' : 'text-login-text-secondary hover:text-login-text-primary bg-transparent'}`}
+                className={`px-3 h-9 cursor-pointer flex items-center gap-2 text-sm rounded-md font-medium transition-colors ${theme === 'dark' ? 'bg-login-left-bg text-login-text-primary shadow-sm' : 'text-login-text-secondary hover:text-login-text-primary bg-transparent'}`}
               >
                 {t('dark_theme')}
+                <Moon size={16} />
               </button>
             </div>
           </div>
@@ -253,7 +265,7 @@ const LoginPage = () => {
                       {t('account_blocked_desc')}
                     </p>
                     <p className="text-[13px] text-login-text-secondary">
-                      {t('retry_in')}<span className="font-bold text-login-text-primary">{formatTime(remainingTime)}</span>
+                      {t('retry_in')}<span className="font-bold text-red-500">{formatTime(remainingTime)}</span>
                     </p>
                   </div>
                 </div>
@@ -261,10 +273,10 @@ const LoginPage = () => {
 
               <button
                 type="submit"
-                disabled={isBlocked}
-                className={`mt-4 w-full py-3 rounded-lg font-medium text-white transition-colors ${isBlocked ? 'bg-[#737373] cursor-default opacity-90' : 'bg-login-btn-bg hover:bg-login-btn-hover cursor-pointer'
-                  }`}
+                disabled={isBlocked || loading}
+                className={`mt-4 w-full flex justify-center items-center gap-2 py-3 rounded-lg font-medium text-white transition-colors ${isBlocked || loading ? 'bg-[#737373] cursor-default opacity-90' : 'bg-login-btn-bg hover:bg-login-btn-hover cursor-pointer'}`}
               >
+                {loading && <CgSpinnerTwo size={16} className="animate-spin" />}
                 {t('login_btn')}
               </button>
             </form>
