@@ -1,17 +1,35 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
-  value: null,
+const getUserFromStorage = () => {
+  try {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
 };
 
-export const counterSlice = createSlice({
-  name: 'referencesSlice',
+const initialState = {
+  currentUser: getUserFromStorage(),
+};
+
+export const referencesSlice = createSlice({
+  name: 'references',
   initialState,
   reducers: {
-    
+    setCurrentUser: (state, { payload }) => {
+      state.currentUser = payload;
+      try {
+        if (payload) {
+          localStorage.setItem('currentUser', JSON.stringify(payload));
+        } else {
+          localStorage.removeItem('currentUser');
+        }
+      } catch { /* ignore */ }
+    },
   },
 });
 
-export const {  } = counterSlice.actions;
+export const { setCurrentUser } = referencesSlice.actions;
 
-export default counterSlice.reducer;
+export default referencesSlice.reducer;
