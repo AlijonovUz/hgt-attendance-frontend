@@ -25,7 +25,7 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          VITE_API_URL: https://hkk-backend.raqamlinazorat.uz
+          VITE_API_URL: https://hkk-backend.raqamlinazorat.uz/api/v1/
 
       - name: Deploy to Server via SSH rsync
         uses: AEnterprise/rsync-deploy@v1.0.2
