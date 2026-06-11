@@ -225,7 +225,7 @@ const LoginPage = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isBlocked}
-                    className="absolute right-3 top-1/2 cursor-pointer -translate-y-1/2 text-login-text-secondary hover:text-login-text-primary p-1"
+                    className="absolute right-3 top-1/2 cursor-pointer disabled:cursor-default -translate-y-1/2 text-login-text-secondary hover:text-login-text-primary p-1"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -262,7 +262,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isBlocked}
-                className={`mt-4 w-full py-3 rounded-lg cursor-pointer font-medium text-white transition-colors ${isBlocked ? 'bg-[#737373] cursor-not-allowed opacity-90' : 'bg-login-btn-bg hover:bg-login-btn-hover'
+                className={`mt-4 w-full py-3 rounded-lg font-medium text-white transition-colors ${isBlocked ? 'bg-[#737373] cursor-default opacity-90' : 'bg-login-btn-bg hover:bg-login-btn-hover cursor-pointer'
                   }`}
               >
                 {t('login_btn')}
