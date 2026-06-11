@@ -27,6 +27,13 @@ const LoginPage = () => {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
 
   useEffect(() => {
+    const accessToken = localStorage.getItem("access")
+    if (accessToken) {
+      navigate("/", { replace: true })
+    }
+  }, [navigate])
+
+  useEffect(() => {
     let interval = null;
     const blockUntil = localStorage.getItem('blockUntil')
 
