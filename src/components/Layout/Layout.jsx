@@ -7,13 +7,13 @@ const Layout = () => {
      const accessToken = localStorage.getItem("access");
      const navigate = useNavigate();
 
-     // useEffect(() => {
-     //      if (!accessToken) {
-     //           navigate("/login", { replace: true });
-     //      } else {
+     useEffect(() => {
+          if (!accessToken) {
+               navigate("/login", { replace: true });
+          } else {
                navigate("/", { replace: true });
-     //      }
-     // }, [accessToken, navigate]);
+          }
+     }, [accessToken, navigate]);
 
      return (
           <div>
