@@ -184,7 +184,7 @@ const LoginPage = () => {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-login-text-primary mb-1.5">{t('full_name')}</label>
+                <label className="block text-sm font-medium text-login-text-primary mb-1.5">{t('login_btn')}</label>
                 <input
                   name="full_name"
                   type="text"
