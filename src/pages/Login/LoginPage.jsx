@@ -8,7 +8,7 @@ import { CgSpinnerTwo } from "react-icons/cg"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 
 const LoginPage = () => {
-  const { t, language, setLanguage } = useLanguage()
+  const { t } = useLanguage()
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
 
@@ -133,7 +133,6 @@ const LoginPage = () => {
     }
   }
 
-  const displayLang = language === 'uz' ? 'UZ' : language === 'cy' ? 'ЎЗ' : 'РУ'
   const isFullNameEmpty = emptyError && !form.full_name.trim()
   const isPasswordEmpty = emptyError && !form.password.trim()
   const hasFullNameError = error || isFullNameEmpty
@@ -263,23 +262,25 @@ const LoginPage = () => {
       </div>
 
       {/* Right Column */}
-      <div className="hidden md:flex w-1/2 bg-login-right-bg p-8 flex-col justify-between transition-colors duration-200">
+      <div
+        className={`hidden relative md:flex w-1/2 p-8 flex-col justify-start`}
+      >
+        <img src={theme === "dark" ? "/bg_dark.png" : "/bg_light.png"} alt="" className="absolute top-0 right-0 z-[-1] h-full w-full" />
+
         <div className="flex flex-col">
-          <h2 className="text-[18px] font-bold text-login-text-primary">{t('brand_title')}</h2>
-          <p className="text-[14px] text-login-text-secondary ">{t('brand_subtitle')}</p>
+          <h2 className="text-[18px] font-bold text-white dark:text-[#fafafa]">{t('brand_title')}</h2>
+          <p className="text-[14px] text-[#f5f5f5] dark:text-[#a3a3a3]">{t('brand_subtitle')}</p>
         </div>
 
-        <div className="">
-          <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-login-text-primary mb-3">
-            {t('system_title')}
-          </h1>
-          <p className="text-[16px] leading-[1.5] max-w-[460px] text-login-text-secondary">
-            {t('system_desc')}
-          </p>
-        </div>
-
-        <div className="text-[13px] text-login-text-secondary">
-          {t('secure_login_info')}
+        <div className="flex items-center h-full">
+          <div className="">
+            <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-white dark:text-[#fafafa] mb-3">
+              {t('system_title')}
+            </h1>
+            <p className="text-[16px] leading-[1.5] max-w-[460px] text-[#f5f5f5] dark:text-[#a3a3a3]">
+              {t('system_desc')}
+            </p>
+          </div>
         </div>
       </div>
     </div>
