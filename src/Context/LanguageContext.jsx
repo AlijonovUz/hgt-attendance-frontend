@@ -46,6 +46,12 @@ export const translations = {
       en: "Select date",
       ru: "Выберите дату"
      },
+     full_name: {
+          uz: "Ism familiya",
+          cy: "Исм фамилия",
+          en: "First and last name",
+          ru: "Имя и фамилия"
+     },
 
 
      // login page

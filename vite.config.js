@@ -14,5 +14,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-
+  server: {
+    allowedHosts: [
+      'defiling-shoptalk-recycler.ngrok-free.dev'
+    ]
+  },
 })

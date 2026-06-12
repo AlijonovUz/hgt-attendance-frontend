@@ -184,11 +184,11 @@ const LoginPage = () => {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-login-text-primary mb-1.5">{t('login_label')}</label>
+                <label className="block text-sm font-medium text-login-text-primary mb-1.5">{t('full_name')}</label>
                 <input
                   name="full_name"
                   type="text"
-                  placeholder={t('login_label')}
+                  placeholder={t('full_name')}
                   value={form.full_name}
                   onChange={handleInputChange}
                   disabled={isBlocked}
@@ -210,14 +210,16 @@ const LoginPage = () => {
                     className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-colors text-[15px] pr-12 ${hasPasswordError ? 'border-[#EF4444] text-[#EF4444]' : 'border-login-border focus:border-blue-500'
                       } ${isBlocked ? 'bg-login-input-disabled text-login-text-secondary' : 'bg-login-input-bg text-login-text-primary'}`}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isBlocked}
-                    className="absolute right-3 top-1/2 cursor-pointer disabled:cursor-default -translate-y-1/2 text-login-text-secondary hover:text-login-text-primary p-1"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                  {form.password.trim() &&
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={isBlocked}
+                      className="absolute right-3 top-1/2 cursor-pointer disabled:cursor-default -translate-y-1/2 text-login-text-secondary hover:text-login-text-primary p-1"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
                 </div>
                 {emptyError && !isBlocked && (
                   <p className="text-[#EF4444] text-[13px] mt-2">
@@ -238,7 +240,7 @@ const LoginPage = () => {
                   </div>
                   <div>
                     <h3 className="text-[14px] font-semibold text-login-text-primary mb-1">{t('account_blocked_title')}</h3>
-                    <p className="text-[13px] text-login-text-secondary mb-3 leading-[1.4]">
+                    <p className="text-[13px] text-login-text-secondary mb-1 max-w-[250px]! leading-[1.4]">
                       {t('account_blocked_desc')}
                     </p>
                     <p className="text-[13px] text-login-text-secondary">
@@ -277,7 +279,7 @@ const LoginPage = () => {
             <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-white dark:text-[#fafafa] mb-3">
               {t('system_title')}
             </h1>
-            <p className="text-[16px] leading-[1.5] max-w-[460px] text-[#f5f5f5] dark:text-[#a3a3a3]">
+            <p className="text-[16px] leading-[1.5] max-w-[400px] text-[#f5f5f5] dark:text-[#a3a3a3]">
               {t('system_desc')}
             </p>
           </div>
