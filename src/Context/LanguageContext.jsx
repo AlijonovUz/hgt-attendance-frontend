@@ -35,16 +35,16 @@ export const translations = {
           ru: "Выбор"
      },
      date: {
-      uz: "Sana",
-      cy: "Сана",
-      en: "Date",
-      ru: "Дата"
+          uz: "Sana",
+          cy: "Сана",
+          en: "Date",
+          ru: "Дата"
      },
      selectDate: {
-      uz: "Sana tanlash",
-      cy: "Сана танлаш",
-      en: "Select date",
-      ru: "Выберите дату"
+          uz: "Sana tanlash",
+          cy: "Сана танлаш",
+          en: "Select date",
+          ru: "Выберите дату"
      },
      full_name: {
           uz: "Ism familiya",
@@ -199,42 +199,192 @@ export const translations = {
 
      // home page
      home_page_title: {
-          uz: "Bosh sahifa",
-          cy: "Бош саҳифа",
-          en: "Homepage",
-          ru: "Главная страница"
+          uz: "Boshqaruv paneli",
+          cy: "Бошқарув панели",
+          en: "Control Panel",
+          ru: "Панель управления"
+     },
+     home_page_subtitle: {
+          uz: "Respublika boʼyicha real vaqtdagi davomat",
+          cy: "Республика бўйича реал вақтдаги давомат",
+          en: "Real-time attendance across the country",
+          ru: "Посещаемость в реальном времени по республике"
+     },
+     day1: {
+          uz: 'kun',
+          cy: 'кун',
+          ru: 'день'
+     },
+     month1: {
+          uz: 'oy',
+          cy: 'ой',
+          ru: 'месяц'
+     },
+     byDate: {
+          uz: "Sana bo'yicha",
+          cy: "Сана бўйича",
+          en: "By date",
+          ru: "По дате"
+     },
+
+     // home page stats
+     total_employees: {
+          uz: "Jami xodimlar",
+          cy: "Жами ходимлар",
+          en: "Total employees",
+          ru: "Всего сотрудников"
+     },
+     trend_this_month: {
+          uz: "bu oy",
+          cy: "бу ой",
+          en: "this month",
+          ru: "в этом месяце"
+     },
+     present_today: {
+          uz: "Bugun kelganlar",
+          cy: "Бугун келганлар",
+          en: "Present today",
+          ru: "Присутствуют сегодня"
+     },
+     trend_attendance: {
+          uz: "davomat",
+          cy: "давомат",
+          en: "attendance",
+          ru: "посещаемость"
+     },
+     latecomers: {
+          uz: "Kechikkanlar",
+          cy: "Кечикканлар",
+          en: "Latecomers",
+          ru: "Опоздавшие"
+     },
+     trend_yesterday_down: {
+          uz: "kecha",
+          cy: "кеча",
+          en: "yesterday",
+          ru: "вчера"
+     },
+     early_leavers: {
+          uz: "Erta ketganlar",
+          cy: "Эрта кетганлар",
+          en: "Early leavers",
+          ru: "Ушедшие рано"
+     },
+     absent: {
+          uz: "Kelmaganlar",
+          cy: "Келмаганлар",
+          en: "Absent",
+          ru: "Отсутствуют"
+     },
+     on_time: {
+          uz: "Vaqtida",
+          cy: "Вақтида",
+          en: "On time",
+          ru: "Вовремя"
+     },
+     late: {
+          uz: "Kechikdi",
+          cy: "Кечикди",
+          en: "Late",
+          ru: "Опоздал"
+     },
+     early_left: {
+          uz: "Erta ketdi",
+          cy: "Эрта кетди",
+          en: "Early left",
+          ru: "Ушел раньше"
+     },
+     absent_today: {
+          uz: "Kelmadi",
+          cy: "Келмади",
+          en: "Absent",
+          ru: "Не пришел"
+     },
+     weekly_dynamics: {
+          uz: "Haftalik dinamika",
+          cy: "Ҳафталик динамика",
+          en: "Weekly dynamics",
+          ru: "Еженедельная динамика"
+     },
+     weekly_dynamics_subtitle: {
+          uz: "Vaqtida kelganlar va kechikkanlar ulushi",
+          cy: "Вақтида келганлар ва кечикканлар улуши",
+          en: "Share of on-time and late arrivals",
+          ru: "Доля пришедших вовремя и опоздавших"
+     },
+     today_status: {
+          uz: "Bugungi holat",
+          cy: "Бугунги ҳолат",
+          en: "Today's status",
+          ru: "Сегодняшнее состояние"
+     },
+     today_status_subtitle: {
+          uz: "Respublika bo'yicha",
+          cy: "Республика бўйича",
+          en: "Across the country",
+          ru: "По республике"
+     },
+     at_workplace: {
+          uz: "Ish joyida",
+          cy: "Иш жойида",
+          en: "At workplace",
+          ru: "На рабочем месте"
+     },
+     discipline_rating_branches: {
+          uz: "Intizom reytingi — filiallar",
+          cy: "Интизом рейтинги — филиаллар",
+          en: "Discipline rating — branches",
+          ru: "Рейтинг дисциплины — филиалы"
+     },
+     branch_fallback: {
+          uz: "Filial",
+          cy: "Филиал",
+          en: "Branch",
+          ru: "Филиал"
+     },
+     late: {
+          uz: "Kechikkanlar",
+          cy: "Кечикканлар",
+          en: "Delayed",
+          ru: "Опоздавшие"
+     },
+     onTime: {
+          uz: "O‘z vaqtida",
+          cy: "Ўз вақтида",
+          en: "On time",
+          ru: "Вовремя"
      }
 }
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguageState] = useState(() => {
-    const saved = localStorage.getItem('language');
-    if (saved === 'uz' || saved === 'cy' || saved === 'ru') {
-      return saved;
-    }
-    return 'uz';
-  });
+     const [language, setLanguageState] = useState(() => {
+          const saved = localStorage.getItem('language');
+          if (saved === 'uz' || saved === 'cy' || saved === 'ru') {
+               return saved;
+          }
+          return 'uz';
+     });
 
-  const setLanguage = (lang) => {
-    setLanguageState(lang);
-    localStorage.setItem('language', lang);
-  };
+     const setLanguage = (lang) => {
+          setLanguageState(lang);
+          localStorage.setItem('language', lang);
+     };
 
-  const t = (key) => {
-    return translations[key]?.[language] || key;
-  };
+     const t = (key) => {
+          return translations[key]?.[language] || key;
+     };
 
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
-  );
+     return (
+          <LanguageContext.Provider value={{ language, setLanguage, t }}>
+               {children}
+          </LanguageContext.Provider>
+     );
 }
 
 export function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
+     const context = useContext(LanguageContext);
+     if (context === undefined) {
+          throw new Error('useLanguage must be used within a LanguageProvider');
+     }
+     return context;
 }

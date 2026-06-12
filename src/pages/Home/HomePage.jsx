@@ -1,16 +1,459 @@
-import { DatePicker } from "@/components/ui/DatePicker"
-import { useLanguage } from "../../Context/LanguageContext"
-import { CustomInput } from "@/components/ui/CustomInput"
-import { LuSearch } from "react-icons/lu"
+import dayjs from "dayjs";
+import { useLanguage } from "../../Context/LanguageContext";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { ChevronDownIcon } from "lucide-react";
+import { TbXboxXFilled } from "react-icons/tb";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { uz, ru, enUS, uzCyrl } from "date-fns/locale";
+import {
+  Login02Icon,
+  IdIcon,
+  BubbleChatDoneIcon,
+  TimeQuarter02Icon,
+  PassportExpiredIcon,
+  TradeUpIcon,
+  TradeDownIcon,
+} from "@hugeicons/core-free-icons";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
+import { axiosAPI } from "@/services/axiosAPI";
+import { HugeIcon } from "@/components/ui/HugeIcon";
+
+
+const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS, };
+
+
 
 const HomePage = () => {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage();
+  const locale = calendarLocales[language] || uz;
+
+  const [loadingData, setLoadingData] = useState(false)
+  const [allStats, setAllStats] = useState(null)
+
+  const [timeRange, setTimeRange] = useState("");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const getDashboardData = async (params = {}) => {
+    setLoadingData(true)
+    try {
+      const res = await axiosAPI.get("analytics/kpi/dashboard-stats/", { params })
+
+      if (res.status == 200) {
+        setAllStats(res.data?.data)
+        setLoadingData(false)
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    finally {
+      setLoadingData(false)
+    }
+  }
+
+  useEffect(() => {
+    getDashboardData()
+  }, [])
+
+  const handleChangeDate = (value) => {
+    setTimeRange(value);
+    setSelectedDate(null);
+    const props = {};
+    if (value === "") props;
+    else if (value !== "") { props.period = value }
+
+    getDashboardData(props)
+  };
+
+  const handleSelectDate = (date) => {
+    if (!date) return;
+    setSelectedDate(date);
+    setTimeRange("sana");
+    setCalendarOpen(false);
+  };
+
+  useEffect(() => {
+    const param = {}
+    if (selectedDate) {
+      param.start_date = dayjs(selectedDate).format("YYYY-MM-DD")
+    }
+
+    getDashboardData(param)
+  }, [selectedDate])
+
+
+  const statsData = [
+    {
+      key: "total",
+      labelKey: "total_employees",
+      value: allStats?.summary?.total_employees || 0,
+      trendVal: `${allStats?.summary?.total_employees_trend || 0}%`,
+      trendTextKey: "trend_this_month",
+      trendUp: (allStats?.summary?.total_employees_trend || 0) >= 0,
+      icon: IdIcon,
+      bg: "bg-[#F5F5F5]",
+      iconBg: "bg-white",
+    },
+    {
+      key: "present",
+      labelKey: "present_today",
+      value: allStats?.summary?.period_arrived || 0,
+      trendVal: `${allStats?.summary?.attendance_percent || 0}%`,
+      trendTextKey: "trend_attendance",
+      trendUp: (allStats?.summary?.attendance_percent || 0) >= 0,
+      icon: BubbleChatDoneIcon,
+      bg: "bg-[#ADDDC0]",
+      iconBg: "bg-white",
+    },
+    {
+      key: "late",
+      labelKey: "latecomers",
+      value: allStats?.summary?.lates || 0,
+      trendVal: `${allStats?.summary?.lates_trend || 0}%`,
+      trendTextKey: "trend_yesterday_down",
+      trendUp: (allStats?.summary?.lates_trend || 0) >= 0,
+      icon: TimeQuarter02Icon,
+      bg: "bg-[#FFC182]",
+      iconBg: "bg-white",
+    },
+    {
+      key: "early",
+      labelKey: "early_leavers",
+      value: allStats?.summary?.early_leaves || 0,
+      trendVal: `${allStats?.summary?.early_leaves_trend || 0}%`,
+      trendTextKey: "trend_yesterday_down",
+      trendUp: (allStats?.summary?.early_leaves_trend || 0) >= 0,
+      icon: Login02Icon,
+      bg: "bg-[#ACD8FC]",
+      iconBg: "bg-white",
+    },
+    {
+      key: "absent",
+      labelKey: "absent",
+      value: allStats?.summary?.absent || 0,
+      trendVal: `${allStats?.summary?.absent_trend || 0}%`,
+      trendTextKey: null,
+      trendUp: (allStats?.summary?.absent_trend || 0) >= 0,
+      icon: PassportExpiredIcon,
+      bg: "bg-[#FDBDBE]",
+      iconBg: "bg-white",
+    },
+  ];
+
+  const weeklyData = allStats?.weekly_dynamics?.map(d => ({
+    name: d.day_name,
+    onTime: d.on_time,
+    late: d.late
+  })) || [];
+
+  const isTodayDataEmpty = !allStats?.today_status || (allStats.today_status.on_time === 0 && allStats.today_status.late === 0 && allStats.today_status.early_left === 0 && allStats.today_status.absent === 0);
+
+  const todayData = allStats?.today_status ? [
+    { name: t("on_time"), value: allStats.today_status.on_time, color: "#52B788" },
+    { name: t("late"), value: allStats.today_status.late, color: "#F4D35E" },
+    { name: t("early_left"), value: allStats.today_status.early_left, color: "#5DB0F4" },
+    { name: t("absent_today"), value: allStats.today_status.absent, color: "#F28B82" },
+  ] : [];
+
+  const todayTotalPercent = allStats?.today_status?.total_percent || 0;
+
+  const branchRatings = allStats?.branch_ratings?.map((b, i) => {
+    let color = "bg-[#2B9A66]";
+    let bg = "bg-[#2B9A66]/20";
+    if (b.rating < 90 && b.rating >= 80) { color = "bg-[#007AFF]"; bg = "bg-[#007AFF]/20"; }
+    else if (b.rating < 80 && b.rating >= 70) { color = "bg-[#F97316]"; bg = "bg-[#F97316]/20"; }
+    else if (b.rating < 70) { color = "bg-[#EF4444]"; bg = "bg-[#EF4444]/20"; }
+    return {
+      id: i + 1,
+      name: b.name || `${t("branch_fallback")} ${i + 1}`,
+      rating: b.rating,
+      color,
+      bg
+    };
+  }) || [];
+
+
+  const dateLabel = selectedDate
+    ? dayjs(selectedDate).format("DD.MM.YYYY")
+    : t("byDate") || "Sana bo'yicha";
 
   return (
-    <div>
-      {t("home_page_title")}
-    </div>
-  )
-}
+    <div className="p-4 flex flex-col items-start gap-4">
 
-export default HomePage
+      {/* Header row */}
+      <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col items-start">
+          <h1 className="text-2xl font-semibold text-[#0A0A0A]">
+            {t("home_page_title")}
+          </h1>
+          <span className="text-[#737373] text-sm">
+            {t("home_page_subtitle")}
+          </span>
+        </div>
+
+        {/* Filter bar */}
+        <div className="flex items-center gap-2">
+
+          {/* Period buttons */}
+          <div className="inline-flex items-center rounded-md border border-slate-200 bg-white p-1 shadow-sm">
+            {[
+              { value: "", label: `1 ${t("day1")}` },
+              { value: "1", label: `1 ${t("month1")}` },
+              { value: "3", label: `3 ${t("month1")}` },
+              { value: "6", label: `6 ${t("month1")}` },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleChangeDate(option.value)}
+                className={cn(
+                  "rounded-sm px-3 py-1 text-[13px] font-semibold transition cursor-pointer",
+                  option.value === timeRange
+                    ? "bg-[#F5F5F5] shadow-sm"
+                    : "text-[#737373] hover:bg-[#f4f4f4]"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Date picker button */}
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger
+              render={
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold shadow-sm transition cursor-pointer hover:bg-[#f4f4f4]",
+                    timeRange === "sana" ? "bg-[#F5F5F5]" : "text-[#737373]"
+                  )}
+                >
+                  {dateLabel}
+                  {selectedDate ? (
+                    <TbXboxXFilled
+                      className="size-3.5 text-gray-400 cursor-pointer mb-0.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDate(null);
+                        setTimeRange("");
+                      }}
+                    />
+                  ) : (
+                    <ChevronDownIcon className="size-4 opacity-60" />
+                  )}
+                </button>
+              }
+            />
+            <PopoverContent
+              className="w-auto overflow-hidden p-0"
+              align="end"
+              sideOffset={8}
+            >
+              <Calendar
+                mode="single"
+                captionLayout="dropdown"
+                startMonth={new Date(new Date().getFullYear() - 5, 0)}
+                endMonth={new Date(new Date().getFullYear() + 5, 11)}
+                selected={selectedDate}
+                onSelect={handleSelectDate}
+                locale={locale}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
+        {statsData.map((stat) => (
+          <div
+            key={stat.key}
+            className={cn(
+              "rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-black/5",
+              stat.bg
+            )}
+          >
+            {/* Top row: label + icon */}
+            <div className="flex items-center justify-between">
+              <span className="text-base font-medium text-[#0A0A0A]">
+                {t(stat.labelKey)}
+              </span>
+              <div className={cn("rounded-xl w-9 h-9 flex items-center justify-center", stat.iconBg)}>
+                <HugeIcon icon={stat.icon} size={20} className="text-[#0A0A0A]" />
+              </div>
+            </div>
+
+            {/* Value */}
+            <span className="text-[28px] font-bold leading-none tracking-tight text-[#0a0a0a]">
+              {stat.value}
+            </span>
+
+            {/* Trend */}
+            <div className="flex items-center gap-1">
+              <HugeIcon
+                icon={stat.trendUp ? TradeUpIcon : TradeDownIcon}
+                size={16}
+                className={stat.trendUp ? "text-[#2B9A66]" : "text-[#DC2626]"}
+              />
+              <span
+                className={cn(
+                  "text-[12px] font-medium",
+                  stat.trendUp ? "text-[#2B9A66]" : "text-[#DC2626]"
+                )}
+              >
+                {stat.trendVal} {stat.trendTextKey ? t(stat.trendTextKey) : ""}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full rounded-b-xl border-b border-slate-200">
+        {/* Weekly dynamics */}
+        <div className="lg:col-span-2 rounded-2xl p-5 flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-[17px] font-semibold text-[#0A0A0A]">
+              {t("weekly_dynamics")}
+            </h2>
+            <span className="text-[13px] text-[#737373]">
+              {t("weekly_dynamics_subtitle")}
+            </span>
+          </div>
+
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={3}>
+                <CartesianGrid vertical={false} stroke="#E5E7EB" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#737373" }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: "#737373" }}
+                  tickFormatter={(val) => `${val}%`}
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                />
+                <Tooltip cursor={{ fill: "transparent" }} />
+                <Bar dataKey="onTime" name={t("on_time")} fill="#52B788" radius={[4, 4, 4, 4]} barSize={25} />
+                <Bar dataKey="late" name={t("late")} fill="#F4D35E" radius={[4, 4, 4, 4]} barSize={25} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex items-center justify-center gap-6 mt-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#52B788]" />
+              <span className="text-[13px] font-medium text-[#737373]">{t("on_time")}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#F4D35E]" />
+              <span className="text-[13px] font-medium text-[#737373]">{t("late")}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Today's status */}
+        <div className="rounded-2xl p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-[17px] font-semibold text-[#0A0A0A]">
+                {t("today_status")}
+              </h2>
+              <span className="text-[13px] text-[#737373]">
+                {t("today_status_subtitle")}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-row items-center gap-6 mt-4">
+            {/* Donut */}
+            <div className="relative w-[220px] h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={isTodayDataEmpty ? [{ value: 1, color: "#F5F5F5" }] : todayData}
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={0}
+                    dataKey="value"
+                    stroke="none"
+                    isAnimationActive={false}
+                  >
+                    {(isTodayDataEmpty ? [{ value: 1, color: "#F5F5F5" }] : todayData).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-3xl font-bold text-[#0A0A0A]">{todayTotalPercent}%</span>
+                <span className="text-xs font-medium text-[#737373] -mt-1">{t("at_workplace")}</span>
+              </div>
+            </div>
+
+            {/* Custom Legend */}
+            <div className="flex flex-col gap-3">
+              {todayData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: item.color }} />
+                  <span className="text-[13px] text-[#737373] w-[65px]">{item.name}</span>
+                  <span className="text-[13px] ml-3 font-bold text-[#0A0A0A]">{item.value.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Branch Ratings */}
+      {branchRatings.length > 0 && (
+        <div className="w-full rounded-2xl p-5 pt-0! flex flex-col gap-4">
+          <h2 className="text-[17px] font-semibold text-[#0A0A0A]">
+            {t("discipline_rating_branches")}
+          </h2>
+          <div className="flex flex-col gap-4 mt-2">
+            {branchRatings.map((branch) => (
+              <div key={branch.id} className="flex items-center gap-4">
+                <span className="text-[13px] font-medium text-[#0A0A0A] w-4">{branch.id}</span>
+                <span className="text-[13px] font-medium text-[#3a3a3a] w-[180px]">{branch.name}</span>
+                <div className={`flex-1 h-3.5 rounded-full flex overflow-hidden ${branch.rating >= 90 ? "bg-[#30A46C]/20" : branch.rating >= 80 ? "bg-[#0090FF]/20" : branch.rating >= 70 ? "bg-[#F76B15]/20" : "bg-[#E5484D]/20"}`}>
+                  <div
+                    className={`h-full rounded-full ${branch.rating >= 90 ? "bg-[#30A46C]" : branch.rating >= 80 ? "bg-[#0090FF]" : branch.rating >= 70 ? "bg-[#F76B15]" : "bg-[#E5484D]"}`}
+                    style={{ width: `${branch.rating}%` }}
+                  />
+                </div>
+                <span className="text-[14px] font-bold text-[#0A0A0A] w-10 text-right">{branch.rating}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default HomePage;

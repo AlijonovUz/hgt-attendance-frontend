@@ -30,7 +30,7 @@ import {
 } from "./popover"
 import { LuCalendar } from "react-icons/lu"
 import { useLanguage } from "../../Context/LanguageContext"
-import { cn } from "@/lib/utils" // 👈 Agar sizda cn funksiyasi bo'lsa klasslarni chiroyli birlashtirish uchun
+import { cn } from "@/lib/utils"
 
 const calendarLocales = {
      uz: uz,
@@ -45,8 +45,8 @@ export const DatePicker = ({
      placeholder,
      srText,
      showTime = false,
-     className = "",       // 👈 Butun konteyner uchun (Field)
-     inputClassName = "",  // 👈 Mana shu yerga istalgan Tailwind focus va border klassingizni yozasiz!
+     className = "",
+     inputClassName = "",
      widthClass = "w-52",
      ...props
 }) => {
@@ -126,7 +126,6 @@ export const DatePicker = ({
           <Field className={cn("mx-auto", widthClass, className)}>
                <FieldLabel htmlFor="date-required">{displayLabel}</FieldLabel>
 
-               {/* 💡 inputClassName to'g'ridan-to'g'ri InputGroup-ga o'tadi va ichki input focus bo'lganda ishlaydi */}
                <InputGroup className={inputClassName}>
                     <InputGroupInput
                          id="date-required"
@@ -167,6 +166,9 @@ export const DatePicker = ({
                               >
                                    <Calendar
                                         mode="single"
+                                        captionLayout="dropdown"
+                                        startMonth={new Date(new Date().getFullYear() - 5, 0)}
+                                        endMonth={new Date(new Date().getFullYear() + 5, 11)}
                                         selected={date}
                                         month={month}
                                         onMonthChange={setMonth}
