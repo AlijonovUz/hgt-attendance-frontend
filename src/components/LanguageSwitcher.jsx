@@ -28,7 +28,7 @@ export const LanguageSwitcher = () => {
                <button
                     type="button"
                     onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                    className="flex items-center gap-1.5 px-3 cursor-pointer py-2.5 rounded-md bg-login-pill-bg hover:bg-login-pill-hover text-login-pill-text text-sm font-medium transition duration-initial"
+                    className="flex items-center gap-1.5 px-3 cursor-pointer py-2.5 rounded-md bg-login-pill-bg hover:bg-login-pill-hover text-login-pill-text text-sm font-medium transition-none"
                >
                     {displayLang} <ChevronDown className="w-4 h-4 text-login-text-secondary" />
                </button>
