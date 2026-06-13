@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import { useLanguage } from "../../Context/LanguageContext";
+import { useTheme } from "../../Context/ThemeContext";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "lucide-react";
@@ -38,6 +39,7 @@ const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS, };
 
 const HomePage = () => {
   const { t, language } = useLanguage();
+  const { theme } = useTheme();
   const locale = calendarLocales[language] || uz;
 
   const [loadingData, setLoadingData] = useState(false)
@@ -104,7 +106,7 @@ const HomePage = () => {
       trendTextKey: "trend_this_month",
       trendUp: (allStats?.summary?.total_employees_trend || 0) >= 0,
       icon: IdIcon,
-      bg: "bg-[#F5F5F5]",
+      bg: "bg-[#F5F5F5] dark:bg-[#262626]",
       iconBg: "bg-white",
     },
     {
@@ -162,10 +164,10 @@ const HomePage = () => {
   const isTodayDataEmpty = !allStats?.today_status || (allStats.today_status.on_time === 0 && allStats.today_status.late === 0 && allStats.today_status.early_left === 0 && allStats.today_status.absent === 0);
 
   const todayData = allStats?.today_status ? [
-    { name: t("on_time"), value: allStats.today_status.on_time, color: "#52B788" },
-    { name: t("late"), value: allStats.today_status.late, color: "#F4D35E" },
-    { name: t("early_left"), value: allStats.today_status.early_left, color: "#5DB0F4" },
-    { name: t("absent_today"), value: allStats.today_status.absent, color: "#F28B82" },
+    { name: t("on_time"), value: allStats.today_status.on_time, color: "#5BB98B" },
+    { name: t("late"), value: allStats.today_status.late, color: "#F3D768" },
+    { name: t("early_left"), value: allStats.today_status.early_left, color: "#5EB1EF" },
+    { name: t("absent_today"), value: allStats.today_status.absent, color: "#EB8E90" },
   ] : [];
 
   const todayTotalPercent = allStats?.today_status?.total_percent || 0;
@@ -191,12 +193,12 @@ const HomePage = () => {
     : t("byDate") || "Sana bo'yicha";
 
   return (
-    <div className="p-4 flex flex-col items-start gap-4">
+    <div className="p-4 flex flex-col items-start gap-4 w-full min-h-screen bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
 
       {/* Header row */}
       <div className="flex items-center justify-between w-full">
         <div className="flex flex-col items-start">
-          <h1 className="text-2xl font-semibold text-[#0A0A0A]">
+          <h1 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
             {t("home_page_title")}
           </h1>
           <span className="text-[#737373] text-sm">
@@ -208,7 +210,7 @@ const HomePage = () => {
         <div className="flex items-center gap-2">
 
           {/* Period buttons */}
-          <div className="inline-flex items-center rounded-md border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="inline-flex items-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] p-1 shadow-sm">
             {[
               { value: "", label: `1 ${t("day1")}` },
               { value: "1", label: `1 ${t("month1")}` },
@@ -220,10 +222,10 @@ const HomePage = () => {
                 type="button"
                 onClick={() => handleChangeDate(option.value)}
                 className={cn(
-                  "rounded-sm px-3 py-1 text-[13px] font-semibold transition cursor-pointer",
+                  "rounded-sm px-3 py-1 text-[13px] font-semibold cursor-pointer",
                   option.value === timeRange
-                    ? "bg-[#F5F5F5] shadow-sm"
-                    : "text-[#737373] hover:bg-[#f4f4f4]"
+                    ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm"
+                    : "text-[#737373] hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
                 )}
               >
                 {option.label}
@@ -238,8 +240,8 @@ const HomePage = () => {
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold shadow-sm transition cursor-pointer hover:bg-[#f4f4f4]",
-                    timeRange === "sana" ? "bg-[#F5F5F5]" : "text-[#737373]"
+                    "inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2 text-[13px] font-semibold shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]",
+                    timeRange === "sana" ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white" : "text-[#737373]"
                   )}
                 >
                   {dateLabel}
@@ -253,7 +255,7 @@ const HomePage = () => {
                       }}
                     />
                   ) : (
-                    <ChevronDownIcon className="size-4 opacity-60" />
+                    <ChevronDownIcon className="size-4 opacity-60 text-current" />
                   )}
                 </button>
               }
@@ -281,55 +283,62 @@ const HomePage = () => {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 w-full">
-        {statsData.map((stat) => (
-          <div
-            key={stat.key}
-            className={cn(
-              "rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-black/5",
-              stat.bg
-            )}
-          >
-            {/* Top row: label + icon */}
-            <div className="flex items-center justify-between">
-              <span className="text-base font-medium text-[#0A0A0A]">
-                {t(stat.labelKey)}
+        {statsData.map((stat) => {
+          return (
+            <div
+              key={stat.key}
+              className={cn(
+                "rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-black/5", stat.bg
+              )}
+            >
+              {/* Top row: label + icon */}
+              <div className="flex items-center justify-between">
+                <span className="text-base font-medium text-[#0A0A0A] dark:text-[#FAFAFA]">
+                  {t(stat.labelKey)}
+                </span>
+                <div className="rounded-xl w-9 h-9 flex items-center justify-center bg-white dark:bg-black">
+                  <HugeIcon
+                    icon={stat.icon}
+                    size={20}
+                    className="text-[#0A0A0A] dark:text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Value */}
+              <span className={cn(
+                "text-[28px] font-bold leading-none tracking-tight text-[#0a0a0a] dark:text-white"
+              )}>
+                {stat.value}
               </span>
-              <div className={cn("rounded-xl w-9 h-9 flex items-center justify-center", stat.iconBg)}>
-                <HugeIcon icon={stat.icon} size={20} className="text-[#0A0A0A]" />
+
+              {/* Trend */}
+              <div className="flex items-center gap-1">
+                <HugeIcon
+                  icon={stat.trendUp ? TradeUpIcon : TradeDownIcon}
+                  size={16}
+                  className={stat.trendUp ? "text-[#2B9A66]" : "text-[#DC2626]"}
+                />
+                <span
+                  className={cn(
+                    "text-[12px] font-medium",
+                    stat.trendUp ? "text-[#2B9A66]" : "text-[#DC2626]"
+                  )}
+                >
+                  {stat.trendVal} {stat.trendTextKey ? t(stat.trendTextKey) : ""}
+                </span>
               </div>
             </div>
-
-            {/* Value */}
-            <span className="text-[28px] font-bold leading-none tracking-tight text-[#0a0a0a]">
-              {stat.value}
-            </span>
-
-            {/* Trend */}
-            <div className="flex items-center gap-1">
-              <HugeIcon
-                icon={stat.trendUp ? TradeUpIcon : TradeDownIcon}
-                size={16}
-                className={stat.trendUp ? "text-[#2B9A66]" : "text-[#DC2626]"}
-              />
-              <span
-                className={cn(
-                  "text-[12px] font-medium",
-                  stat.trendUp ? "text-[#2B9A66]" : "text-[#DC2626]"
-                )}
-              >
-                {stat.trendVal} {stat.trendTextKey ? t(stat.trendTextKey) : ""}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Charts section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full rounded-b-xl border-b border-slate-200">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full rounded-lg border-b border-slate-200 dark:border-transparent pb-4 dark:pb-0!">
         {/* Weekly dynamics */}
-        <div className="lg:col-span-2 rounded-2xl p-5 flex flex-col gap-4">
+        <div className="lg:col-span-2 rounded-2xl p-5 flex flex-col gap-4 bg-white dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
           <div className="flex flex-col gap-1">
-            <h2 className="text-[17px] font-semibold text-[#0A0A0A]">
+            <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
               {t("weekly_dynamics")}
             </h2>
             <span className="text-[13px] text-[#737373]">
@@ -337,10 +346,10 @@ const HomePage = () => {
             </span>
           </div>
 
-          <div className="h-[250px] w-full">
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={3}>
-                <CartesianGrid vertical={false} stroke="#E5E7EB" />
+                <CartesianGrid vertical={false} stroke={theme === "dark" ? "#2E2E2E" : "#E5E7EB"} />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
@@ -356,30 +365,35 @@ const HomePage = () => {
                   domain={[0, 100]}
                   ticks={[0, 25, 50, 75, 100]}
                 />
-                <Tooltip cursor={{ fill: "transparent" }} />
-                <Bar dataKey="onTime" name={t("on_time")} fill="#52B788" radius={[4, 4, 4, 4]} barSize={25} />
-                <Bar dataKey="late" name={t("late")} fill="#F4D35E" radius={[4, 4, 4, 4]} barSize={25} />
+                <Tooltip
+                  cursor={{ fill: "transparent" }}
+                  contentStyle={theme === "dark" ? { backgroundColor: "#171717", borderColor: "#2E2E2E", borderRadius: "8px" } : { borderRadius: "8px" }}
+                  itemStyle={theme === "dark" ? { color: "#fff" } : undefined}
+                  labelStyle={theme === "dark" ? { color: "#a3a3a3" } : undefined}
+                />
+                <Bar dataKey="onTime" name={t("on_time")} fill="#5BB98B" radius={[4, 4, 4, 4]} barSize={25} />
+                <Bar dataKey="late" name={t("late")} fill="#F3D768" radius={[4, 4, 4, 4]} barSize={25} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           <div className="flex items-center justify-center gap-6 mt-1">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#52B788]" />
+              <div className="w-2 h-2 rounded-[3px] bg-[#5BB98B]" />
               <span className="text-[13px] font-medium text-[#737373]">{t("on_time")}</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#F4D35E]" />
+              <div className="w-2 h-2 rounded-[3px] bg-[#F3D768]" />
               <span className="text-[13px] font-medium text-[#737373]">{t("late")}</span>
             </div>
           </div>
         </div>
 
         {/* Today's status */}
-        <div className="rounded-2xl p-5 flex flex-col gap-4">
+        <div className="rounded-2xl p-5 flex flex-col gap-4 bg-white dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
-              <h2 className="text-[17px] font-semibold text-[#0A0A0A]">
+              <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
                 {t("today_status")}
               </h2>
               <span className="text-[13px] text-[#737373]">
@@ -390,11 +404,11 @@ const HomePage = () => {
 
           <div className="flex flex-row items-center gap-6 mt-4">
             {/* Donut */}
-            <div className="relative w-[220px] h-[220px]">
+            <div className="relative w-[220px] h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={isTodayDataEmpty ? [{ value: 1, color: "#F5F5F5" }] : todayData}
+                    data={isTodayDataEmpty ? [{ value: 1, color: theme === "dark" ? "#262626" : "#F5F5F5" }] : todayData}
                     innerRadius={60}
                     outerRadius={100}
                     paddingAngle={0}
@@ -402,14 +416,14 @@ const HomePage = () => {
                     stroke="none"
                     isAnimationActive={false}
                   >
-                    {(isTodayDataEmpty ? [{ value: 1, color: "#F5F5F5" }] : todayData).map((entry, index) => (
+                    {(isTodayDataEmpty ? [{ value: 1, color: theme === "dark" ? "#262626" : "#F5F5F5" }] : todayData).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-3xl font-bold text-[#0A0A0A]">{todayTotalPercent}%</span>
+                <span className="text-3xl font-bold text-[#0A0A0A] dark:text-white">{todayTotalPercent}%</span>
                 <span className="text-xs font-medium text-[#737373] -mt-1">{t("at_workplace")}</span>
               </div>
             </div>
@@ -418,9 +432,9 @@ const HomePage = () => {
             <div className="flex flex-col gap-3">
               {todayData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-[3px]" style={{ backgroundColor: item.color }} />
-                  <span className="text-[13px] text-[#737373] w-[65px]">{item.name}</span>
-                  <span className="text-[13px] ml-3 font-bold text-[#0A0A0A]">{item.value.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
+                  <div className="w-2 h-2 rounded-[3px]" style={{ backgroundColor: item.color }} />
+                  <span className="text-sm text-[#0A0A0A] dark:text-[#FAFAFA] w-[65px]">{item.name}</span>
+                  <span className="text-sm ml-3 font-semibold text-[#0A0A0A] dark:text-white">{item.value.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
                 </div>
               ))}
             </div>
@@ -430,22 +444,22 @@ const HomePage = () => {
 
       {/* Branch Ratings */}
       {branchRatings.length > 0 && (
-        <div className="w-full rounded-2xl p-5 pt-0! flex flex-col gap-4">
-          <h2 className="text-[17px] font-semibold text-[#0A0A0A]">
+        <div className="w-full rounded-2xl p-5 flex flex-col gap-4 bg-white dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
+          <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
             {t("discipline_rating_branches")}
           </h2>
           <div className="flex flex-col gap-4 mt-2">
-            {branchRatings.map((branch) => (
-              <div key={branch.id} className="flex items-center gap-4">
-                <span className="text-[13px] font-medium text-[#0A0A0A] w-4">{branch.id}</span>
-                <span className="text-[13px] font-medium text-[#3a3a3a] w-[180px]">{branch.name}</span>
+            {branchRatings.map((branch, i) => (
+              <div key={i + 1} className="flex items-center gap-4">
+                <span className="text-[13px] font-medium text-[#0A0A0A] dark:text-white/80 w-4">{i + 1}</span>
+                <span className="text-[13px] font-medium text-[#3a3a3a] dark:text-white/90 w-[180px]">{branch.name}</span>
                 <div className={`flex-1 h-3.5 rounded-full flex overflow-hidden ${branch.rating >= 90 ? "bg-[#30A46C]/20" : branch.rating >= 80 ? "bg-[#0090FF]/20" : branch.rating >= 70 ? "bg-[#F76B15]/20" : "bg-[#E5484D]/20"}`}>
                   <div
                     className={`h-full rounded-full ${branch.rating >= 90 ? "bg-[#30A46C]" : branch.rating >= 80 ? "bg-[#0090FF]" : branch.rating >= 70 ? "bg-[#F76B15]" : "bg-[#E5484D]"}`}
                     style={{ width: `${branch.rating}%` }}
                   />
                 </div>
-                <span className="text-[14px] font-bold text-[#0A0A0A] w-10 text-right">{branch.rating}%</span>
+                <span className="text-[14px] font-bold text-[#0A0A0A] dark:text-white w-10 text-right">{branch.rating}%</span>
               </div>
             ))}
           </div>

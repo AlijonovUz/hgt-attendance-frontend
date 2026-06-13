@@ -109,6 +109,9 @@
   --login-pill-bg: #F5F5F5;
   --login-pill-hover: #EAEAEA;
   --login-pill-text: #1A1A1A;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #D1D5DB;
+  --scrollbar-thumb-hover: #9CA3AF;
 }
 
 .dark {
@@ -157,6 +160,9 @@
   --login-pill-bg: #404040;
   --login-pill-hover: #444444;
   --login-pill-text: #FFFFFF;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #2E2E2E;
+  --scrollbar-thumb-hover: #3F3F46;
 }
 
 @layer base {
@@ -170,5 +176,23 @@
 
   html {
     @apply font-sans;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+
+  /* Custom Webkit scrollbar rules */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
   }
 }
