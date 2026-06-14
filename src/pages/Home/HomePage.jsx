@@ -56,7 +56,6 @@ const HomePage = () => {
 
       if (res.status == 200) {
         setAllStats(res.data?.data)
-        setLoadingData(false)
       }
     } catch (err) {
       console.error(err);
@@ -96,6 +95,21 @@ const HomePage = () => {
     getDashboardData(param)
   }, [selectedDate])
 
+  if (loadingData) {
+    return (
+      <div className="p-4 flex flex-col gap-4 w-full min-h-[calc(100vh-3.5rem)] bg-white dark:bg-[#0A0A0A]">
+        {/* Top 3 skeleton cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+          <div className="h-[148px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-zinc-800" />
+          <div className="h-[148px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-zinc-800" />
+          <div className="h-[148px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-zinc-800" />
+        </div>
+
+        {/* Large bottom skeleton card */}
+        <div className="w-full flex-1 min-h-[400px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-zinc-800" />
+      </div>
+    );
+  }
 
   const statsData = [
     {
@@ -193,7 +207,7 @@ const HomePage = () => {
     : t("byDate") || "Sana bo'yicha";
 
   return (
-    <div className="p-4 flex flex-col items-start gap-4 w-full min-h-screen bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
+    <div className="p-4 flex flex-col items-start gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
 
       {/* Header row */}
       <div className="flex items-center justify-between w-full">

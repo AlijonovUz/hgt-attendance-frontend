@@ -29,11 +29,17 @@ const Layout = () => {
                     }
                } catch (err) {
                     console.error(err);
+                    localStorage.removeItem("access");
+                    localStorage.removeItem("refresh");
+                    dispatch(setCurrentUser(null));
+                    navigate("/login", { replace: true });
                }
           }
 
-          getCurrentUser()
-     }, [])
+          if (accessToken) {
+               getCurrentUser();
+          }
+     }, [accessToken, dispatch, navigate])
 
 
      return (
