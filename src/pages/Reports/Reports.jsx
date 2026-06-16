@@ -329,7 +329,7 @@ const Reports = () => {
       </div>
 
       {/* ─── Jadval ─── */}
-      <div className="w-full rounded-2xl h-[calc(100vh-210px)] border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
+      <div className="w-full rounded-2xl max-h-[calc(100vh-215px)] border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
 
         {/* Scrollable area: thead + tbody */}
         <div className="flex-1 overflow-y-auto">
@@ -402,21 +402,14 @@ const Reports = () => {
                       <Pill icon={Logout01Icon} iconType="huge" iconClass="text-[#9CA3AF]">{fmt(r.left_early)}</Pill>
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold text-[#1A1A1A] dark:text-white">
-                      {r.discipline_kpi ?? "—"}
+                      {r.discipline_kpi ?? ""}
                     </td>
                   </tr>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Jami qatori — har doim pastda qotib turadi */}
-        {!loading && results.length > 0 && summary && (
-          <div className="flex-shrink-0 border-t border-[#E5E7EB] dark:border-[#2E2E2E]">
-            <table className="w-full border-collapse text-left">
-              <tbody>
-                <tr className="bg-[#EFF4FF] dark:bg-[#1D2A52]">
+              {/* Jami qatori — har doim pastda qotib turadi */}
+              {!loading && results.length > 0 && summary && (
+                <tr className="bg-[#EFF4FF] sticky bottom-0 z-10 dark:bg-[#1D2A52]">
                   <td className="w-12 px-4 py-3.5" />
                   <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white">
                     {t("total_row")}
@@ -440,10 +433,10 @@ const Reports = () => {
                     {summary.discipline_kpi ?? "—"}
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* ─── Toast ─── */}
