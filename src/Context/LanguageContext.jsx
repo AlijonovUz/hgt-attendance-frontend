@@ -46,6 +46,12 @@ export const translations = {
           en: "Select date",
           ru: "Выберите дату"
      },
+     double_click_to_select: {
+          uz: "Belgilash uchun 2 marta bosing",
+          cy: "Белгилаш учун 2 марта босинг",
+          en: "Double click to select",
+          ru: "Дважды нажмите для выбора"
+     },
      full_name: {
           uz: "Ism familiya",
           cy: "Исм фамилия",

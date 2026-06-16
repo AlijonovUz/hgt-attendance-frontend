@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { useLanguage } from "../../Context/LanguageContext";
 import { useTheme } from "../../Context/ThemeContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "lucide-react";
 import { TbXboxXFilled } from "react-icons/tb";
@@ -44,6 +44,8 @@ const HomePage = () => {
 
   const [loadingData, setLoadingData] = useState(false)
   const [allStats, setAllStats] = useState(null)
+  // Faqat birinchi yuklanishda skeleton ko'rsatish uchun
+  const isInitialLoad = useRef(true)
 
   const [timeRange, setTimeRange] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -62,6 +64,8 @@ const HomePage = () => {
     }
     finally {
       setLoadingData(false)
+      // Birinchi marta yuklangandan so'ng false qilamiz
+      isInitialLoad.current = false
     }
   }
 
@@ -83,19 +87,27 @@ const HomePage = () => {
     if (!date) return;
     setSelectedDate(date);
     setTimeRange("sana");
-    setCalendarOpen(false);
+    if (!date.from || (date.from && date.to)) {
+      setCalendarOpen(false);
+    }
   };
 
   useEffect(() => {
     const param = {}
     if (selectedDate) {
-      param.start_date = dayjs(selectedDate).format("YYYY-MM-DD")
+      if (selectedDate.from) {
+        param.start_date = dayjs(selectedDate.from).format("YYYY-MM-DD")
+        param.end_date = selectedDate.to ? dayjs(selectedDate.to).format("YYYY-MM-DD") : dayjs(selectedDate.from).format("YYYY-MM-DD")
+      } else {
+        param.start_date = dayjs(selectedDate).format("YYYY-MM-DD")
+      }
     }
 
     getDashboardData(param)
   }, [selectedDate])
 
-  if (loadingData) {
+  // Skeleton faqat birinchi yuklanishda ko'rsatiladi (filter qilganda emas)
+  if (loadingData && isInitialLoad.current) {
     return (
       <div className="p-4 flex flex-col gap-4 w-full min-h-[calc(100vh-3.5rem)] bg-white dark:bg-[#0A0A0A]">
         {/* Top 3 skeleton cards */}
@@ -203,7 +215,9 @@ const HomePage = () => {
 
 
   const dateLabel = selectedDate
-    ? dayjs(selectedDate).format("DD.MM.YYYY")
+    ? selectedDate.from
+      ? `${dayjs(selectedDate.from).format("DD.MM.YYYY")}${selectedDate.to ? ` \u00bb ${dayjs(selectedDate.to).format("DD.MM.YYYY")}` : ""}`
+      : dayjs(selectedDate).format("DD.MM.YYYY")
     : t("byDate") || "Sana bo'yicha";
 
   return (
@@ -239,7 +253,7 @@ const HomePage = () => {
                   "rounded-sm px-3 py-1 text-[13px] font-semibold cursor-pointer",
                   option.value === timeRange
                     ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm"
-                    : "text-[#737373] hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
+                    : " hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
                 )}
               >
                 {option.label}
@@ -255,7 +269,7 @@ const HomePage = () => {
                   type="button"
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2 text-[13px] font-semibold shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]",
-                    timeRange === "sana" ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white" : "text-[#737373]"
+                    timeRange === "sana" ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white" : ""
                   )}
                 >
                   {dateLabel}
@@ -280,6 +294,7 @@ const HomePage = () => {
               sideOffset={8}
             >
               <Calendar
+                daterange={true}
                 mode="single"
                 captionLayout="dropdown"
                 startMonth={new Date(new Date().getFullYear() - 5, 0)}
@@ -447,8 +462,8 @@ const HomePage = () => {
               {todayData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-[3px]" style={{ backgroundColor: item.color }} />
-                  <span className="text-sm text-[#0A0A0A] dark:text-[#FAFAFA] w-[65px]">{item.name}</span>
-                  <span className="text-sm ml-3 font-semibold text-[#0A0A0A] dark:text-white">{item.value.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
+                  <span className="text-sm text-[#0A0A0A] dark:text-[#FAFAFA] w-[75px]">{item.name}</span>
+                  <span className="text-sm ml-5 font-semibold text-[#0A0A0A] dark:text-white">{item.value.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
                 </div>
               ))}
             </div>

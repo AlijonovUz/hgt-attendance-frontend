@@ -110,7 +110,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                         className={({ isActive }) =>
                                              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#1A1A1A] dark:text-white font-medium overflow-hidden
                                              ${isActive
-                                                  ? "bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                  ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs"
                                                   : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
                                              }`
                                         }

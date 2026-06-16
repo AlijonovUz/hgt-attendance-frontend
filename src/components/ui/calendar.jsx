@@ -1,9 +1,92 @@
 import * as React from "react"
 import { DayPicker, getDefaultClassNames } from "react-day-picker"
+import { format } from "date-fns"
+import dayjs from "dayjs"
+import { useLanguage } from "@/Context/LanguageContext"
 
 import { cn } from "@/lib/utils"
+
+const CalendarContext = React.createContext({
+  daterange: false,
+  selected: null,
+  onSelect: null,
+  t: () => "",
+})
 import { Button, buttonVariants } from "@/components/ui/button"
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "lucide-react"
+import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, CheckIcon } from "lucide-react"
+
+// ─── Custom Dropdown ───────────────────────────────────────────────────────────
+// Native <select> Chrome dark mode da oq fon bilan chiqadi.
+// Shuning uchun to'liq custom React dropdown ishlatamiz.
+function CalendarDropdown({ value, onChange, options, className, ...props }) {
+  const [open, setOpen] = React.useState(false)
+  const ref = React.useRef(null)
+
+  // Tashqariga bosilganda yopilsin
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    if (open) document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  // options massividan hozirgi tanlangan elementni topamiz
+  const selected = options?.find((o) => String(o.value) === String(value))
+
+  return (
+    <div ref={ref} className="relative" {...props}>
+      {/* Trigger — selected?.label matnni ko'rsatadi */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex items-center gap-1 rounded-md px-2 py-0.5 text-sm font-medium",
+          "hover:bg-accent cursor-pointer select-none transition-colors",
+          "text-foreground",
+          className
+        )}
+      >
+        <span>{selected?.label}</span>
+        <ChevronDownIcon
+          className={cn("size-3.5 opacity-60 transition-transform duration-150", open && "rotate-180")}
+        />
+      </button>
+
+      {/* Dropdown list */}
+      {open && (
+        <div
+          className={cn(
+            "absolute top-full mt-1 z-50 min-w-[7rem] rounded-lg border shadow-lg py-1 overflow-y-auto max-h-52",
+            "bg-popover border-border text-popover-foreground",
+            "left-0"
+          )}
+        >
+          {options?.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange?.({ target: { value: String(opt.value) } })
+                setOpen(false)
+              }}
+              className={cn(
+                "flex w-full items-center justify-between px-3 py-1.5 text-sm cursor-pointer transition-colors",
+                "hover:bg-accent hover:text-accent-foreground",
+                String(opt.value) === String(value) && "font-semibold text-primary"
+              )}
+            >
+              {opt.label}
+              {String(opt.value) === String(value) && (
+                <CheckIcon className="size-3.5 text-primary flex-shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function Calendar({
   className,
@@ -14,13 +97,18 @@ function Calendar({
   locale,
   formatters,
   components,
+  daterange = false,
+  selected,
+  onSelect,
   ...props
 }) {
   const defaultClassNames = getDefaultClassNames()
+  const { t } = useLanguage()
 
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
+    <CalendarContext.Provider value={{ daterange, selected, onSelect, t }}>
+      <DayPicker
+        showOutsideDays={showOutsideDays}
       className={cn(
         "group/calendar bg-background p-3 [--cell-radius:6px] [--cell-size:36px]",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -31,7 +119,7 @@ function Calendar({
       locale={locale}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString(locale?.code, { month: "long" }),
+          locale ? format(date, "LLLL", { locale }) : date.toLocaleString(undefined, { month: "long" }),
         ...formatters,
       }}
       classNames={{
@@ -64,8 +152,9 @@ function Calendar({
           "relative",
           defaultClassNames.dropdown_root
         ),
+        // Native select ni yashiramiz — custom dropdown uni almashtiradi
         dropdown: cn(
-          "absolute inset-0 opacity-0 cursor-pointer",
+          "hidden",
           defaultClassNames.dropdown
         ),
         caption_label: cn(
@@ -122,6 +211,9 @@ function Calendar({
           }
           return (<ChevronDownIcon className={cn("size-4", className)} {...props} />)
         },
+        Dropdown: (dropdownProps) => (
+          <CalendarDropdown {...dropdownProps} />
+        ),
         DayButton: ({ ...props }) => (
           <CalendarDayButton locale={locale} {...props} />
         ),
@@ -136,7 +228,10 @@ function Calendar({
         },
         ...components,
       }}
+      selected={daterange ? undefined : selected}
+      onSelect={daterange ? undefined : onSelect}
       {...props} />
+    </CalendarContext.Provider>
   )
 }
 
@@ -152,22 +247,93 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
 
+  const clickTimeoutRef = React.useRef(null)
+  React.useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const { daterange, selected, onSelect, t } = React.useContext(CalendarContext)
+
+  // Compute modifiers for date range selection
+  const isRangeStart = daterange && selected?.from && dayjs(day.date).isSame(selected.from, 'day')
+  const isRangeEnd = daterange && selected?.to && dayjs(day.date).isSame(selected.to, 'day')
+  const isRangeMiddle = daterange && selected?.from && selected?.to &&
+    dayjs(day.date).isAfter(selected.from, 'day') &&
+    dayjs(day.date).isBefore(selected.to, 'day')
+
+  const isStart = daterange ? isRangeStart : modifiers.range_start
+  const isEnd = daterange ? isRangeEnd : modifiers.range_end
+  const isMiddle = daterange ? isRangeMiddle : modifiers.range_middle
+  const isSelectedSingle = daterange
+    ? (selected?.from && !selected?.to && dayjs(day.date).isSame(selected.from, 'day'))
+    : (modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle)
+
+  const handleClick = (e) => {
+    if (daterange) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current)
+        clickTimeoutRef.current = null
+      }
+
+      const clickedDate = day.date
+      clickTimeoutRef.current = setTimeout(() => {
+        if (onSelect) {
+          onSelect({ from: clickedDate, to: undefined })
+        }
+        clickTimeoutRef.current = null
+      }, 250)
+    } else {
+      props.onClick?.(e)
+    }
+  }
+
+  const handleDoubleClick = (e) => {
+    if (daterange && onSelect) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current)
+        clickTimeoutRef.current = null
+      }
+
+      const clickedDate = day.date
+      let newRange
+      if (!selected || !selected.from || (selected.from && selected.to)) {
+        newRange = { from: clickedDate, to: undefined }
+      } else {
+        const fromDate = dayjs(selected.from)
+        const clicked = dayjs(clickedDate)
+        if (clicked.isBefore(fromDate)) {
+          newRange = { from: clickedDate, to: selected.from }
+        } else {
+          newRange = { from: selected.from, to: clickedDate }
+        }
+      }
+      onSelect(newRange)
+    }
+  }
+
   return (
     <button
+      {...props}
       ref={ref}
       data-day={day.date.toLocaleDateString(locale?.code)}
-      data-selected-single={
-        modifiers.selected &&
-        !modifiers.range_start &&
-        !modifiers.range_end &&
-        !modifiers.range_middle
-      }
-      data-range-start={modifiers.range_start}
-      data-range-end={modifiers.range_end}
-      data-range-middle={modifiers.range_middle}
+      data-selected-single={isSelectedSingle}
+      data-range-start={isStart}
+      data-range-end={isEnd}
+      data-range-middle={isMiddle}
       data-today={modifiers.today}
       data-outside={modifiers.outside}
       data-disabled={modifiers.disabled}
+      title={daterange ? t("double_click_to_select") : undefined}
       className={cn(
         // Base styles
         "inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-normal transition-colors",
@@ -176,19 +342,20 @@ function CalendarDayButton({
         "hover:bg-accent hover:text-accent-foreground",
         // Focus ring
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-        // Selected single — dark rounded pill (rasmda 25-kun ko'rinishi)
+        // Selected single
         "data-[selected-single=true]:bg-foreground data-[selected-single=true]:text-background data-[selected-single=true]:rounded-md data-[selected-single=true]:hover:bg-foreground/90",
         // Range
         "data-[range-start=true]:bg-foreground data-[range-start=true]:text-background data-[range-start=true]:rounded-l-md",
         "data-[range-end=true]:bg-foreground data-[range-end=true]:text-background data-[range-end=true]:rounded-r-md",
-        "data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-middle=true]:rounded-none",
+        "data-[range-middle=true]:bg-[#f5f5f5] dark:data-[range-middle=true]:bg-[#262626] data-[range-middle=true]:text-foreground data-[range-middle=true]:rounded-none",
         // Outside days
         "data-[outside=true]:text-muted-foreground data-[outside=true]:opacity-50",
         // Disabled
         "data-[disabled=true]:text-muted-foreground data-[disabled=true]:opacity-30 data-[disabled=true]:cursor-not-allowed data-[disabled=true]:pointer-events-none",
         className
       )}
-      {...props}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
     />
   )
 }
