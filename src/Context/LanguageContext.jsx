@@ -353,6 +353,134 @@ export const translations = {
           cy: "Ўз вақтида",
           en: "On time",
           ru: "Вовремя"
+     },
+
+     // reports page
+     reports_subtitle: {
+          uz: "Davomat hisobotlarini shakllantirish va eksport qilish",
+          cy: "Давомат ҳисоботларини шакллантириш ва экспорт қилиш",
+          en: "Generate and export attendance reports",
+          ru: "Формирование и экспорт отчетов посещаемости"
+     },
+     period_daily: {
+          uz: "Kunlik",
+          cy: "Кунлик",
+          en: "Daily",
+          ru: "Дневной"
+     },
+     period_weekly: {
+          uz: "Haftalik",
+          cy: "Ҳафталик",
+          en: "Weekly",
+          ru: "Недельный"
+     },
+     period_monthly: {
+          uz: "Oylik",
+          cy: "Ойлик",
+          en: "Monthly",
+          ru: "Месячный"
+     },
+     period_quarterly: {
+          uz: "Choraklik",
+          cy: "Чораклик",
+          en: "Quarterly",
+          ru: "Квартальный"
+     },
+     period_yearly: {
+          uz: "Yillik",
+          cy: "Йиллик",
+          en: "Yearly",
+          ru: "Годовой"
+     },
+     tab_by_branch: {
+          uz: "Filiallar bo'yicha",
+          cy: "Филиаллар бўйича",
+          en: "By branch",
+          ru: "По филиалам"
+     },
+     tab_by_employee: {
+          uz: "Xodimlar bo'yicha",
+          cy: "Ходимлар бўйича",
+          en: "By employee",
+          ru: "По сотрудникам"
+     },
+     col_branch: {
+          uz: "Filial",
+          cy: "Филиал",
+          en: "Branch",
+          ru: "Филиал"
+     },
+     col_employee: {
+          uz: "Xodim",
+          cy: "Ходим",
+          en: "Employee",
+          ru: "Сотрудник"
+     },
+     col_total: {
+          uz: "Jami",
+          cy: "Жами",
+          en: "Total",
+          ru: "Всего"
+     },
+     col_arrived: {
+          uz: "Kelgan",
+          cy: "Келган",
+          en: "Arrived",
+          ru: "Пришли"
+     },
+     col_late: {
+          uz: "Kechikkan",
+          cy: "Кечиккан",
+          en: "Late",
+          ru: "Опоздали"
+     },
+     col_absent: {
+          uz: "Kelmagan",
+          cy: "Келмаган",
+          en: "Absent",
+          ru: "Отсутствуют"
+     },
+     col_early: {
+          uz: "Erta ketgan",
+          cy: "Эрта кетган",
+          en: "Left early",
+          ru: "Ушли рано"
+     },
+     col_discipline_kpi: {
+          uz: "Intizom KPI",
+          cy: "Интизом KPI",
+          en: "Discipline KPI",
+          ru: "KPI дисциплины"
+     },
+     total_row: {
+          uz: "Jami",
+          cy: "Жами",
+          en: "Total",
+          ru: "Итого"
+     },
+     export_excel_success: {
+          uz: "Davomat hisoboti - Excel hisoboti eksport qilindi",
+          cy: "Давомат ҳисоботи - Excel ҳисоботи экспорт қилинди",
+          en: "Attendance report - Excel report exported",
+          ru: "Отчет посещаемости - Excel отчет экспортирован"
+     },
+     export_pdf_success: {
+          uz: "Davomat hisoboti - PDF hisoboti eksport qilindi",
+          cy: "Давомат ҳисоботи - PDF ҳисоботи экспорт қилинди",
+          en: "Attendance report - PDF report exported",
+          ru: "Отчет посещаемости - PDF отчет экспортирован"
+     },
+     reports_empty: {
+          uz: "Ma'lumot topilmadi",
+          cy: "Маълумот топилмади",
+          en: "No data found",
+          ru: "Данные не найдены"
+     },
+     export_empty_warning: {
+          uz: "Eksport qilish uchun ma'lumot yo'q",
+          cy: "Экспорт қилиш учун маълумот йўқ",
+          en: "No data to export",
+          ru: "Нет данных для экспорта"
      }
 }
 
