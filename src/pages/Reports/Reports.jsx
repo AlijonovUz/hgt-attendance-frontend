@@ -13,6 +13,7 @@ import {
   FileText,
   Download,
 } from "lucide-react"
+import { PiMicrosoftExcelLogo } from "react-icons/pi";
 import { TbXboxXFilled } from "react-icons/tb"
 import { uz, ru, enUS, uzCyrl } from "date-fns/locale"
 
@@ -22,6 +23,8 @@ import { cn } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Toast } from "@/components/ui/Toast"
+import { HugeIcon } from "@/components/ui/HugeIcon"
+import { Calendar02Icon, Download01Icon, Logout01Icon, Pdf02Icon, TimeQuarter02Icon } from "@hugeicons/core-free-icons"
 
 const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS }
 
@@ -70,9 +73,14 @@ const Reports = () => {
 
       const params = { period }
       if (period === "custom" && selectedDate) {
-        const d = dayjs(selectedDate).format("YYYY-MM-DD")
-        params.start_date = d
-        params.end_date = d
+        if (selectedDate.from) {
+          params.start_date = dayjs(selectedDate.from).format("YYYY-MM-DD")
+          params.end_date = selectedDate.to ? dayjs(selectedDate.to).format("YYYY-MM-DD") : dayjs(selectedDate.from).format("YYYY-MM-DD")
+        } else {
+          const d = dayjs(selectedDate).format("YYYY-MM-DD")
+          params.start_date = d
+          params.end_date = d
+        }
       }
 
       const res = await axiosAPI.get(endpoint, { params })
@@ -101,7 +109,9 @@ const Reports = () => {
     if (!date) return
     setSelectedDate(date)
     setPeriod("custom")
-    setCalendarOpen(false)
+    if (!date.from || (date.from && date.to)) {
+      setCalendarOpen(false)
+    }
   }
 
   const clearDate = (e) => {
@@ -111,7 +121,9 @@ const Reports = () => {
   }
 
   const dateLabel = selectedDate
-    ? dayjs(selectedDate).format("DD.MM.YYYY")
+    ? selectedDate.from
+      ? `${dayjs(selectedDate.from).format("DD.MM.YYYY")}${selectedDate.to ? ` \u00bb ${dayjs(selectedDate.to).format("DD.MM.YYYY")}` : ""}`
+      : dayjs(selectedDate).format("DD.MM.YYYY")
     : t("byDate")
 
   // ─── Eksport ───
@@ -140,15 +152,15 @@ const Reports = () => {
     ])
     const totalRow = summary
       ? [
-          "",
-          t("total_row"),
-          summary.total_expected ?? 0,
-          summary.present ?? 0,
-          summary.late ?? 0,
-          summary.absent ?? 0,
-          summary.left_early ?? 0,
-          summary.discipline_kpi ?? "—",
-        ]
+        "",
+        t("total_row"),
+        summary.total_expected ?? 0,
+        summary.present ?? 0,
+        summary.late ?? 0,
+        summary.absent ?? 0,
+        summary.left_early ?? 0,
+        summary.discipline_kpi ?? "—",
+      ]
       : null
     return { headers, body, totalRow }
   }
@@ -184,10 +196,12 @@ const Reports = () => {
     showToast(t("export_pdf_success"))
   }
 
-  // ─── Hujayra "pill" ───
-  const Pill = ({ icon: Icon, iconClass, children }) => (
+  const Pill = ({ icon: Icon, iconClass, children, iconType }) => (
     <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1 text-sm text-[#1A1A1A] dark:text-white">
-      {Icon && <Icon size={14} className={cn("flex-shrink-0", iconClass)} />}
+      {Icon && (iconType === "huge" ?
+        <HugeIcon icon={Icon} size={14} className={cn("flex-shrink-0", iconClass)} /> :
+        <Icon size={14} className={cn("flex-shrink-0", iconClass)} />
+      )}
       <span className="tabular-nums">{children}</span>
     </span>
   )
@@ -207,18 +221,18 @@ const Reports = () => {
         </div>
 
         {/* Davr filtri + sana */}
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] p-1 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center rounded-md bg-[#F5F5F5] dark:bg-[#262626] p-1">
             {PERIODS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => handlePeriodChange(opt.value)}
                 className={cn(
-                  "rounded-sm px-3 py-1 text-[13px] font-semibold cursor-pointer transition-colors",
+                  "rounded-sm px-3 py-1 text-[13px] font-medium text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
                   opt.value === period
-                    ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm"
-                    : "text-[#737373] hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
+                    ? "bg-white dark:bg-[#0A0A0A] shadow-sm"
+                    : "hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
                 )}
               >
                 {t(opt.labelKey)}
@@ -232,10 +246,10 @@ const Reports = () => {
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2 text-[13px] font-semibold shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]",
+                    "inline-flex items-center gap-1.5 rounded-lg shadow-xs border-2 border-[#f5f5f5] dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] px-3 py-1.5 text-[13px] font-medium cursor-pointer text-[#0A0A0A] dark:text-white",
                     period === "custom"
-                      ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white"
-                      : "text-[#737373]"
+                      ? "bg-[#F5F5F5] dark:bg-[#2E2E2E]"
+                      : ""
                   )}
                 >
                   {dateLabel}
@@ -245,13 +259,14 @@ const Reports = () => {
                       onClick={clearDate}
                     />
                   ) : (
-                    <ChevronDownIcon className="size-4 opacity-60 text-current" />
+                    <HugeIcon icon={Calendar02Icon} />
                   )}
                 </button>
               }
             />
             <PopoverContent className="w-auto overflow-hidden p-0" align="end" sideOffset={8}>
               <Calendar
+                daterange={true}
                 mode="single"
                 captionLayout="dropdown"
                 startMonth={new Date(new Date().getFullYear() - 5, 0)}
@@ -269,7 +284,7 @@ const Reports = () => {
       {/* ─── Tab + Eksport ─── */}
       <div className="flex items-center justify-between w-full gap-4 flex-wrap">
         {/* Tab toggle */}
-        <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] p-1 shadow-sm">
+        <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-[#f5f5f5] dark:bg-[#171717] p-1 shadow-sm">
           {[
             { value: "branch", labelKey: "tab_by_branch" },
             { value: "employee", labelKey: "tab_by_employee" },
@@ -279,10 +294,10 @@ const Reports = () => {
               type="button"
               onClick={() => setReportType(tab.value)}
               className={cn(
-                "rounded-md px-4 py-1.5 text-[13px] font-semibold cursor-pointer transition-colors",
+                "rounded-md px-2 py-1.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
                 reportType === tab.value
-                  ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm"
-                  : "text-[#737373] hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
+                  ? "bg-white dark:bg-[#0A0A0A] shadow-sm"
+                  : ""
               )}
             >
               {t(tab.labelKey)}
@@ -295,129 +310,140 @@ const Reports = () => {
           <button
             type="button"
             onClick={exportExcel}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2 text-[13px] font-semibold text-[#1A1A1A] dark:text-white shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] px-4 py-1.5 text-[13px] font-semibold text-[#1A1A1A] dark:text-white shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
           >
-            <FileSpreadsheet size={16} className="text-[#22A565]" />
+            <PiMicrosoftExcelLogo size={18} className="text-[#22A565]" />
             Excel
-            <Download size={14} className="text-[#737373]" />
+            <HugeIcon icon={Download01Icon} size={16} />
           </button>
           <button
             type="button"
             onClick={exportPDF}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2 text-[13px] font-semibold text-[#1A1A1A] dark:text-white shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] px-4 py-1.5 text-[13px] font-semibold text-[#1A1A1A] dark:text-white shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
           >
-            <FileText size={16} className="text-[#EF4444]" />
+            <HugeIcon icon={Pdf02Icon} size={16} className="text-[#0588F0]" />
             PDF
-            <Download size={14} className="text-[#737373]" />
+            <HugeIcon icon={Download01Icon} size={16} />
           </button>
         </div>
       </div>
 
       {/* ─── Jadval ─── */}
-      <div className="w-full rounded-2xl border border-[#E5E7EB] dark:border-[#2E2E2E] overflow-hidden bg-white dark:bg-[#0A0A0A]">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
-              {[
-                "#",
-                t(isBranch ? "col_branch" : "col_employee"),
-                t("col_total"),
-                t("col_arrived"),
-                t("col_late"),
-                t("col_absent"),
-                t("col_early"),
-                t("col_discipline_kpi"),
-              ].map((h, i) => (
-                <th
-                  key={i}
-                  className={cn(
-                    "px-4 py-3 text-[13px] font-medium text-[#6B7280] dark:text-[#9CA3AF] whitespace-nowrap",
-                    i === 0 && "w-12"
-                  )}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
+      <div className="w-full rounded-2xl h-[calc(100vh-210px)] border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
 
-          <tbody>
-            {loading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={i} className="border-b border-[#F0F0F0] dark:border-[#1F1F1F]">
-                  {Array.from({ length: colCount }).map((__, j) => (
-                    <td key={j} className="px-4 py-3.5">
-                      <div className="h-6 rounded-md bg-[#F5F5F5] dark:bg-[#1A1A1A] animate-pulse" />
+        {/* Scrollable area: thead + tbody */}
+        <div className="flex-1 overflow-y-auto">
+          <table className="w-full border-collapse text-left">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
+                {[
+                  "#",
+                  t(isBranch ? "col_branch" : "col_employee"),
+                  t("col_total"),
+                  t("col_arrived"),
+                  t("col_late"),
+                  t("col_absent"),
+                  t("col_early"),
+                  t("col_discipline_kpi"),
+                ].map((h, i) => (
+                  <th
+                    key={i}
+                    className={cn(
+                      "px-4 py-3 text-[13px] font-medium text-[#6B7280] dark:text-[#fafafa] whitespace-nowrap",
+                      i === 0 && "w-12 dark:text-[#444444]"
+                    )}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i} className="border-b border-[#F0F0F0] dark:border-[#1F1F1F]">
+                    {Array.from({ length: colCount }).map((__, j) => (
+                      <td key={j} className="px-4 py-3.5">
+                        <div className="h-6 rounded-md bg-[#F5F5F5] dark:bg-[#1A1A1A] animate-pulse" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : results.length === 0 ? (
+                <tr>
+                  <td colSpan={colCount} className="px-4 py-16 text-center text-sm text-[#737373]">
+                    {t("reports_empty")}
+                  </td>
+                </tr>
+              ) : (
+                results.map((r, i) => (
+                  <tr
+                    key={r.id ?? i}
+                    className="border-b border-[#F0F0F0] dark:border-[#1F1F1F] hover:bg-[#FAFAFA] dark:hover:bg-[#141414] transition-colors"
+                  >
+                    <td className="px-4 py-3 text-sm text-[#737373] dark:text-[#444444]">{i + 1}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A] dark:text-white max-w-[220px] truncate" title={nameOf(r)}>
+                      {nameOf(r)}
                     </td>
-                  ))}
-                </tr>
-              ))
-            ) : results.length === 0 ? (
-              <tr>
-                <td colSpan={colCount} className="px-4 py-16 text-center text-sm text-[#737373]">
-                  {t("reports_empty")}
-                </td>
-              </tr>
-            ) : (
-              results.map((r, i) => (
-                <tr
-                  key={r.id ?? i}
-                  className="border-b border-[#F0F0F0] dark:border-[#1F1F1F] hover:bg-[#FAFAFA] dark:hover:bg-[#141414] transition-colors"
-                >
-                  <td className="px-4 py-3 text-sm text-[#737373] dark:text-[#9CA3AF]">{i + 1}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A] dark:text-white max-w-[220px] truncate" title={nameOf(r)}>
-                    {nameOf(r)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Pill>{fmt(r.total_expected)}</Pill>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Pill icon={CheckCircle2} iconClass="text-[#22A565]">{fmt(r.present)}</Pill>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Pill icon={Clock} iconClass="text-[#F97316]">{fmt(r.late)}</Pill>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Pill icon={XCircle} iconClass="text-[#EF4444]">{fmt(r.absent)}</Pill>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Pill icon={LogOut} iconClass="text-[#9CA3AF]">{fmt(r.left_early)}</Pill>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-[#1A1A1A] dark:text-white">
-                    {r.discipline_kpi ?? "—"}
-                  </td>
-                </tr>
-              ))
-            )}
+                    <td className="px-4 py-3">
+                      <Pill>{fmt(r.total_expected)}</Pill>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Pill icon={CheckCircle2} iconClass="text-[#22A565]">{fmt(r.present)}</Pill>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Pill icon={TimeQuarter02Icon} iconType="huge" iconClass="text-[#F97316]">{fmt(r.late)}</Pill>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Pill icon={XCircle} iconClass="text-[#EF4444]">{fmt(r.absent)}</Pill>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Pill icon={Logout01Icon} iconType="huge" iconClass="text-[#9CA3AF]">{fmt(r.left_early)}</Pill>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-semibold text-[#1A1A1A] dark:text-white">
+                      {r.discipline_kpi ?? "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Jami qatori */}
-            {!loading && results.length > 0 && summary && (
-              <tr className="bg-[#EFF4FF] dark:bg-[#1D2A52]">
-                <td colSpan={2} className="px-4 py-3.5 text-sm font-bold text-[#1A1A1A] dark:text-white">
-                  {t("total_row")}
-                </td>
-                <td className="px-4 py-3.5 text-sm font-bold text-[#1A1A1A] dark:text-white tabular-nums">
-                  {fmt(summary.total_expected)}
-                </td>
-                <td className="px-4 py-3.5 text-sm font-bold text-[#22A565] tabular-nums">
-                  {fmt(summary.present)}
-                </td>
-                <td className="px-4 py-3.5 text-sm font-bold text-[#F97316] tabular-nums">
-                  {fmt(summary.late)}
-                </td>
-                <td className="px-4 py-3.5 text-sm font-bold text-[#EF4444] tabular-nums">
-                  {fmt(summary.absent)}
-                </td>
-                <td className="px-4 py-3.5 text-sm font-bold text-[#1A1A1A] dark:text-white tabular-nums">
-                  {fmt(summary.left_early)}
-                </td>
-                <td className="px-4 py-3.5 text-sm font-bold text-[#0066FF] dark:text-[#5EB1EF]">
-                  {summary.discipline_kpi ?? "—"}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {/* Jami qatori — har doim pastda qotib turadi */}
+        {!loading && results.length > 0 && summary && (
+          <div className="flex-shrink-0 border-t border-[#E5E7EB] dark:border-[#2E2E2E]">
+            <table className="w-full border-collapse text-left">
+              <tbody>
+                <tr className="bg-[#EFF4FF] dark:bg-[#1D2A52]">
+                  <td className="w-12 px-4 py-3.5" />
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white">
+                    {t("total_row")}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white tabular-nums">
+                    {fmt(summary.total_expected)}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#22A565] tabular-nums">
+                    {fmt(summary.present)}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#F97316] tabular-nums">
+                    {fmt(summary.late)}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#EF4444] tabular-nums">
+                    {fmt(summary.absent)}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white tabular-nums">
+                    {fmt(summary.left_early)}
+                  </td>
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#0066FF] dark:text-[#5EB1EF]">
+                    {summary.discipline_kpi ?? "—"}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ─── Toast ─── */}
