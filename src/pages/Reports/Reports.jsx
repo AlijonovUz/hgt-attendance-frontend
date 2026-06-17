@@ -12,6 +12,8 @@ import {
   FileSpreadsheet,
   FileText,
   Download,
+  ArrowLeft,
+  X,
 } from "lucide-react"
 import { PiMicrosoftExcelLogo } from "react-icons/pi";
 import { TbXboxXFilled } from "react-icons/tb"
@@ -24,7 +26,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Toast } from "@/components/ui/Toast"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, Download01Icon, Logout01Icon, Pdf02Icon, TimeQuarter02Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Logout01Icon, Pdf02Icon, Search01Icon, TimeQuarter02Icon } from "@hugeicons/core-free-icons"
+import { Modal } from "@/components/ui/modal"
+import { Select } from "@/components/ui/select"
 
 const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS }
 
@@ -57,6 +61,8 @@ const Reports = () => {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
 
+  const [openFilterModal, setOpenFilterModal] = useState(false)
+
   const isBranch = reportType === "branch"
   const results = data?.results || []
   const summary = data?.summary || null
@@ -64,18 +70,81 @@ const Reports = () => {
   const showToast = (message) =>
     setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
 
-  const fetchReports = async () => {
+  // Reports.jsx — faqat o'zgargan qismlar ko'rsatilgan
+
+  // 1. State'lar qo'shiladi (mavjud state'lar tagiga)
+  const [regions, setRegions] = useState([])
+  const [districts, setDistricts] = useState([])
+  const [regionsLoading, setRegionsLoading] = useState(false)
+  const [districtsLoading, setDistrictsLoading] = useState(false)
+
+  const [filterRegion, setFilterRegion] = useState(null)      // { value, label }
+  const [filterDistrict, setFilterDistrict] = useState(null)
+  const [filterStatus, setFilterStatus] = useState(null)
+
+  // 2. Region'larni yuklash
+  const fetchRegions = async () => {
+    setRegionsLoading(true)
+    try {
+      const res = await axiosAPI.get("users/regions/")
+      if (res.status === 200) {
+        setRegions(
+          (res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setRegionsLoading(false)
+    }
+  }
+
+  // 3. District'larni yuklash (region tanlanganda)
+  const fetchDistricts = async (regionId) => {
+    setDistrictsLoading(true)
+    setFilterDistrict(null)
+    try {
+      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
+      if (res.status === 200) {
+        setDistricts(
+          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDistrictsLoading(false)
+    }
+  }
+
+  // 4. Modal ochilganda region'larni yuklash
+  useEffect(() => {
+    if (openFilterModal) fetchRegions()
+  }, [openFilterModal])
+
+  // 5. Region o'zgarganda district'larni yuklash
+  const handleRegionChange = (opt) => {
+    setFilterRegion(opt)
+    setDistricts([])
+    setFilterDistrict(null)
+    if (opt?.value) fetchDistricts(opt.value)
+  }
+
+  // 6. fetchReports — filter param'larini qo'shish
+  const fetchReports = async (extraParams = {}) => {
     setLoading(true)
     try {
       const endpoint = isBranch
         ? "analytics/reports/by-branch/"
         : "analytics/reports/by-employee/"
 
-      const params = { period }
+      const params = { period, ...extraParams }
       if (period === "custom" && selectedDate) {
         if (selectedDate.from) {
           params.start_date = dayjs(selectedDate.from).format("YYYY-MM-DD")
-          params.end_date = selectedDate.to ? dayjs(selectedDate.to).format("YYYY-MM-DD") : dayjs(selectedDate.from).format("YYYY-MM-DD")
+          params.end_date = selectedDate.to
+            ? dayjs(selectedDate.to).format("YYYY-MM-DD")
+            : dayjs(selectedDate.from).format("YYYY-MM-DD")
         } else {
           const d = dayjs(selectedDate).format("YYYY-MM-DD")
           params.start_date = d
@@ -94,6 +163,34 @@ const Reports = () => {
       setLoading(false)
     }
   }
+
+  // 7. Search tugmasi bosilganda
+  const handleFilterSearch = () => {
+    const extraParams = {}
+    if (filterRegion?.value) extraParams.region_id = filterRegion.value
+    if (filterDistrict?.value) extraParams.district_id = filterDistrict.value
+    if (filterStatus?.value) extraParams.status = filterStatus.value
+    setOpenFilterModal(false)
+    fetchReports(extraParams)
+  }
+
+  // 8. Tozalash
+  const handleFilterClear = () => {
+    setFilterRegion(null)
+    setFilterDistrict(null)
+    setFilterStatus(null)
+    setDistricts([])
+  }
+
+  // 9. Status options — tarjima orqali
+  const STATUS_OPTIONS = [
+    { value: "present", label: t("status_present") },
+    { value: "absent", label: t("status_absent") },
+    { value: "late", label: t("status_late") },
+  ]
+
+  console.log(filterStatus);
+
 
   useEffect(() => {
     fetchReports()
@@ -284,25 +381,35 @@ const Reports = () => {
       {/* ─── Tab + Eksport ─── */}
       <div className="flex items-center justify-between w-full gap-4 flex-wrap">
         {/* Tab toggle */}
-        <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-[#f5f5f5] dark:bg-[#171717] p-1 shadow-sm">
-          {[
-            { value: "branch", labelKey: "tab_by_branch" },
-            { value: "employee", labelKey: "tab_by_employee" },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setReportType(tab.value)}
-              className={cn(
-                "rounded-md px-2 py-1.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
-                reportType === tab.value
-                  ? "bg-white dark:bg-[#0A0A0A] shadow-sm"
-                  : ""
-              )}
-            >
-              {t(tab.labelKey)}
-            </button>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="inline-flex items-center rounded-lg bg-[#f5f5f5] dark:bg-[#171717] p-1 shadow-sm">
+            {[
+              { value: "branch", labelKey: "tab_by_branch" },
+              { value: "employee", labelKey: "tab_by_employee" },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setReportType(tab.value)}
+                className={cn(
+                  "rounded-md px-2 py-1.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
+                  reportType === tab.value
+                    ? "bg-white dark:bg-[#0A0A0A] shadow-sm border-2"
+                    : ""
+                )}
+              >
+                {t(tab.labelKey)}
+              </button>
+            ))}
+          </div>
+
+          <button
+            className="flex items-center gap-1 cursor-pointer border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3"
+            onClick={() => setOpenFilterModal(true)}
+          >
+            <HugeIcon icon={FilterVerticalIcon} size={16} />
+            {t("filter")}
+          </button>
         </div>
 
         {/* Excel / PDF */}
@@ -446,6 +553,88 @@ const Reports = () => {
         message={toast.message}
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
       />
+
+      <Modal
+        isOpen={openFilterModal}
+        onClose={() => setOpenFilterModal(false)}
+        height={600}
+      >
+        <div className="flex flex-col justify-between h-full">
+          {/* top section */}
+          <div className="flex flex-col gap-3">
+            {/* nav */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span
+                  className="w-11 h-11 cursor-pointer flex items-center justify-center rounded-lg hover:bg-slate-100 transition dark:hover:bg-[#0a0a0a]"
+                  onClick={() => setOpenFilterModal(false)}
+                >
+                  <ArrowLeft size={24} />
+                </span>
+                <h1 className="text-2xl font-semibold">{t("filter_title")}</h1>
+              </div>
+              <span className="text-sm text-[#737373] dark:text-[#A3A3A3]">
+                {t("filter_subtitle")}
+              </span>
+            </div>
+
+            {/* main section */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Region */}
+              <Select
+                label={t("region_branch_title")}
+                placeholder={t("region_branch_placeholder")}
+                options={regions}
+                value={filterRegion?.value ?? null}
+                onChange={handleRegionChange}
+              />
+
+              {/* District — region tanlanmasa disabled */}
+              <Select
+                label={t("district_branch_title")}
+                placeholder={
+                  !filterRegion
+                    ? t("select_region_first")
+                    : t("district_branch_placeholder")
+                }
+                options={districts}
+                value={filterDistrict?.value ?? null}
+                onChange={(opt) => setFilterDistrict(opt)}
+                disabled={!filterRegion || districtsLoading}
+              />
+
+              {/* Status — faqat employee uchun */}
+              {reportType === "employee" && (
+                <Select
+                  label={t("status")}
+                  placeholder={t("select_status")}
+                  options={STATUS_OPTIONS}
+                  value={filterStatus?.value ?? null}
+                  onChange={(opt) => setFilterStatus(opt)}
+                  className="col-span-2"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-5">
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer"
+              onClick={handleFilterClear}
+            >
+              <X size={14} />
+              {t("clear")}
+            </button>
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer bg-[#0090FF] text-white px-3.5 py-2.5 rounded-lg"
+              onClick={handleFilterSearch}
+            >
+              <HugeIcon size={14} icon={Search01Icon} />
+              {t("search")}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

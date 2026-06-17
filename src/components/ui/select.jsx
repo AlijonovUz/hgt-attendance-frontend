@@ -1,0 +1,173 @@
+import { useState, useRef, useEffect } from "react";
+import { Check, X } from "lucide-react";
+import { useLanguage } from "@/Context/LanguageContext";
+import { HugeIcon } from "./HugeIcon";
+import { ArrowDown01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+
+export const Select = ({
+     label,
+     placeholder = "Tanlang",
+     options = [],
+     value,
+     onChange,
+     disabled = false,
+     className = "",
+}) => {
+     const { t } = useLanguage()
+
+     const [open, setOpen] = useState(false);
+     const [selected, setSelected] = useState(
+          value !== undefined ? (options.find((o) => o.value === value) ?? null) : null
+     );
+     const wrapperRef = useRef(null);
+
+     // Sync controlled value
+     useEffect(() => {
+          if (value !== undefined) {
+               setSelected(options.find((o) => o.value === value) ?? null);
+          }
+     }, [value, options]);
+
+     // Close on outside click
+     useEffect(() => {
+          const handleClickOutside = (e) => {
+               if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+                    setOpen(false);
+               }
+          }
+          document.addEventListener("mousedown", handleClickOutside);
+          return () => document.removeEventListener("mousedown", handleClickOutside);
+     }, []);
+
+     const handleSelect = (option) => {
+          setSelected(option);
+          setOpen(false);
+          onChange?.(option);
+     }
+
+     const handleClear = (e) => {
+          e.stopPropagation();
+          setSelected(null);
+          setOpen(false);
+          onChange?.(null);
+     }
+
+     const handleKeyDown = (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+               e.preventDefault();
+               if (!disabled) setOpen((prev) => !prev);
+          }
+          if (e.key === "Escape") setOpen(false);
+     }
+
+     return (
+          <div ref={wrapperRef} className={`relative w-full font-sans ${className}`}>
+               {/* Label */}
+               {label && (
+                    <label className="block mb-1.5 text-sm text-[#737373] dark:text-[#A3A3A3]">
+                         {label}
+                    </label>
+               )}
+
+               {/* Trigger */}
+               <div
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    aria-expanded={open}
+                    aria-disabled={disabled}
+                    tabIndex={disabled ? -1 : 0}
+                    onClick={() => !disabled && setOpen((prev) => !prev)}
+                    onKeyDown={handleKeyDown}
+                    className={[
+                         "flex items-center justify-between w-full px-3.5 py-3 rounded-xl border-2 text-sm cursor-pointer select-none outline-none transition-all duration-150",
+                         "bg-white dark:bg-[#171717]",
+                         open
+                              ? "border-gray-300 ring-2 ring-gray-400/30 dark:border-[#707070] dark:ring-[#303030]/50"
+                              : "border-gray-200 dark:border-[#404040]",
+                         disabled
+                              ? "bg-gray-100 dark:bg-[#0a0a0a] opacity-60 cursor-not-allowed pointer-events-none"
+                              : "",
+                    ]
+                         .filter(Boolean)
+                         .join(" ")}
+               >
+                    <span
+                         className={
+                              selected
+                                   ? "text-[#0a0a0a] dark:text-[#fafafa]"
+                                   : "text-[#737373] dark:text-[#A3A3A3]"
+                         }
+                    >
+                         {selected ? selected.label : placeholder}
+                    </span>
+
+                    {/* Icon: X when selected, ArrowDown when not */}
+                    {selected && !disabled ? (
+                         <button
+                              type="button"
+                              onClick={handleClear}
+                              className="flex items-center cursor-pointer justify-center flex-shrink-0 w-5 h-5 rounded-full text-[#737373] hover:text-[#0a0a0a] hover:bg-gray-100 dark:text-[#A3A3A3] dark:hover:text-[#fafafa] dark:hover:bg-[#2a2a2a] transition-colors duration-150"
+                              aria-label="Tozalash"
+                         >
+                              <HugeIcon icon={Cancel01Icon} size={14} />
+                         </button>
+                    ) : (
+                         <HugeIcon
+                              icon={ArrowDown01Icon}
+                              size={18}
+                              className={`text-[#0a0a0a] dark:text-[#fafafa] flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                         />
+                    )}
+               </div>
+
+               {/* Dropdown */}
+               {open && (
+                    <div
+                         role="listbox"
+                         className="absolute top-[calc(100%+6px)] left-0 w-full z-50 bg-white dark:bg-[#171717] border border-gray-200 dark:border-[#404040] rounded-xl p-1 shadow-lg overflow-hidden animate-[fadeSlide_0.15s_ease]"
+                         style={{
+                              animation: "fadeSlide 0.15s ease",
+                         }}
+                    >
+                         <style>{`
+                           @keyframes fadeSlide {
+                             from { opacity: 0; transform: translateY(-6px); }
+                             to   { opacity: 1; transform: translateY(0); }
+                           }
+                         `}</style>
+
+                         {options.length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
+                                   {t("no_data_found")}
+                              </div>
+                         ) : (
+                              options.map((option) => {
+                                   const isSelected = selected?.value === option.value;
+                                   return (
+                                        <div
+                                             key={option.value}
+                                             role="option"
+                                             aria-selected={isSelected}
+                                             onClick={() => handleSelect(option)}
+                                             className={[
+                                                  "flex items-center justify-between px-2 py-3 rounded-lg text-sm cursor-pointer transition-colors duration-100",
+                                                  isSelected
+                                                       ? "bg-[#F5F5F5] dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-white font-medium"
+                                                       : "text-[#737373] dark:text-[#A3A3A3] hover:bg-gray-50 dark:hover:bg-[#0a0a0a]",
+                                             ]
+                                                  .filter(Boolean)
+                                                  .join(" ")}
+                                        >
+                                             {option.label}
+                                             {isSelected && (
+                                                  <Check size={16} className="text-[#0a0a0a] dark:text-white flex-shrink-0" />
+                                             )}
+                                        </div>
+                                   );
+                              })
+                         )}
+                    </div>
+               )}
+          </div>
+     );
+}
