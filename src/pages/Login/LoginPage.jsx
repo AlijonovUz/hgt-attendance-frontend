@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom"
 import { Eye, EyeOff, ShieldAlert, SunMedium, Moon } from "lucide-react"
 import { CgSpinnerTwo } from "react-icons/cg"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { HugeIcon } from "@/components/ui/HugeIcon"
+import { ViewOffIcon } from "@hugeicons/core-free-icons"
 
 const LoginPage = () => {
   const { t } = useLanguage()
@@ -217,7 +219,7 @@ const LoginPage = () => {
                       disabled={isBlocked}
                       className="absolute right-3 top-1/2 cursor-pointer disabled:cursor-default -translate-y-1/2 text-login-text-secondary hover:text-login-text-primary p-1"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? <HugeIcon icon={ViewOffIcon} className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   }
                 </div>
@@ -253,7 +255,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isBlocked || loading}
-                className={`mt-4 w-full flex justify-center items-center gap-2 py-3 rounded-lg font-medium text-white transition-colors ${isBlocked || loading ? 'bg-[#737373] cursor-default opacity-90' : 'bg-login-btn-bg hover:bg-login-btn-hover cursor-pointer'}`}
+                className={`mt-4 w-full flex justify-center items-center gap-2 py-3 rounded-lg font-medium text-white dark:text-[#0a0a0a] transition-colors ${isBlocked || loading ? 'bg-[#737373] cursor-default opacity-90' : 'bg-login-btn-bg hover:bg-login-btn-hover cursor-pointer'}`}
               >
                 {loading && <CgSpinnerTwo size={16} className="animate-spin" />}
                 {t('login_btn')}

@@ -34,6 +34,12 @@ export const translations = {
           en: "Selection",
           ru: "Выбор"
      },
+     search: {
+          uz: "Qidirish",
+          cy: "Қидириш",
+          en: "Search",
+          ru: "Поиск"
+     },
      date: {
           uz: "Sana",
           cy: "Сана",
@@ -46,6 +52,30 @@ export const translations = {
           en: "Select date",
           ru: "Выберите дату"
      },
+     no_data_found: {
+          uz: "Ma'lumot topilmadi",
+          cy: "Маълумот топилмади",
+          en: "No data found",
+          ru: "Данные не найдены"
+     },
+     filter: {
+          uz: "Filter",
+          cy: "Филтер",
+          en: "Filter",
+          ru: "Фильтр"
+     },
+     filter_title: {
+          uz: "Filtrlash",
+          cy: "Филтрлаш",
+          en: "Filtr",
+          ru: "Фильтровать"
+     },
+     filter_subtitle: {
+          uz: "Kerakli filtrlarni tanlang, natijalar shunga qarab saralanadi",
+          cy: "Керакли фильтрларни танланг, натижалар шунга қараб сараланади",
+          en: "Select the filters you want, and we'll sort the results accordingly",
+          ru: "Выберите нужные фильтры, чтобы результаты были отсортированы по ним"
+     },
      double_click_to_select: {
           uz: "Belgilash uchun 2 marta bosing",
           cy: "Белгилаш учун 2 марта босинг",
@@ -57,6 +87,48 @@ export const translations = {
           cy: "Исм фамилия",
           en: "First and last name",
           ru: "Имя и фамилия"
+     },
+     status: {
+          uz: "Holati",
+          cy: "Ҳолати",
+          en: "Status",
+          ru: "Статус"
+     },
+     select_status: {
+          uz: "Holatini tanlang",
+          cy: "Ҳолатини танланг",
+          en: "Select status",
+          ru: "Выберите статус"
+     },
+     status_present: {
+          uz: "Kelgan",
+          cy: "Келган",
+          en: "Present",
+          ru: "Присутствовал"
+     },
+     status_absent: {
+          uz: "Kelmagan",
+          cy: "Келмаган",
+          en: "Absent",
+          ru: "Отсутствовал"
+     },
+     status_late: {
+          uz: "Kech kelgan",
+          cy: "Кеч келган",
+          en: "Late",
+          ru: "Опоздал"
+     },
+     select_region_first: {
+          uz: "Avval viloyat tanlang",
+          cy: "Аввал вилоят танланг",
+          en: "Select a region first",
+          ru: "Сначала выберите регион"
+     },
+     loading: {
+          uz: "Yuklanmoqda...",
+          cy: "Юкланмоқда...",
+          en: "Loading...",
+          ru: "Загрузка..."
      },
 
 
@@ -487,6 +559,30 @@ export const translations = {
           cy: "Экспорт қилиш учун маълумот йўқ",
           en: "No data to export",
           ru: "Нет данных для экспорта"
+     },
+     region_branch_title: {
+          uz: "Viloyat filiali",
+          cy: "Вилоят филиали",
+          en: "Regional branch",
+          ru: "Областной филиал"
+     },
+     region_branch_placeholder: {
+          uz: "Viloyat filialini tanlang",
+          cy: "Вилоят филиалини танланг",
+          en: "Select a regional branch",
+          ru: "Выберите региональный филиал"
+     },
+     district_branch_title: {
+          uz: "Tuman filiali",
+          cy: "Туман филиали",
+          en: "District branch",
+          ru: "Районный филиал"
+     },
+     district_branch_placeholder: {
+          uz: "Tuman filialini tanlang",
+          cy: "Туман филиалини танланг",
+          en: "Select a district branch",
+          ru: "Выберите районный филиал"
      }
 }
 
