@@ -778,6 +778,218 @@ export const translations = {
           cy: "Ходим қўшиш",
           en: "Add employee",
           ru: "Добавить сотрудника"
+     },
+
+     // ─── Geozonalar ───
+     gz_subtitle: {
+          uz: "Ish hududlarini boshqarish — markaz, radius (50–500 m), holat",
+          cy: "Иш ҳудудларини бошқариш — марказ, радиус (50–500 m), ҳолат",
+          en: "Manage work zones — center, radius (50–500 m), status",
+          ru: "Управление рабочими зонами — центр, радиус (50–500 м), статус"
+     },
+     gz_new: {
+          uz: "Yangi geozona",
+          cy: "Янги геозона",
+          en: "New geozone",
+          ru: "Новая геозона"
+     },
+     gz_name: {
+          uz: "Geozona nomi",
+          cy: "Геозона номи",
+          en: "Geozone name",
+          ru: "Название геозоны"
+     },
+     gz_type: {
+          uz: "Geozona turi",
+          cy: "Геозона тури",
+          en: "Geozone type",
+          ru: "Тип геозоны"
+     },
+     gz_type_ph: {
+          uz: "Geozona turini tanlang",
+          cy: "Геозона турини танланг",
+          en: "Select geozone type",
+          ru: "Выберите тип геозоны"
+     },
+     gz_lat: {
+          uz: "Kenglik (Latitude)",
+          cy: "Кенглик (Latitude)",
+          en: "Latitude",
+          ru: "Широта (Latitude)"
+     },
+     gz_lng: {
+          uz: "Uzunlik (Longitude)",
+          cy: "Узунлик (Longitude)",
+          en: "Longitude",
+          ru: "Долгота (Longitude)"
+     },
+     gz_radius: {
+          uz: "Radius (metr)",
+          cy: "Радиус (метр)",
+          en: "Radius (meters)",
+          ru: "Радиус (метр)"
+     },
+     gz_add_btn: {
+          uz: "Geozona qo'shish",
+          cy: "Геозона қўшиш",
+          en: "Add geozone",
+          ru: "Добавить геозону"
+     },
+     gz_save: {
+          uz: "O'zgarishlarni saqlash",
+          cy: "Ўзгаришларни сақлаш",
+          en: "Save changes",
+          ru: "Сохранить изменения"
+     },
+     gz_field_name: {
+          uz: "Nomi",
+          cy: "Номи",
+          en: "Name",
+          ru: "Название"
+     },
+     gz_attached_branch: {
+          uz: "Biriktirilgan filial",
+          cy: "Бириктирилган филиал",
+          en: "Attached branch",
+          ru: "Прикреплённый филиал"
+     },
+     gz_center_coord: {
+          uz: "Koordinata (markaz nuqta)",
+          cy: "Координата (марказ нуқта)",
+          en: "Coordinate (center point)",
+          ru: "Координата (центр)"
+     },
+     gz_attached_workers: {
+          uz: "Biriktirilgan xodimlar",
+          cy: "Бириктирилган ходимлар",
+          en: "Attached employees",
+          ru: "Прикреплённые сотрудники"
+     },
+     gz_workers_unit: {
+          uz: "ta",
+          cy: "та",
+          en: "",
+          ru: ""
+     },
+     gz_meter: {
+          uz: "metr",
+          cy: "метр",
+          en: "meters",
+          ru: "метр"
+     },
+     gz_meter_short: {
+          uz: "m",
+          cy: "m",
+          en: "m",
+          ru: "м"
+     },
+     gz_empty: {
+          uz: "Geozona topilmadi",
+          cy: "Геозона топилмади",
+          en: "No geozones found",
+          ru: "Геозоны не найдены"
+     },
+     gz_select_hint: {
+          uz: "Ko'rish uchun geozonani tanlang",
+          cy: "Кўриш учун геозонани танланг",
+          en: "Select a geozone to view",
+          ru: "Выберите геозону для просмотра"
+     },
+     gz_no_branch: {
+          uz: "Biriktirilmagan",
+          cy: "Бириктирилмаган",
+          en: "Not attached",
+          ru: "Не прикреплён"
+     },
+     gz_delete: {
+          uz: "O'chirish",
+          cy: "Ўчириш",
+          en: "Delete",
+          ru: "Удалить"
+     },
+     gz_cancel: {
+          uz: "Bekor qilish",
+          cy: "Бекор қилиш",
+          en: "Cancel",
+          ru: "Отмена"
+     },
+     gz_delete_title: {
+          uz: "Geozonani o'chirish",
+          cy: "Геозонани ўчириш",
+          en: "Delete geozone",
+          ru: "Удалить геозону"
+     },
+     gz_delete_confirm: {
+          uz: "Ushbu geozonani o'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo'lmaydi.",
+          cy: "Ушбу геозонани ўчиришни тасдиқлайсизми? Бу амални қайтариб бўлмайди.",
+          en: "Are you sure you want to delete this geozone? This action cannot be undone.",
+          ru: "Вы уверены, что хотите удалить эту геозону? Это действие необратимо."
+     },
+     gz_created: {
+          uz: "Geozona qo'shildi",
+          cy: "Геозона қўшилди",
+          en: "Geozone created",
+          ru: "Геозона создана"
+     },
+     gz_updated: {
+          uz: "O'zgarishlar saqlandi",
+          cy: "Ўзгаришлар сақланди",
+          en: "Changes saved",
+          ru: "Изменения сохранены"
+     },
+     gz_deleted: {
+          uz: "Geozona o'chirildi",
+          cy: "Геозона ўчирилди",
+          en: "Geozone deleted",
+          ru: "Геозона удалена"
+     },
+     gz_error: {
+          uz: "Xatolik yuz berdi",
+          cy: "Хатолик юз берди",
+          en: "An error occurred",
+          ru: "Произошла ошибка"
+     },
+     gz_validation: {
+          uz: "Iltimos, majburiy maydonlarni to'ldiring",
+          cy: "Илтимос, мажбурий майдонларни тўлдиринг",
+          en: "Please fill in the required fields",
+          ru: "Пожалуйста, заполните обязательные поля"
+     },
+     gz_coord_invalid: {
+          uz: "Koordinata noto'g'ri (masalan: 41.3110, 69.2797)",
+          cy: "Координата нотўғри (масалан: 41.3110, 69.2797)",
+          en: "Invalid coordinate (e.g. 41.3110, 69.2797)",
+          ru: "Неверная координата (например: 41.3110, 69.2797)"
+     },
+     zt_main_office: {
+          uz: "Markaziy apparat",
+          cy: "Марказий аппарат",
+          en: "Main office",
+          ru: "Центральный аппарат"
+     },
+     zt_region_branch: {
+          uz: "Viloyat filiali",
+          cy: "Вилоят филиали",
+          en: "Region branch",
+          ru: "Областной филиал"
+     },
+     zt_district_branch: {
+          uz: "Tuman bo'limi",
+          cy: "Туман бўлими",
+          en: "District branch",
+          ru: "Районное отделение"
+     },
+     zt_special_object: {
+          uz: "Maxsus obyekt",
+          cy: "Махсус объект",
+          en: "Special object",
+          ru: "Специальный объект"
+     },
+     zt_temp_object: {
+          uz: "Vaqtinchalik obyekt",
+          cy: "Вақтинчалик объект",
+          en: "Temporary object",
+          ru: "Временный объект"
      }
 }
 
