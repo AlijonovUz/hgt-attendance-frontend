@@ -34,10 +34,7 @@ import { axiosAPI } from "@/services/axiosAPI";
 import { HugeIcon } from "@/components/ui/HugeIcon";
 import { useSelector } from "react-redux";
 
-
 const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS, };
-
-
 
 const HomePage = () => {
   const { t, language } = useLanguage();

@@ -44,7 +44,7 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
                >
                     {/* ── Sticky header ── */}
                     {header && (
-                         <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-[#FAFAFA] dark:bg-[#171717] sticky top-0 z-10 border-b border-[#F0F0F0] dark:border-[#222]">
+                         <div className="flex-shrink-0 px-6 pt-6 bg-[#FAFAFA] dark:bg-[#171717] sticky top-0 z-10">
                               {header}
                          </div>
                     )}

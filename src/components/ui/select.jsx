@@ -12,6 +12,7 @@ export const Select = ({
      onChange,
      disabled = false,
      className = "",
+     contanierClassName
 }) => {
      const { t } = useLanguage()
 
@@ -61,7 +62,7 @@ export const Select = ({
      }
 
      return (
-          <div ref={wrapperRef} className={`relative w-full font-sans`}>
+          <div ref={wrapperRef} className={`relative w-full font-sans ${contanierClassName}`}>
                {/* Label */}
                {label && (
                     <label className="block mb-1.5 text-sm text-[#737373] dark:text-[#A3A3A3]">

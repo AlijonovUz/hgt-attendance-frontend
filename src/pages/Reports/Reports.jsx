@@ -138,7 +138,13 @@ const Reports = () => {
         ? "analytics/reports/by-branch/"
         : "analytics/reports/by-employee/"
 
-      const params = { period, ...extraParams }
+      const params = { ...extraParams }
+
+      // Custom date bo'lsa, period qo'shmaymiz
+      if (period !== "custom") {
+        params.period = period
+      }
+
       if (period === "custom" && selectedDate) {
         if (selectedDate.from) {
           params.start_date = dayjs(selectedDate.from).format("YYYY-MM-DD")
@@ -188,9 +194,6 @@ const Reports = () => {
     { value: "absent", label: t("status_absent") },
     { value: "late", label: t("status_late") },
   ]
-
-  console.log(filterStatus);
-
 
   useEffect(() => {
     fetchReports()
@@ -538,7 +541,7 @@ const Reports = () => {
                     {t("total_row")}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white tabular-nums">
-                      {fmt(summary.total_expected)}
+                    {fmt(summary.total_expected)}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#22A565] tabular-nums">
                     {fmt(summary.present)}
@@ -627,7 +630,7 @@ const Reports = () => {
                   options={STATUS_OPTIONS}
                   value={filterStatus?.value ?? null}
                   onChange={(opt) => setFilterStatus(opt)}
-                  className="col-span-2"
+                  contanierClassName="col-span-2"
                 />
               )}
             </div>
