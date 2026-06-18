@@ -247,15 +247,6 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
 
-  const clickTimeoutRef = React.useRef(null)
-  React.useEffect(() => {
-    return () => {
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current)
-      }
-    }
-  }, [])
-
   const { daterange, selected, onSelect, t } = React.useContext(CalendarContext)
 
   // Compute modifiers for date range selection
@@ -277,47 +268,24 @@ function CalendarDayButton({
       e.preventDefault()
       e.stopPropagation()
 
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current)
-        clickTimeoutRef.current = null
-      }
-
-      const clickedDate = day.date
-      clickTimeoutRef.current = setTimeout(() => {
-        if (onSelect) {
-          onSelect({ from: clickedDate, to: undefined })
+      if (onSelect) {
+        const clickedDate = day.date
+        let newRange
+        if (!selected || !selected.from || (selected.from && selected.to)) {
+          newRange = { from: clickedDate, to: undefined }
+        } else {
+          const fromDate = dayjs(selected.from)
+          const clicked = dayjs(clickedDate)
+          if (clicked.isBefore(fromDate)) {
+            newRange = { from: clickedDate, to: selected.from }
+          } else {
+            newRange = { from: selected.from, to: clickedDate }
+          }
         }
-        clickTimeoutRef.current = null
-      }, 250)
+        onSelect(newRange)
+      }
     } else {
       props.onClick?.(e)
-    }
-  }
-
-  const handleDoubleClick = (e) => {
-    if (daterange && onSelect) {
-      e.preventDefault()
-      e.stopPropagation()
-
-      if (clickTimeoutRef.current) {
-        clearTimeout(clickTimeoutRef.current)
-        clickTimeoutRef.current = null
-      }
-
-      const clickedDate = day.date
-      let newRange
-      if (!selected || !selected.from || (selected.from && selected.to)) {
-        newRange = { from: clickedDate, to: undefined }
-      } else {
-        const fromDate = dayjs(selected.from)
-        const clicked = dayjs(clickedDate)
-        if (clicked.isBefore(fromDate)) {
-          newRange = { from: clickedDate, to: selected.from }
-        } else {
-          newRange = { from: selected.from, to: clickedDate }
-        }
-      }
-      onSelect(newRange)
     }
   }
 
@@ -333,7 +301,7 @@ function CalendarDayButton({
       data-today={modifiers.today}
       data-outside={modifiers.outside}
       data-disabled={modifiers.disabled}
-      title={daterange ? t("double_click_to_select") : undefined}
+      title={daterange ? t("click_to_select") : undefined}
       className={cn(
         // Base styles
         "inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-normal transition-colors",
@@ -355,7 +323,6 @@ function CalendarDayButton({
         className
       )}
       onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
     />
   )
 }

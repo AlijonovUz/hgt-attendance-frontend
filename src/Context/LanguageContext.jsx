@@ -76,11 +76,11 @@ export const translations = {
           en: "Select the filters you want, and we'll sort the results accordingly",
           ru: "Выберите нужные фильтры, чтобы результаты были отсортированы по ним"
      },
-     double_click_to_select: {
-          uz: "Belgilash uchun 2 marta bosing",
-          cy: "Белгилаш учун 2 марта босинг",
-          en: "Double click to select",
-          ru: "Дважды нажмите для выбора"
+     click_to_select: {
+          uz: "Belgilash uchun bosing",
+          cy: "Белгилаш учун босинг",
+          en: "Click to select",
+          ru: "Нажмите для выбора"
      },
      full_name: {
           uz: "Ism familiya",
@@ -129,6 +129,37 @@ export const translations = {
           cy: "Юкланмоқда...",
           en: "Loading...",
           ru: "Загрузка..."
+     },
+
+     region: {
+          uz: "Viloyat",
+          cy: "Вилоят",
+          en: "Region",
+          ru: "Область"
+     },
+     district: {
+          uz: "Tuman",
+          cy: "Туман",
+          en: "District",
+          ru: "Район"
+     },
+     position: {
+          uz: "Lavozim",
+          cy: "Лавозим",
+          en: "Position",
+          ru: "Должность"
+     },
+     department: {
+          uz: "Bo'lim",
+          cy: "Бўлим",
+          en: "Department",
+          ru: "Отдел"
+     },
+     phone: {
+          uz: "Telefon",
+          cy: "Телефон",
+          en: "Phone",
+          ru: "Телефон"
      },
 
 
@@ -244,10 +275,10 @@ export const translations = {
           ru: "Главная страница"
      },
      employeeRestr: {
-          uz: "Xodimlar reestri",
-          cy: "Ходимлар реэстри",
-          en: "Employee Register",
-          ru: "Реестр работников"
+          uz: "Xodimlar ro'yxati",
+          cy: "Ходимлар рўйхати",
+          en: "Personnel list",
+          ru: "Список сотрудников"
      },
      reports: {
           uz: "Hisobotlar",
@@ -318,11 +349,11 @@ export const translations = {
           en: "this month",
           ru: "в этом месяце"
      },
-     present_today: {
-          uz: "Bugun kelganlar",
-          cy: "Бугун келганлар",
-          en: "Present today",
-          ru: "Присутствуют сегодня"
+     come: {
+          uz: "Ishga kelganlar",
+          cy: "Ишга келганлар",
+          en: "Coming to work",
+          ru: "Пришедшие на работу"
      },
      trend_attendance: {
           uz: "davomat",
@@ -331,9 +362,9 @@ export const translations = {
           ru: "посещаемость"
      },
      latecomers: {
-          uz: "Kechikkanlar",
-          cy: "Кечикканлар",
-          en: "Latecomers",
+          uz: "Kechikib kelganlar",
+          cy: "Кечикиб келганлар",
+          en: "Late arrivals",
           ru: "Опоздавшие"
      },
      trend_yesterday_down: {
@@ -349,34 +380,28 @@ export const translations = {
           ru: "Ушедшие рано"
      },
      absent: {
-          uz: "Kelmaganlar",
-          cy: "Келмаганлар",
+          uz: "Ishga kelmaganlar",
+          cy: "Ишга келмаганлар",
           en: "Absent",
-          ru: "Отсутствуют"
+          ru: "Неявки на работу"
      },
      on_time: {
-          uz: "Vaqtida",
-          cy: "Вақтида",
-          en: "On time",
-          ru: "Вовремя"
+          uz: "Vaqtida kelganlar",
+          cy: "Вақтида келганлар",
+          en: "Timely arrivals",
+          ru: "Прибывшие вовремя"
      },
      late: {
-          uz: "Kechikdi",
-          cy: "Кечикди",
-          en: "Late",
-          ru: "Опоздал"
+          uz: "Kechikib kelganlar",
+          cy: "Кечикиб келганлар",
+          en: "Late arrivals",
+          ru: "Опоздавшие"
      },
      early_left: {
-          uz: "Erta ketdi",
-          cy: "Эрта кетди",
-          en: "Early left",
-          ru: "Ушел раньше"
-     },
-     absent_today: {
-          uz: "Kelmadi",
-          cy: "Келмади",
-          en: "Absent",
-          ru: "Не пришел"
+          uz: "Erta ketganlar",
+          cy: "Эрта кетганлар",
+          en: "Early departures",
+          ru: "Ранние отъезды"
      },
      weekly_dynamics: {
           uz: "Haftalik dinamika",
@@ -391,10 +416,10 @@ export const translations = {
           ru: "Доля пришедших вовремя и опоздавших"
      },
      today_status: {
-          uz: "Bugungi holat",
-          cy: "Бугунги ҳолат",
-          en: "Today's status",
-          ru: "Сегодняшнее состояние"
+          uz: "Holat boʼyicha taqsimot",
+          cy: "Ҳолат бўйича тақсимот",
+          en: "Status distribution",
+          ru: "Распределение по статусу"
      },
      today_status_subtitle: {
           uz: "Respublika bo'yicha",
@@ -583,6 +608,158 @@ export const translations = {
           cy: "Туман филиалини танланг",
           en: "Select a district branch",
           ru: "Выберите районный филиал"
+     },
+
+     // employee list
+     employees_title: {
+          uz: "Xodimlar ro'yxati",
+          cy: "Ходимлар рўйхати",
+          en: "Employee list",
+          ru: "Список сотрудников"
+     },
+     employees_count_label: {
+          uz: "ta xodim ko'rsatilmoqda",
+          cy: "та ходим кўрсатилмоқда",
+          en: "employees shown",
+          ru: "сотрудников показано"
+     },
+     new_employee: {
+          uz: "Yangi xodim",
+          cy: "Янги ходим",
+          en: "New employee",
+          ru: "Новый сотрудник"
+     },
+     search_employee: {
+          uz: "Qidirish ... (ism-familya, yoki tabel)",
+          cy: "Қидириш ... (исм-фамилия, ёки табел)",
+          en: "Search ... (name, or tab number)",
+          ru: "Поиск ... (ФИО или табельный номер)"
+     },
+     all_branches: {
+          uz: "Barcha fililar",
+          cy: "Барча филиллар",
+          en: "All branches",
+          ru: "Все филиалы"
+     },
+     all_departments: {
+          uz: "Barcha bo'limlar",
+          cy: "Барча бўлимлар",
+          en: "All departments",
+          ru: "Все отделы"
+     },
+     work_start: {
+          uz: "Kelgan vaqti",
+          cy: "Келган вақти",
+          en: "Arrival time",
+          ru: "Время прихода"
+     },
+     add_employee_subtitle: {
+          uz: "Xodim qo'shish",
+          cy: "Ходим қўшиш",
+          en: "Add employee",
+          ru: "Добавить сотрудника"
+     },
+     create_password_placeholder: {
+          uz: "Parol yarating",
+          cy: "Пароль яратинг",
+          en: "Create a password",
+          ru: "Создайте пароль"
+     },
+     tabel_number: {
+          uz: "Tabel raqami",
+          cy: "Табел рақами",
+          en: "Tab number",
+          ru: "Табельный номер"
+     },
+     select_branch: {
+          uz: "Filialni tanlang",
+          cy: "Филиални танланг",
+          en: "Select branch",
+          ru: "Выберите филиал"
+     },
+     select_department: {
+          uz: "Bo'limni tanlang",
+          cy: "Бўлимни танланг",
+          en: "Select department",
+          ru: "Выберите отдел"
+     },
+     select_position: {
+          uz: "Lavozimni tanlang",
+          cy: "Лавозимни танланг",
+          en: "Select position",
+          ru: "Выберите должность"
+     },
+     role_permissions: {
+          uz: "Rol va ruxsatlar",
+          cy: "Рол ва рухсатлар",
+          en: "Role & permissions",
+          ru: "Роль и разрешения"
+     },
+     role_permissions_subtitle: {
+          uz: "Rol tanlang — ruxsatlar avtomatik moslashadi",
+          cy: "Рол танланг — рухсатлар автоматик мослашади",
+          en: "Select role — permissions auto-apply",
+          ru: "Выберите роль — права применятся автоматически"
+     },
+     select_role: {
+          uz: "Rolni tanlang",
+          cy: "Ролни танланг",
+          en: "Select role",
+          ru: "Выберите роль"
+     },
+     perm_attendance_mark: {
+          uz: "Davomatni belgilash",
+          cy: "Давоматни белгилаш",
+          en: "Mark attendance",
+          ru: "Отмечать посещаемость"
+     },
+     perm_attendance_view: {
+          uz: "Davomatni ko'rish",
+          cy: "Давоматни кўриш",
+          en: "View attendance",
+          ru: "Просмотр посещаемости"
+     },
+     perm_kpi_view: {
+          uz: "KPI ko'rish",
+          cy: "КПИ кўриш",
+          en: "View KPI",
+          ru: "Просмотр KPI"
+     },
+     perm_employee_manage: {
+          uz: "Xodim qo'shish / tahrirlash",
+          cy: "Ходим қўшиш / таҳрирлаш",
+          en: "Add / edit employees",
+          ru: "Добавить / редактировать сотрудников"
+     },
+     perm_reports_export: {
+          uz: "Hisobotlarni eksport qilish",
+          cy: "Ҳисоботларни экспорт қилиш",
+          en: "Export reports",
+          ru: "Экспорт отчётов"
+     },
+     perm_geozone_create: {
+          uz: "Geozona yaratish",
+          cy: "Геозона яратиш",
+          en: "Create geozones",
+          ru: "Создавать геозоны"
+     },
+     perm_roles_manage: {
+          uz: "Rollarni boshqarish",
+          cy: "Ролларни бошқариш",
+          en: "Manage roles",
+          ru: "Управление ролями"
+     },
+     role: {
+          uz: "Rol",
+          cy: "Рол",
+          en: "Role",
+          ru: "Рол"
+     },
+     addEmployee: {
+          uz: "Xodim qo'shish",
+          cy: "Ходим қўшиш",
+          en: "Add employee",
+          ru: "Добавить сотрудника"
      }
 }
 

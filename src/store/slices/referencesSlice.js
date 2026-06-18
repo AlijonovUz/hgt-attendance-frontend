@@ -11,6 +11,7 @@ const getUserFromStorage = () => {
 
 const initialState = {
   currentUser: getUserFromStorage(),
+  regions: []
 };
 
 export const referencesSlice = createSlice({
@@ -25,11 +26,14 @@ export const referencesSlice = createSlice({
         } else {
           localStorage.removeItem('currentUser');
         }
-      } catch { /* ignore */ }
+      } catch { }
     },
+    setRegions: (state, { payload }) => {
+      state.regions = payload
+    }
   },
 });
 
-export const { setCurrentUser } = referencesSlice.actions;
+export const { setCurrentUser, setRegions } = referencesSlice.actions;
 
 export default referencesSlice.reducer;

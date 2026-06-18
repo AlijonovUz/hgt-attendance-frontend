@@ -7,6 +7,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { TbXboxXFilled } from "react-icons/tb";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RegionDistrictFilter } from "@/components/ui/RegionDistrictFilter";
 import { uz, ru, enUS, uzCyrl } from "date-fns/locale";
 import {
   Login02Icon,
@@ -31,6 +32,7 @@ import {
 } from "recharts";
 import { axiosAPI } from "@/services/axiosAPI";
 import { HugeIcon } from "@/components/ui/HugeIcon";
+import { useSelector } from "react-redux";
 
 
 const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS, };
@@ -42,14 +44,20 @@ const HomePage = () => {
   const { theme } = useTheme();
   const locale = calendarLocales[language] || uz;
 
+  const regions = useSelector((state) => state.references.regions)
+
   const [loadingData, setLoadingData] = useState(false)
   const [allStats, setAllStats] = useState(null)
-  // Faqat birinchi yuklanishda skeleton ko'rsatish uchun
+
   const isInitialLoad = useRef(true)
 
-  const [timeRange, setTimeRange] = useState("");
+  const [timeRange, setTimeRange] = useState("daily");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+
+  const [weeklyParams, setWeeklyParams] = useState({})
+  const [statusParams, setStatusParams] = useState({})
+
 
   const getDashboardData = async (params = {}) => {
     setLoadingData(true)
@@ -87,10 +95,27 @@ const HomePage = () => {
     if (!date) return;
     setSelectedDate(date);
     setTimeRange("sana");
-    if (!date.from || (date.from && date.to)) {
+    if (!date.from) {
       setCalendarOpen(false);
     }
   };
+
+  const handleWeeklyFilter = (regionId, districtId) => {
+    const params = { ...weeklyParams }
+    if (regionId !== undefined) params.region_id = regionId ?? undefined
+    if (districtId !== undefined) params.district_id = districtId ?? undefined
+    setWeeklyParams(params)
+    getDashboardData({ ...params })   // period/date param'lari ham birga jo'nating kerak bo'lsa
+  }
+
+  const handleStatusFilter = (regionId, districtId) => {
+    const params = { ...statusParams }
+    if (regionId !== undefined) params.region_id = regionId ?? undefined
+    if (districtId !== undefined) params.district_id = districtId ?? undefined
+    setStatusParams(params)
+    getDashboardData({ ...params })
+  }
+
 
   useEffect(() => {
     const param = {}
@@ -128,8 +153,8 @@ const HomePage = () => {
       key: "total",
       labelKey: "total_employees",
       value: allStats?.summary?.total_employees || 0,
-      trendVal: `${allStats?.summary?.total_employees_trend || 0}%`,
-      trendTextKey: "trend_this_month",
+      trendVal: `${allStats?.summary?.total_employees_trend || 0}`,
+      trendTextKey: "branch_fallback",
       trendUp: (allStats?.summary?.total_employees_trend || 0) >= 0,
       icon: IdIcon,
       bg: "bg-[#F5F5F5] dark:bg-[#262626]",
@@ -137,10 +162,9 @@ const HomePage = () => {
     },
     {
       key: "present",
-      labelKey: "present_today",
+      labelKey: "come",
       value: allStats?.summary?.period_arrived || 0,
       trendVal: `${allStats?.summary?.attendance_percent || 0}%`,
-      trendTextKey: "trend_attendance",
       trendUp: (allStats?.summary?.attendance_percent || 0) >= 0,
       icon: BubbleChatDoneIcon,
       bg: "bg-[#ADDDC0]",
@@ -151,7 +175,6 @@ const HomePage = () => {
       labelKey: "latecomers",
       value: allStats?.summary?.lates || 0,
       trendVal: `${allStats?.summary?.lates_trend || 0}%`,
-      trendTextKey: "trend_yesterday_down",
       trendUp: (allStats?.summary?.lates_trend || 0) >= 0,
       icon: TimeQuarter02Icon,
       bg: "bg-[#FFC182]",
@@ -162,7 +185,6 @@ const HomePage = () => {
       labelKey: "early_leavers",
       value: allStats?.summary?.early_leaves || 0,
       trendVal: `${allStats?.summary?.early_leaves_trend || 0}%`,
-      trendTextKey: "trend_yesterday_down",
       trendUp: (allStats?.summary?.early_leaves_trend || 0) >= 0,
       icon: Login02Icon,
       bg: "bg-[#ACD8FC]",
@@ -181,6 +203,14 @@ const HomePage = () => {
     },
   ];
 
+  const PERIODS = [
+    { value: "daily", labelKey: "period_daily" },
+    { value: "weekly", labelKey: "period_weekly" },
+    { value: "monthly", labelKey: "period_monthly" },
+    { value: "quarterly", labelKey: "period_quarterly" },
+    { value: "yearly", labelKey: "period_yearly" },
+  ]
+
   const weeklyData = allStats?.weekly_dynamics?.map(d => ({
     name: d.day_name,
     onTime: d.on_time,
@@ -193,7 +223,7 @@ const HomePage = () => {
     { name: t("on_time"), value: allStats.today_status.on_time, color: "#5BB98B" },
     { name: t("late"), value: allStats.today_status.late, color: "#F3D768" },
     { name: t("early_left"), value: allStats.today_status.early_left, color: "#5EB1EF" },
-    { name: t("absent_today"), value: allStats.today_status.absent, color: "#EB8E90" },
+    { name: t("absent"), value: allStats.today_status.absent, color: "#EB8E90" },
   ] : [];
 
   const todayTotalPercent = allStats?.today_status?.total_percent || 0;
@@ -238,25 +268,20 @@ const HomePage = () => {
         <div className="flex items-center gap-2">
 
           {/* Period buttons */}
-          <div className="inline-flex items-center rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] p-1 shadow-sm">
-            {[
-              { value: "", label: `1 ${t("day1")}` },
-              { value: "1", label: `1 ${t("month1")}` },
-              { value: "3", label: `3 ${t("month1")}` },
-              { value: "6", label: `6 ${t("month1")}` },
-            ].map((option) => (
+          <div className="inline-flex items-center rounded-lg border border-slate-200 dark:border-zinc-800 bg-[#F5F5F5] dark:bg-[#262626] p-1 shadow-sm">
+            {PERIODS.map((opt) => (
               <button
-                key={option.value}
+                key={opt.value}
                 type="button"
-                onClick={() => handleChangeDate(option.value)}
+                onClick={() => handleChangeDate(opt.value)}
                 className={cn(
-                  "rounded-sm px-3 py-1 text-[13px] font-semibold cursor-pointer",
-                  option.value === timeRange
-                    ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm"
-                    : " hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
+                  "rounded-md px-3 py-1 text-[13px] font-medium text-[#0A0A0A] dark:text-white cursor-pointer ",
+                  opt.value === timeRange
+                    ? "bg-white dark:bg-[#0A0A0A] border-2 border-[#E5E5E5] dark:border-[#404040] shadow-sm"
+                    : "hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
                 )}
               >
-                {option.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </div>
@@ -363,16 +388,24 @@ const HomePage = () => {
       </div>
 
       {/* Charts section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full rounded-lg border-b border-slate-200 dark:border-transparent pb-4 dark:pb-0!">
+      <div className="grid grid-cols-1 lg:grid-cols-11 gap-4 w-full">
         {/* Weekly dynamics */}
-        <div className="lg:col-span-2 rounded-2xl p-5 flex flex-col gap-4 bg-white dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
-              {t("weekly_dynamics")}
-            </h2>
-            <span className="text-[13px] text-[#737373]">
-              {t("weekly_dynamics_subtitle")}
-            </span>
+        <div className="lg:col-span-7 rounded-2xl p-5 flex flex-col gap-4 bg-[#FBFBFB] dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
+          <div className="flex items-start justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
+                {t("weekly_dynamics")}
+              </h2>
+              <span className="text-[13px] text-[#737373]">
+                {t("weekly_dynamics_subtitle")}
+              </span>
+            </div>
+
+            <RegionDistrictFilter
+              regions={regions}
+              onRegionChange={(regionId) => handleWeeklyFilter(regionId, null)}
+              onDistrictChange={(districtId) => handleWeeklyFilter(undefined, districtId)}
+            />
           </div>
 
           <div className="h-[280px] w-full">
@@ -419,17 +452,25 @@ const HomePage = () => {
         </div>
 
         {/* Today's status */}
-        <div className="rounded-2xl p-5 flex flex-col gap-4 bg-white dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
-                {t("today_status")}
-              </h2>
-              <span className="text-[13px] text-[#737373]">
-                {t("today_status_subtitle")}
-              </span>
+        <div className="col-span-4 rounded-2xl p-5 flex flex-col gap-4 bg-[#FBFBFB] dark:bg-[#171717] dark:border dark:border-zinc-800 dark:shadow-sm">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
+                  {t("today_status")}
+                </h2>
+                <span className="text-[13px] text-[#737373]">
+                  {t("today_status_subtitle")}
+                </span>
+              </div>
             </div>
+            <RegionDistrictFilter
+              regions={regions}
+              onRegionChange={(regionId) => handleStatusFilter(regionId, null)}
+              onDistrictChange={(districtId) => handleStatusFilter(undefined, districtId)}
+            />
           </div>
+
 
           <div className="flex flex-row items-center gap-6 mt-4">
             {/* Donut */}
@@ -462,8 +503,8 @@ const HomePage = () => {
               {todayData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-[3px]" style={{ backgroundColor: item.color }} />
-                  <span className="text-sm text-[#0A0A0A] dark:text-[#FAFAFA] w-[75px]">{item.name}</span>
-                  <span className="text-sm ml-5 font-semibold text-[#0A0A0A] dark:text-white">{item.value.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
+                  <span className="text-sm text-[#0A0A0A] dark:text-[#FAFAFA] w-auto">{item.name}</span>
+                  <span className="text-sm font-semibold text-[#0A0A0A] dark:text-white">{item.value?.toLocaleString('ru-RU').replace(/,/g, ' ')}</span>
                 </div>
               ))}
             </div>

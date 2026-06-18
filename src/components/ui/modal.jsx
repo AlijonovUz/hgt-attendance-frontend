@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 
-export const Modal = ({ className, width, height, isOpen, onClose, children }) => {
+export const Modal = ({ className, width, height, isOpen, onClose, children, header }) => {
      const [shouldRender, setShouldRender] = useState(isOpen)
      const [isAnimating, setIsAnimating] = useState(false)
 
@@ -35,13 +35,24 @@ export const Modal = ({ className, width, height, isOpen, onClose, children }) =
                     style={{ width: width, height: height }}
                     className={cn(
                          "fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
-                         "w-[600px] rounded-[24px] shadow-lg p-6 bg-[#FAFAFA] dark:bg-[#171717]",
+                         "w-[600px] rounded-[24px] shadow-lg bg-[#FAFAFA] dark:bg-[#171717]",
                          "transition-all duration-300 ease-out transform origin-center",
+                         "flex flex-col overflow-hidden",
                          isAnimating ? "opacity-100 scale-100" : "opacity-0 scale-95",
                          className,
                     )}
                >
-                    {children}
+                    {/* ── Sticky header ── */}
+                    {header && (
+                         <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-[#FAFAFA] dark:bg-[#171717] sticky top-0 z-10 border-b border-[#F0F0F0] dark:border-[#222]">
+                              {header}
+                         </div>
+                    )}
+
+                    {/* ── Scrollable content ── */}
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                         {children}
+                    </div>
                </div>
 
                <span
