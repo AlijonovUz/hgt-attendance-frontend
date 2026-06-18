@@ -7,7 +7,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { TbXboxXFilled } from "react-icons/tb";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RegionDistrictFilter } from "@/components/ui/RegionDistrictFilter";
+import { RegionDistrictFilter } from "@/components/ui/Regiondistrictfilter";
 import { uz, ru, enUS, uzCyrl } from "date-fns/locale";
 import {
   Login02Icon,
