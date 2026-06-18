@@ -3,9 +3,9 @@ import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
-import { MapPin, MapPinned, Trash2, X, Crosshair, AlertTriangle } from "lucide-react"
+import { MapPin, MapPinned, Trash2, X, AlertTriangle, Search, ArrowLeft } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { CheckmarkSquare01Icon } from "@hugeicons/core-free-icons"
+import { CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
@@ -46,6 +46,18 @@ const fmtCoord = (lat, lng) => {
   if (Number.isNaN(a) || Number.isNaN(b)) return "—"
   return `${a.toFixed(4)}, ${b.toFixed(4)}`
 }
+
+// ─── GPS ikonka (Figma SVG, currentColor orqali rangga moslashadi) ───
+const GpsIcon = ({ size = 15, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+    <path d="M13.6771 7.99992C13.6771 11.1295 11.14 13.6666 8.01042 13.6666C4.8808 13.6666 2.34375 11.1295 2.34375 7.99992C2.34375 4.8703 4.8808 2.33325 8.01042 2.33325C11.14 2.33325 13.6771 4.8703 13.6771 7.99992Z" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M15.0013 8H13.668" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M2.33333 8H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 0.999919L8 2.33325" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 13.6667V15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M9.99997 8C9.99997 9.10457 9.10454 10 7.99997 10C6.8954 10 5.99997 9.10457 5.99997 8C5.99997 6.89543 6.8954 6 7.99997 6C9.10454 6 9.99997 6.89543 9.99997 8Z" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+)
 
 // ─── Radius slider (detail + modal'da qayta ishlatiladi) ───
 const RadiusSlider = ({ value, onChange, theme }) => {
@@ -91,7 +103,7 @@ const ZoneCircle = ({ lat, lng, radius, theme, t }) => {
     >
       {/* Koordinata pill */}
       <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
-        <Crosshair size={14} className="text-[#0090FF]" />
+        <GpsIcon size={15} className="text-[#0A0A0A] dark:text-[#fafafa] opacity-50" />
         {fmtCoord(lat, lng)}
       </div>
 
@@ -138,6 +150,20 @@ const Geozones = () => {
   const [deleteTarget, setDeleteTarget] = useState(null) // o'chiriladigan geozona obyekti
   const [deleting, setDeleting] = useState(false)
 
+  // ── Qidiruv + filtrlar ──
+  const [searchInput, setSearchInput] = useState("")
+  const [search, setSearch] = useState("")
+  const searchTimer = useRef(null)
+
+  const [regions, setRegions] = useState([])
+  const [districts, setDistricts] = useState([])
+
+  const [openFilterModal, setOpenFilterModal] = useState(false)
+  // Qo'llanilgan filtrlar (ro'yxatga ta'sir qiladi)
+  const [filters, setFilters] = useState({ region: null, district: null, branch: null, zone_type: null })
+  // Modal ichidagi vaqtinchalik (draft) tanlovlar
+  const [draft, setDraft] = useState({ region: null, district: null, branch: null, zone_type: null })
+
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
   const showToast = (message) =>
     setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
@@ -167,7 +193,14 @@ const Geozones = () => {
   const fetchGeozones = async (selectId) => {
     setLoading(true)
     try {
-      const res = await axiosAPI.get("attendance/geozones/")
+      const params = {}
+      if (search) params.search = search
+      if (filters.region) params.region = filters.region
+      if (filters.district) params.district = filters.district
+      if (filters.branch) params.branch = filters.branch
+      if (filters.zone_type) params.zone_type = filters.zone_type
+
+      const res = await axiosAPI.get("attendance/geozones/", { params })
       if (res.status === 200) {
         const list = res.data?.data?.results || []
         setGeozones(list)
@@ -201,10 +234,78 @@ const Geozones = () => {
     }
   }
 
+  const fetchRegions = async () => {
+    try {
+      const res = await axiosAPI.get("users/regions/")
+      if (res.status === 200) {
+        setRegions(
+          (res.data?.data?.results || res.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const fetchDistricts = async (regionId) => {
+    try {
+      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
+      if (res.status === 200) {
+        setDistricts(
+          (res.data?.data?.results || res.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // Bir martalik yuklashlar
+  useEffect(() => {
+    fetchBranches()
+    fetchRegions()
+  }, [])
+
+  // Qidiruv yoki filtr o'zgarganda ro'yxatni qayta yuklash
   useEffect(() => {
     fetchGeozones()
-    fetchBranches()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, filters])
+
+  // Qidiruv debounce
+  const handleSearchChange = (e) => {
+    setSearchInput(e.target.value)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => setSearch(e.target.value.trim()), 400)
+  }
+
+  // ── Filtr modal amallari ──
+  const openFilters = () => {
+    setDraft(filters)
+    if (filters.region) fetchDistricts(filters.region)
+    setOpenFilterModal(true)
+  }
+
+  const handleDraftRegion = (opt) => {
+    const v = opt?.value ?? null
+    setDraft((d) => ({ ...d, region: v, district: null }))
+    setDistricts([])
+    if (v) fetchDistricts(v)
+  }
+
+  const applyFilters = () => {
+    setFilters(draft)
+    setOpenFilterModal(false)
+  }
+
+  const clearFilters = () => {
+    const empty = { region: null, district: null, branch: null, zone_type: null }
+    setDraft(empty)
+    setFilters(empty)
+    setDistricts([])
+  }
+
+  const hasFilter = filters.region || filters.district || filters.branch || filters.zone_type
 
   // Tanlov o'zgarganda radiusni sinxronlash
   const lastSyncedId = useRef(null)
@@ -319,11 +420,12 @@ const Geozones = () => {
           <span className="text-[#737373] text-sm">{t("gz_subtitle")}</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Ikkita borderli tugma — orasida bo'shliqsiz */}
+        <div className="flex items-center">
           <button
             type="button"
             onClick={() => setAddModal(true)}
-            className="inline-flex items-center gap-2 rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 py-2 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E]"
+            className="inline-flex items-center h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
           >
             {t("gz_new")}
           </button>
@@ -331,7 +433,7 @@ const Geozones = () => {
             type="button"
             onClick={() => setAddModal(true)}
             title={t("gz_new")}
-            className="p-2.5 shadow-xs rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] flex items-center justify-center cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E]"
+            className="inline-flex items-center justify-center h-[38px] w-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors text-[#0A0A0A] dark:text-white"
           >
             <MapPinned size={16} />
           </button>
@@ -341,8 +443,34 @@ const Geozones = () => {
       {/* ─── Body: list + detail ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
 
-        {/* ── Chap: ro'yxat ── */}
-        <div className="flex flex-col gap-2.5 h-[calc(100vh-180px)] overflow-y-auto pr-1">
+        {/* ── Chap: qidiruv + ro'yxat ── */}
+        <div className="flex flex-col gap-3 min-w-0">
+
+          {/* Qidiruv + Filter */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={handleSearchChange}
+                placeholder={t("gz_search_ph")}
+                className="w-full h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] pl-9 pr-3 text-sm text-[#0A0A0A] dark:text-white placeholder:text-[#737373] outline-none focus:border-[#0090FF] transition-colors"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={openFilters}
+              className="relative inline-flex items-center gap-2 h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors"
+            >
+              {hasFilter && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0090FF] ring-2 ring-white dark:ring-[#0A0A0A]" />}
+              <HugeIcon icon={FilterVerticalIcon} size={16} />
+              {t("gz_filter")}
+            </button>
+          </div>
+
+          {/* Ro'yxat */}
+          <div className="flex flex-col gap-2.5 h-[calc(100vh-235px)] overflow-y-auto pr-1">
           {loading ? (
             Array.from({ length: 7 }).map((_, i) => (
               <div
@@ -403,10 +531,11 @@ const Geozones = () => {
               )
             })
           )}
+          </div>
         </div>
 
         {/* ── O'ng: detail ── */}
-        <div className="lg:sticky lg:top-0 h-fit">
+        <div className="lg:sticky lg:top-0 h-fit lg:mt-[60px]">
           {!selected ? (
             <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#2E2E2E] p-10 flex flex-col items-center justify-center gap-2 text-[#737373] min-h-[400px]">
               <MapPin size={28} strokeWidth={1.5} />
@@ -625,6 +754,89 @@ const Geozones = () => {
         </div>
       </Modal>
 
+      {/* ─── Filtrlash modali ─── */}
+      <Modal isOpen={openFilterModal} onClose={() => setOpenFilterModal(false)} height={560}>
+        <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col gap-4">
+            {/* Sarlavha */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span
+                  className="w-11 h-11 cursor-pointer flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-[#1A1A1A] transition-colors"
+                  onClick={() => setOpenFilterModal(false)}
+                >
+                  <ArrowLeft size={24} />
+                </span>
+                <h1 className="text-2xl font-semibold">{t("gz_filter_title")}</h1>
+              </div>
+              <span className="text-sm text-[#737373] dark:text-[#A3A3A3]">
+                {t("gz_filter_subtitle")}
+              </span>
+            </div>
+
+            {/* Filtrlar */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Viloyat */}
+              <Select
+                label={t("gz_region")}
+                placeholder={t("gz_region_ph")}
+                options={regions}
+                value={draft.region}
+                onChange={handleDraftRegion}
+              />
+
+              {/* Tuman */}
+              <Select
+                label={t("gz_district")}
+                placeholder={!draft.region ? t("gz_select_region_first") : t("gz_district_ph")}
+                options={districts}
+                value={draft.district}
+                onChange={(opt) => setDraft((d) => ({ ...d, district: opt?.value ?? null }))}
+                disabled={!draft.region}
+              />
+
+              {/* Filial */}
+              <Select
+                label={t("gz_filial")}
+                placeholder={t("gz_branch_ph")}
+                options={branches}
+                value={draft.branch}
+                onChange={(opt) => setDraft((d) => ({ ...d, branch: opt?.value ?? null }))}
+              />
+
+              {/* Geozona turi */}
+              <Select
+                label={t("gz_type")}
+                placeholder={t("gz_type_ph")}
+                options={zoneTypeOptions}
+                value={draft.zone_type}
+                onChange={(opt) => setDraft((d) => ({ ...d, zone_type: opt?.value ?? null }))}
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-5">
+            <button
+              type="button"
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer text-[#0A0A0A] dark:text-white"
+              onClick={clearFilters}
+            >
+              <X size={14} />
+              {t("gz_clear")}
+            </button>
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-semibold cursor-pointer bg-[#0090FF] hover:bg-[#007BE0] transition-colors text-white px-4 py-2.5 rounded-lg"
+              onClick={applyFilters}
+            >
+              <HugeIcon size={16} icon={Search01Icon} />
+              {t("gz_search_btn")}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       {/* ─── O'chirishni tasdiqlash ─── */}
       <Modal
         isOpen={!!deleteTarget}
@@ -639,11 +851,6 @@ const Geozones = () => {
           <div className="flex flex-col gap-1">
             <h3 className="text-lg font-semibold text-[#0A0A0A] dark:text-white">{t("gz_delete_title")}</h3>
             <p className="text-sm text-[#737373] dark:text-[#A3A3A3]">{t("gz_delete_confirm")}</p>
-            {deleteTarget && (
-              <p className="text-sm font-medium text-[#0A0A0A] dark:text-white mt-1 truncate">
-                {deleteTarget.name}
-              </p>
-            )}
           </div>
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
