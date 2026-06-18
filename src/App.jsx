@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings, Profile } from "./pages"
+import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings, Profile, ReferencePage } from "./pages"
 import Layout from "./components/Layout/Layout"
 import { EmptySection } from "./components/EmptySection"
 
@@ -26,6 +26,10 @@ const App = () => {
         {
           path: "/geozones",
           element: <Geozones />,
+        },
+        {
+          path: "/references/:type",
+          element: <ReferencePage />,
         },
         {
           path: "/settings",
