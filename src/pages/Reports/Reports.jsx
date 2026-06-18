@@ -627,7 +627,7 @@ const Reports = () => {
                   options={STATUS_OPTIONS}
                   value={filterStatus?.value ?? null}
                   onChange={(opt) => setFilterStatus(opt)}
-                  className="col-span-2"
+                  contanierClassName="col-span-2"
                 />
               )}
             </div>

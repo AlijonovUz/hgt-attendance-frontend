@@ -1,78 +1,27 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useLanguage } from "@/Context/LanguageContext";
 import { axiosAPI } from "@/services/axiosAPI";
 import { cn } from "@/lib/utils";
-import { Check, ChevronDownIcon, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronDownIcon, Ellipsis, MoreVertical, Plus, X } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 import { PiMicrosoftExcelLogo } from "react-icons/pi";
 import { HugeIcon } from "@/components/ui/HugeIcon";
-import { CheckmarkSquare01Icon, Download01Icon, Settings05Icon, SquareArrowDown01Icon, UserAccountIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, Cancel01Icon, CancelCircleHalfDotIcon, CheckmarkCircle04Icon, CheckmarkSquare01Icon, Download01Icon, FilterVerticalIcon, Search01Icon, Settings05Icon, SquareArrowDown01Icon, UserAccountIcon, UserLock01Icon, UserRemove02Icon } from "@hugeicons/core-free-icons";
 import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Switch } from "@/components/ui/switch";
+import { AddButton } from "@/components/ui/customAddButton";
+import { useSelector } from "react-redux";
+import { AlertModal } from "@/components/ui/ComfirmAlert";
+import Toast from "@/components/ui/Toast";
 
 const PAGE_SIZE = 20;
 
-const ROLES = [
-  { value: "employee", label: "Xodim" },
-  { value: "manager", label: "Menejer" },
-  { value: "admin", label: "Admin" },
-];
-
-const SCOPE_OPTIONS = [
-  { value: "self", label: "O'zi" },
-  { value: "all", label: "Barchasi" },
-];
-
-
-
-const ScopeSelect = ({ value, onChange }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", fn);
-    return () => document.removeEventListener("mousedown", fn);
-  }, []);
-
-  const current = SCOPE_OPTIONS.find((o) => o.value === value) || SCOPE_OPTIONS[0];
-
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#171717] text-[12px] font-medium text-[#0A0A0A] dark:text-white cursor-pointer"
-      >
-        {current.label}
-        <ChevronDownIcon size={12} className={cn("transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-50 bg-white dark:bg-[#1A1A1A] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-lg shadow-lg overflow-hidden min-w-[100px]">
-          {SCOPE_OPTIONS.map((opt) => (
-            <div
-              key={opt.value}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={cn(
-                "px-3 py-2 text-[13px] cursor-pointer transition-colors",
-                opt.value === value
-                  ? "bg-[#F5F5F5] dark:bg-[#262626] font-medium text-[#0A0A0A] dark:text-white"
-                  : "text-[#737373] hover:bg-[#F9F9F9] dark:hover:bg-[#222]"
-              )}
-            >
-              {opt.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const EmployeeRegister = () => {
   const { t } = useLanguage();
+
+  const regions = useSelector((state) => state.references.regions)
 
   const [employees, setEmployees] = useState([]);
   const [count, setCount] = useState(0);
@@ -91,6 +40,42 @@ const EmployeeRegister = () => {
   const [positions, setPositions] = useState([])
   const [roles, setRoles] = useState([])
 
+  const [districts, setDistricts] = useState([])
+
+  // Modal list pagination states
+  const [modalPage, setModalPage] = useState(1)
+  const [modalTotalCount, setModalTotalCount] = useState(0)
+  const [modalLoading, setModalLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const listContainerRef = useRef(null)
+
+  // Filter states for each modal type
+  const [filters, setFilters] = useState({
+    branch: {
+      region: null,
+      district: null,
+      branch: null,
+      hasFilter: false
+    },
+    department: {
+      region: null,
+      district: null,
+      branch: null,
+      hasFilter: false
+    },
+    position: {
+      region: null,
+      district: null,
+      branch: null,
+      hasFilter: false
+    }
+  });
+
+  // Temporary filter states for modal
+  const [tempFilterRegion, setTempFilterRegion] = useState(null)
+  const [tempFilterDistrict, setTempFilterDistrict] = useState(null)
+  const [tempFilterBranch, setTempFilterBranch] = useState(null)
+
   const [form, setForm] = useState({
     full_name: "",
     password: "",
@@ -99,6 +84,8 @@ const EmployeeRegister = () => {
     branch: null,
     department: null,
     position: null,
+    roles: null,
+    schedule: null,
     perm_attendance_mark: false,
     perm_attendance_view: "self",
     perm_kpi_view: "self",
@@ -108,9 +95,82 @@ const EmployeeRegister = () => {
     perm_roles_manage: false,
   });
 
-  const [permOpen, setPermOpen] = useState(true);
+  const [selectedRolePerms, setSelectedRolePerms] = useState({})
+
+  const [permOpen, setPermOpen] = useState(false);
+  const [tableOpen, setTableOpen] = useState(false);
+  const [schedules, setSchedules] = useState([]);
+  const [selectedDay, setSelectedDay] = useState(0);
 
   const [addEmployeeModal, setAddEmployeeModal] = useState(false)
+  const [errors, setErrors] = useState({});
+  const [detailEmployee, setDetailEmployee] = useState(null); // null = create mode
+  const [dotMenuOpen, setDotMenuOpen] = useState(false);
+  const dotMenuRef = useRef(null);
+
+  // Close dot menu on outside click
+  useEffect(() => {
+    const fn = (e) => { if (dotMenuRef.current && !dotMenuRef.current.contains(e.target)) setDotMenuOpen(false); };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
+
+  const [openModal, setOpenModal] = useState(null)
+
+  const [openFilterModal, setOpenFilterModal] = useState(false)
+
+  const [currentFilterModal, setCurrentFilterModal] = useState(null)
+
+  const [openGroups, setOpenGroups] = useState({});
+
+  const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
+
+  const [blockModalOpen, setBlockModalOpen] = useState(false)
+  const [fireModalOpen, setFireModalOpen] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState(null)
+  const [blockLoading, setBlockLoading] = useState(false)
+  const [fireLoading, setFireLoading] = useState(false)
+
+  // Local search state
+  const [filterSearch, setFilterSearch] = useState("")
+
+  const GROUP_LABELS = {
+    regions: t("regions") || "Viloyatlar",
+    districts: t("districts") || "Tumanlar",
+    analytics: t("analytics") || "Analitika",
+    holidays: t("holidays") || "Bayramlar",
+    schedules: t("schedules") || "Ish grafiklari",
+    audits: t("audits") || "Audit",
+    roles: t("role") || "Rollar",
+    positions: t("positions") || "Lavozimlar",
+    departments: t("departments") || "Bo'limlar",
+    branchs: t("branchs") || "Filiallar",
+    reports: t("reports") || "Hisobotlar",
+    kpis: t("kpis") || "KPI",
+    gps: t("gps") || "GPS",
+    geozones: t("geozones") || "Geozonalar",
+    attendances: t("attendances") || "Davomat",
+    employees: t("employees") || "Xodimlar",
+  };
+
+  const toggleGroup = (key) =>
+    setOpenGroups((p) => ({ ...p, [key]: !p[key] }));
+
+
+  useEffect(() => {
+    if (!addEmployeeModal && !openModal && !openFilterModal) {
+      setErrors({});
+      setDotMenuOpen(false);
+    }
+  }, [addEmployeeModal, openModal, openFilterModal]);
+
+  const showToast = (message, type = "success") => {
+    setToast((prev) => ({
+      open: true,
+      message: message,
+      seq: prev.seq + 1,
+    }))
+  }
 
   const fetchEmployees = async (params = {}) => {
     setLoading(true);
@@ -135,32 +195,22 @@ const EmployeeRegister = () => {
     }
   };
 
-  const fetchBranches = async () => {
+  const fetchBranches = async (params = {}) => {
     try {
-      const res = await axiosAPI.get("users/branches/");
+      const res = await axiosAPI.get("users/branches/", { params });
       if (res.status === 200) {
-        setBranches(
-          (res.data?.data?.results || res.data?.results || []).map((b) => ({
-            value: b.id,
-            label: b.name,
-          }))
-        );
+        setBranches(res.data?.data?.results || [])
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const fetchPositions = async () => {
+  const fetchPositions = async (params = {}) => {
     try {
-      const res = await axiosAPI.get("users/positions/");
+      const res = await axiosAPI.get("users/positions/", { params });
       if (res.status === 200) {
-        setPositions(
-          (res.data?.data?.results || res.data?.results || []).map((b) => ({
-            value: b.id,
-            label: b.name,
-          }))
-        );
+        setPositions(res.data?.data?.results || []);
       }
     } catch (err) {
       console.error(err);
@@ -171,39 +221,290 @@ const EmployeeRegister = () => {
     try {
       const res = await axiosAPI.get("users/roles/");
       if (res.status === 200) {
-        setRoles(
-          (res.data?.data?.results || res.data?.results || []).map((b) => ({
-            value: b.id,
-            label: b.name,
-          }))
-        );
+        setRoles(res.data?.data?.results || []);
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const fetchDepartments = async () => {
+  const fetchDepartments = async (params = {}) => {
     try {
-      const res = await axiosAPI.get("users/departments/");
+      const res = await axiosAPI.get("users/departments/", { params });
       if (res.status === 200) {
-        setDepartments(
-          (res.data?.data?.results || res.data?.results || []).map((d) => ({
-            value: d.id,
-            label: d.name,
-          }))
-        );
+        setDepartments(res.data?.data?.results || []);
       }
     } catch (err) {
       console.error(err);
     }
   };
+
+  const fetchSchedules = async () => {
+    try {
+      const res = await axiosAPI.get("users/schedules/");
+      if (res.status === 200) {
+        setSchedules(res.data?.data?.results || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Fetch modal list with pagination
+  const fetchModalList = async (type, pageNum = 1, searchTerm = "") => {
+    setModalLoading(true)
+    try {
+      let res
+      const params = { page: pageNum, page_size: PAGE_SIZE }
+
+      if (searchTerm.trim()) {
+        params.search = searchTerm
+      }
+
+      // Apply filters
+      const filterData = filters[type]
+      if (type === "branch") {
+        if (filterData.region?.value) params.region = filterData.region.value
+        if (filterData.district?.value) params.district = filterData.district.value
+        if (filterData.branch?.value) params.id = filterData.branch.value
+        res = await axiosAPI.get("users/branches/", { params })
+        if (res.status === 200) {
+          const newData = res.data?.data?.results || []
+          if (pageNum === 1) {
+            setBranches(newData)
+          } else {
+            setBranches(prev => [...prev, ...newData])
+          }
+          setModalTotalCount(res.data?.data?.count || 0)
+          setHasMore(newData.length === PAGE_SIZE)
+        }
+      } else if (type === "department") {
+        if (filterData.branch?.value) params.branch = filterData.branch.value
+        if (filterData.region?.value) params.region = filterData.region.value
+        res = await axiosAPI.get("users/departments/", { params })
+        if (res.status === 200) {
+          const newData = res.data?.data?.results || []
+          if (pageNum === 1) {
+            setDepartments(newData)
+          } else {
+            setDepartments(prev => [...prev, ...newData])
+          }
+          setModalTotalCount(res.data?.data?.count || 0)
+          setHasMore(newData.length === PAGE_SIZE)
+        }
+      } else if (type === "position") {
+        if (filterData.branch?.value) params.branch = filterData.branch.value
+        if (filterData.region?.value) params.region = filterData.region.value
+        res = await axiosAPI.get("users/positions/", { params })
+        if (res.status === 200) {
+          const newData = res.data?.data?.results || []
+          if (pageNum === 1) {
+            setPositions(newData)
+          } else {
+            setPositions(prev => [...prev, ...newData])
+          }
+          setModalTotalCount(res.data?.data?.count || 0)
+          setHasMore(newData.length === PAGE_SIZE)
+        }
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setModalLoading(false)
+    }
+  }
+
+  const fetchDistricts = async (regionId) => {
+    setTempFilterDistrict(null)
+    try {
+      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
+      if (res.status === 200) {
+        setDistricts(
+          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleRegionChange = (opt) => {
+    setTempFilterRegion(opt)
+    setDistricts([])
+    setTempFilterDistrict(null)
+    if (opt?.value) fetchDistricts(opt.value)
+  }
+
+  const handleBlockEmployee = async () => {
+    if (!selectedEmployee) return
+    setBlockLoading(true)
+    try {
+      const res = await axiosAPI.post(`users/employees/${selectedEmployee.id}/block/`)
+      if (res.status === 200 || res.status === 201) {
+        showToast(`${selectedEmployee.full_name} ${t("employee_blocked")}`)
+
+        setBlockModalOpen(false)
+        setDotMenuOpen(false)
+        setAddEmployeeModal(false)
+        fetchEmployees()
+        // Detail ma'lumotlarni yangilash
+        if (detailEmployee && detailEmployee.id === selectedEmployee.id) {
+          setDetailEmployee(prev => ({ ...prev, is_blocked: true }))
+        }
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBlockLoading(false)
+    }
+  }
+
+  const handleUnblockEmployee = async () => {
+    if (!selectedEmployee) return
+    setBlockLoading(true)
+    try {
+      const res = await axiosAPI.post(`users/employees/${selectedEmployee.id}/unblock/`)
+      if (res.status === 200 || res.status === 201) {
+        showToast(`${selectedEmployee.full_name} ${t("employee_unblocked")}`)
+
+        setBlockModalOpen(false)
+        setDotMenuOpen(false)
+        setAddEmployeeModal(false)
+        fetchEmployees()
+        if (detailEmployee && detailEmployee.id === selectedEmployee.id) {
+          setDetailEmployee(prev => ({ ...prev, is_blocked: false }))
+        }
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBlockLoading(false)
+    }
+  }
+
+  const handleFireEmployee = async () => {
+    if (!selectedEmployee) return
+    setFireLoading(true)
+    try {
+      const res = await axiosAPI.post(`users/employees/${selectedEmployee.id}/fire/`)
+      if (res.status === 200 || res.status === 201) {
+        showToast(`${selectedEmployee.full_name} ${t("employee_fired")}`)
+
+        setFireModalOpen(false)
+        setDotMenuOpen(false)
+        setAddEmployeeModal(false)
+        setDetailEmployee(null)
+        fetchEmployees()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setFireLoading(false)
+    }
+  }
+
+
+  // Apply filter function - sends request to API
+  const applyFilter = () => {
+    const filterKey = currentFilterModal
+
+    // Save filters for this modal
+    setFilters(prev => ({
+      ...prev,
+      [filterKey]: {
+        region: tempFilterRegion,
+        district: tempFilterDistrict,
+        branch: tempFilterBranch,
+        hasFilter: !!(tempFilterRegion || tempFilterDistrict || tempFilterBranch)
+      }
+    }))
+
+    // Reset page and fetch with new filters
+    setModalPage(1)
+    setHasMore(true)
+    fetchModalList(filterKey, 1, filterSearch)
+
+    // Close filter modal and reopen selection modal
+    setOpenFilterModal(false)
+    setTimeout(() => setOpenModal(currentFilterModal), 100)
+  }
+
+  // Clear filter function
+  const clearFilter = () => {
+    setTempFilterRegion(null)
+    setTempFilterDistrict(null)
+    setTempFilterBranch(null)
+    setDistricts([])
+
+    // Clear saved filters
+    setFilters(prev => ({
+      ...prev,
+      [currentFilterModal]: {
+        region: null,
+        district: null,
+        branch: null,
+        hasFilter: false
+      }
+    }))
+
+    // Reset data
+    setModalPage(1)
+    setHasMore(true)
+    fetchModalList(currentFilterModal, 1, filterSearch)
+  }
+
+  // Open filter modal with saved filters
+  const openFilterModalWithFilters = (modalType) => {
+    setCurrentFilterModal(modalType)
+    const savedFilters = filters[modalType]
+    setTempFilterRegion(savedFilters.region)
+    setTempFilterDistrict(savedFilters.district)
+    setTempFilterBranch(savedFilters.branch)
+
+    // If region exists, fetch districts
+    if (savedFilters.region?.value) {
+      fetchDistricts(savedFilters.region.value)
+    }
+
+    setOpenFilterModal(modalType)
+    setTimeout(() => setOpenModal(null), 100)
+  }
+
+  // Handle scroll for infinite scroll
+  const handleScroll = useCallback(() => {
+    if (!listContainerRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = listContainerRef.current
+    if (scrollTop + clientHeight >= scrollHeight - 50 && !modalLoading && hasMore) {
+      const nextPage = modalPage + 1
+      setModalPage(nextPage)
+      fetchModalList(openModal, nextPage, filterSearch)
+    }
+  }, [modalLoading, hasMore, modalPage, openModal, filterSearch])
+
+  // Attach scroll listener
+  useEffect(() => {
+    const container = listContainerRef.current
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+      return () => container.removeEventListener('scroll', handleScroll)
+    }
+  }, [handleScroll])
+
+  // Reset pagination when modal opens or search changes
+  useEffect(() => {
+    if (openModal && openModal !== "roles") {
+      setModalPage(1)
+      setHasMore(true)
+      fetchModalList(openModal, 1, filterSearch)
+    }
+  }, [openModal, filterSearch])
 
   useEffect(() => {
     fetchRoles();
     fetchBranches();
     fetchPositions();
     fetchDepartments();
+    fetchSchedules();
   }, []);
 
   useEffect(() => {
@@ -211,25 +512,236 @@ const EmployeeRegister = () => {
   }, [page, search, branchFilter, departmentFilter]);
 
   const handleAddEmployee = async () => {
+    const newErrors = {};
+    if (!form.full_name?.trim()) {
+      newErrors.full_name = t("field_required") || "Ushbu maydon majburiy";
+    }
+    if (!form.password?.trim()) {
+      newErrors.password = t("field_required") || "Ushbu maydon majburiy";
+    }
+    if (!form.tabel?.trim()) {
+      newErrors.tabel = t("field_required") || "Ushbu maydon majburiy";
+    } else if (form.tabel.trim().length !== 14) {
+      newErrors.tabel = t("jshshir_length_error") || "JSHSHIR 14 ta raqamdan iborat bo'lishi kerak";
+    }
+    if (!form.phone?.trim()) {
+      newErrors.phone = t("field_required") || "Ushbu maydon majburiy";
+    }
+    if (!form.branch) {
+      newErrors.branch = t("field_required") || "Ushbu maydon majburiy";
+    }
+    if (!form.department) {
+      newErrors.department = t("field_required") || "Ushbu maydon majburiy";
+    }
+    if (!form.position) {
+      newErrors.position = t("field_required") || "Ushbu maydon majburiy";
+    }
+    if (!form.roles) {
+      newErrors.roles = t("field_required") || "Ushbu maydon majburiy";
+      setPermOpen(true);
+    }
+    if (!form.schedule) {
+      newErrors.schedule = t("field_required") || "Ushbu maydon majburiy";
+      setTableOpen(true);
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+
     try {
       const res = await axiosAPI.post("users/employees/", {
         full_name: form.full_name,
         password: form.password,
-        tabel_number: form.tabel,
-        phone: form.phone,
+        jshshir: form.tabel,
+        phone: form.phone.replace(/[\s-]/g, ""),
         branch: form.branch,
         department: form.department,
         position: form.position,
+        role: form.roles,
+        schedule: form.schedule,
       });
       if (res.status === 201 || res.status === 200) {
         setAddEmployeeModal(false);
-        setForm({ full_name: "", tabel: "", phone: "", branch: null, department: null, position: null });
+        showToast(`${form.full_name} ${t("employee_added")}`)
+        setForm({
+          full_name: "",
+          password: "",
+          tabel: "",
+          phone: "",
+          branch: null,
+          department: null,
+          position: null,
+          roles: null,
+          schedule: null,
+          perm_attendance_mark: false,
+          perm_attendance_view: "self",
+          perm_kpi_view: "self",
+          perm_employee_manage: false,
+          perm_reports_export: false,
+          perm_geozone_create: false,
+          perm_roles_manage: false,
+        });
+        setSelectedDay(0);
         fetchEmployees();
       }
     } catch (err) {
       console.error(err);
+      const details = err?.response?.data?.error?.details;
+      if (details && typeof details === "object") {
+        const fieldMap = {
+          full_name: "full_name",
+          password: "password",
+          jshshir: "tabel",
+          phone: "phone",
+          branch: "branch",
+          department: "department",
+          position: "position",
+          role: "roles",
+          schedule: "schedule",
+        };
+        const backendErrors = {};
+        Object.entries(details).forEach(([field, messages]) => {
+          const key = fieldMap[field] || field;
+          backendErrors[key] = Array.isArray(messages) ? messages[0] : messages;
+        });
+        setErrors(backendErrors);
+        // Auto-open collapsed sections if they have errors
+        if (backendErrors.roles) setPermOpen(true);
+        if (backendErrors.schedule) setTableOpen(true);
+      }
     }
   };
+
+  const handleOpenDetail = async (id) => {
+    try {
+      const res = await axiosAPI.get(`users/employees/${id}/`)
+      if (res.status === 200) {
+        const emp = res.data?.data;
+        setDetailEmployee(emp);
+        // Telefon raqamini formatlash
+        const rawPhone = emp?.phone || "";
+        const digits = rawPhone.replace(/\D/g, "");
+        let formattedPhone = rawPhone;
+        if (digits.length >= 11) {
+          const local = digits.startsWith("998") ? digits.slice(3) : digits;
+          const d = local.slice(0, 9);
+          if (d.length <= 2) formattedPhone = `+998 ${d}`;
+          else if (d.length <= 5) formattedPhone = `+998 ${d.slice(0, 2)} ${d.slice(2)}`;
+          else if (d.length <= 7) formattedPhone = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5)}`;
+          else formattedPhone = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
+        }
+        setForm({
+          full_name: emp?.full_name || "",
+          password: "",
+          tabel: emp?.jshshir || "",
+          phone: formattedPhone,
+          branch: emp?.branch_info?.id || null,
+          department: emp?.department_info?.id || null,
+          position: emp?.position_info?.id || null,
+          roles: emp?.role_info?.id || null,
+          schedule: emp?.schedule_info?.id || null,
+          perm_attendance_mark: false,
+          perm_attendance_view: "self",
+          perm_kpi_view: "self",
+          perm_employee_manage: false,
+          perm_reports_export: false,
+          perm_geozone_create: false,
+          perm_roles_manage: false,
+        });
+        setSelectedDay(0);
+        setErrors({});
+        setAddEmployeeModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // Faqat ozgargan maydonlarni aniqlash
+  const getChangedFields = (emp) => {
+    const changed = {};
+    const cleanPhone = form.phone.replace(/[\s-]/g, "");
+    if (form.full_name !== (emp?.full_name || "")) changed.full_name = form.full_name;
+    if (form.password?.trim()) changed.password = form.password;
+    if (form.tabel !== (emp?.jshshir || "")) changed.jshshir = form.tabel;
+    if (cleanPhone !== (emp?.phone || "")) changed.phone = cleanPhone;
+    if (form.branch !== (emp?.branch_info?.id || null)) changed.branch = form.branch;
+    if (form.department !== (emp?.department_info?.id || null)) changed.department = form.department;
+    if (form.position !== (emp?.position_info?.id || null)) changed.position = form.position;
+    if (form.roles !== (emp?.role_info?.id || null)) changed.role = form.roles;
+    if (form.schedule !== (emp?.schedule_info?.id || null)) changed.schedule = form.schedule;
+    return changed;
+  };
+
+  const handleUpdateEmployee = async () => {
+    const changed = getChangedFields(detailEmployee);
+    if (Object.keys(changed).length === 0) {
+      setAddEmployeeModal(false);
+      return;
+    }
+    try {
+      const res = await axiosAPI.patch(`users/employees/${detailEmployee?.id}/`, changed);
+      if (res.status === 200) {
+        showToast(`${detailEmployee?.full_name} ${t("employee_updated")}`)
+
+        setAddEmployeeModal(false);
+        fetchEmployees();
+      }
+    } catch (err) {
+      console.error(err);
+      const details = err?.response?.data?.error?.details;
+      if (details && typeof details === "object") {
+        const fieldMap = {
+          full_name: "full_name", password: "password", jshshir: "tabel",
+          phone: "phone", branch: "branch", department: "department",
+          position: "position", role: "roles", schedule: "schedule",
+        };
+        const backendErrors = {};
+        Object.entries(details).forEach(([field, messages]) => {
+          const key = fieldMap[field] || field;
+          backendErrors[key] = Array.isArray(messages) ? messages[0] : messages;
+        });
+        setErrors(backendErrors);
+        if (backendErrors.roles) setPermOpen(true);
+        if (backendErrors.schedule) setTableOpen(true);
+      }
+    }
+  };
+
+  const isCrudGroup = (items) => items.length > 1;
+
+  useEffect(() => {
+    const found = roles.find((r) => r.id === form.roles);
+    setSelectedRolePerms(found?.permissions_info ?? {});
+  }, [form.roles, roles]);
+
+  // Barcha options bitta objectda
+  const modalOptions = {
+    branch: branches,
+    department: departments,
+    position: positions,
+    roles,
+  };
+
+  const modalTitles = {
+    branch: t("select_branch") || "Filialni tanlang",
+    department: t("select_department") || "Bo'limni tanlang",
+    position: t("select_position") || "Lavozimni tanlang",
+    roles: t("select_role") || "Rol tanlang",
+  };
+
+  // Alohida state
+  const [modalSelected, setModalSelected] = useState(null);
+
+  // openModal o'zgarganda sync qil
+  useEffect(() => {
+    if (openModal) {
+      setModalSelected(form[openModal]);
+    }
+  }, [openModal]);
 
   const handleSearchChange = (e) => {
     setSearchInput(e.target.value);
@@ -241,87 +753,62 @@ const EmployeeRegister = () => {
   };
 
   const exportExcel = () => {
-    if (!employees.length) return;
-    const headers = [
-      "#",
-      t("full_name") || "Ism familya",
-      t("col_branch") || "Filial",
-      t("department") || "Bo'lim",
-      t("position") || "Lavozim",
-      t("work_start") || "Kelgan vaqti",
-      "KPI",
-    ];
-    const rows = employees.map((e, i) => [
-      i + 1,
-      e.full_name || "",
-      e.branch_info?.name || "",
-      e.department_info?.name || "",
-      e.position_info?.name || "",
-      e.schedule_info?.work_start_time.slice(0, 5) || "",
-      "",
-    ]);
+    if (!employees.length) {
+      showToast(t("no_data_to_export"));
+      return;
+    }
 
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    try {
+      const headers = [
+        "#",
+        t("full_name") || "Ism familya",
+        t("col_branch") || "Filial",
+        t("department") || "Bo'lim",
+        t("position") || "Lavozim",
+        t("work_start") || "Kelgan vaqti",
+        "KPI",
+      ];
+      const rows = employees.map((e, i) => [
+        i + 1,
+        e.full_name || "",
+        e.branch_info?.name || "",
+        e.department_info?.name || "",
+        e.position_info?.name || "",
+        e.schedule_info?.work_start_time?.slice(0, 5) || "",
+        "",
+      ]);
 
-    // Ustun kengliklarini sozlash
-    ws["!cols"] = [
-      { wch: 5 },   // #
-      { wch: 30 },  // Ism familya
-      { wch: 22 },  // Filial
-      { wch: 20 },  // Bo'lim
-      { wch: 20 },  // Lavozim
-      { wch: 16 },  // Kelgan vaqti
-      { wch: 10 },  // KPI
-    ];
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 
-    // Thead balandligi
-    ws["!rows"] = [{ hpt: 28 }];
+      ws["!cols"] = [
+        { wch: 5 },
+        { wch: 30 },
+        { wch: 22 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 16 },
+        { wch: 10 },
+      ];
 
-    // Thead stillari — har bir ustun uchun
-    headers.forEach((_, colIdx) => {
-      const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIdx });
-      if (!ws[cellRef]) return;
-      ws[cellRef].s = {
-        fill: {
-          patternType: "solid",
-          fgColor: { rgb: "FAFAFA" }, // ko'k rang
-        },
-        font: {
-          bold: true,
-          sz: 12,
-          color: { rgb: "000000" },
-        },
-        alignment: {
-          vertical: "center",
-          horizontal: colIdx === 0 ? "center" : "left",
-          wrapText: false,
-        },
-        border: {
-          top: { style: "thin", color: { rgb: "E5E5E5" } },
-          bottom: { style: "thin", color: { rgb: "E5E5E5" } },
-          right: { style: "thin", color: { rgb: "E5E5E5" } },
-          left: { style: "thin", color: { rgb: "E5E5E5" } },
-        },
-      };
-    });
+      ws["!rows"] = [{ hpt: 28 }];
 
-    // Data qatorlari stillari
-    rows.forEach((_, rowIdx) => {
-      headers.forEach((__, colIdx) => {
-        const cellRef = XLSX.utils.encode_cell({ r: rowIdx + 1, c: colIdx });
+      headers.forEach((_, colIdx) => {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIdx });
         if (!ws[cellRef]) return;
         ws[cellRef].s = {
           fill: {
             patternType: "solid",
-            fgColor: { rgb: "FFFFFF" },
+            fgColor: { rgb: "FAFAFA" },
           },
           font: {
-            sz: 11,
-            color: { rgb: "1A1A1A" },
+            bold: true,
+            sz: 12,
+            color: { rgb: "000000" },
           },
           alignment: {
             vertical: "center",
             horizontal: colIdx === 0 ? "center" : "left",
+            wrapText: false,
           },
           border: {
             top: { style: "thin", color: { rgb: "E5E5E5" } },
@@ -331,14 +818,91 @@ const EmployeeRegister = () => {
           },
         };
       });
-    });
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Xodimlar");
-    XLSX.writeFile(wb, "Xodimlar-royxati.xlsx");
+      rows.forEach((_, rowIdx) => {
+        headers.forEach((__, colIdx) => {
+          const cellRef = XLSX.utils.encode_cell({ r: rowIdx + 1, c: colIdx });
+          if (!ws[cellRef]) return;
+          ws[cellRef].s = {
+            fill: {
+              patternType: "solid",
+              fgColor: { rgb: "FFFFFF" },
+            },
+            font: {
+              sz: 11,
+              color: { rgb: "1A1A1A" },
+            },
+            alignment: {
+              vertical: "center",
+              horizontal: colIdx === 0 ? "center" : "left",
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "E5E5E5" } },
+              bottom: { style: "thin", color: { rgb: "E5E5E5" } },
+              right: { style: "thin", color: { rgb: "E5E5E5" } },
+              left: { style: "thin", color: { rgb: "E5E5E5" } },
+            },
+          };
+        });
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Xodimlar");
+      XLSX.writeFile(wb, "Xodimlar-royxati.xlsx");
+
+      // Muvaffaqiyatli yuklandi
+      showToast(t("export_success"));
+    } catch (err) {
+      console.error(err);
+      showToast(t("export_error"));
+    }
   };
 
   const COLS = 7;
+
+  const CustomButton = ({ placeholder, onclick, onClear, selected, hasError }) => {
+    return (
+      <button
+        type="button"
+        onClick={onclick}
+        className={cn(
+          "flex items-center justify-between w-full px-3.5 py-3 rounded-xl border text-sm cursor-pointer select-none outline-none bg-[#fafafa] dark:bg-[#171717]",
+          hasError
+            ? "border-red-500!"
+            : "border-gray-200 dark:border-[#404040]"
+        )}
+      >
+        <span
+          className={
+            selected
+              ? "text-[#0a0a0a] dark:text-[#fafafa] truncate max-w-full"
+              : "text-[#737373] dark:text-[#A3A3A3] truncate max-w-full"
+          }
+        >
+          {selected ?? placeholder}
+        </span>
+
+        <div className="flex items-center gap-2">
+          <HugeIcon
+            icon={ArrowDown01Icon}
+            size={18}
+            className={`text-[#0a0a0a] dark:text-[#fafafa] flex-shrink-0`}
+          />
+
+          {selected &&
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onClear() }}
+              className="flex items-center cursor-pointer justify-center flex-shrink-0 w-5 h-5 rounded-full text-[#737373] hover:text-[#0a0a0a] hover:bg-gray-100 dark:text-[#A3A3A3] dark:hover:text-[#fafafa] dark:hover:bg-[#2a2a2a] transition-colors duration-150"
+              aria-label="Tozalash"
+            >
+              <HugeIcon icon={Cancel01Icon} size={14} />
+            </button>
+          }
+        </div>
+      </button>
+    )
+  }
 
   return (
     <>
@@ -355,17 +919,33 @@ const EmployeeRegister = () => {
             </span>
           </div>
 
-          <div className="flex items-center" onClick={() => setAddEmployeeModal(true)}>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#404040] px-4 py-2 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer"
-            >
-              {t("new_employee") || "Yangi xodim"}
-            </button>
-            <span className="p-[10px] shadow-xs rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#404040] flex items-center justify-center">
-              <Plus size={16} className="dark:text-[#f5f5f5] text-[#0A0A0A]" />
-            </span>
-          </div>
+          <AddButton
+            onOpen={() => {
+              setDetailEmployee(null);
+              setForm({
+                full_name: "",
+                password: "",
+                tabel: "",
+                phone: "",
+                branch: null,
+                department: null,
+                position: null,
+                roles: null,
+                schedule: null,
+                perm_attendance_mark: false,
+                perm_attendance_view: "self",
+                perm_kpi_view: "self",
+                perm_employee_manage: false,
+                perm_reports_export: false,
+                perm_geozone_create: false,
+                perm_roles_manage: false,
+              });
+              setErrors({});
+              setAddEmployeeModal(true);
+            }}
+            title={t("new_employee")}
+          />
+
         </div>
 
         {/* ── Filters row ── */}
@@ -383,7 +963,7 @@ const EmployeeRegister = () => {
             {/* Branch filter */}
             <div className="w-[200px]">
               <Select
-                placeholder={t("all_branches") || "Barcha fililar"}
+                placeholder={t("all_branches") || "Barcha filiallar"}
                 options={branches}
                 value={branchFilter}
                 onChange={(opt) => {
@@ -432,7 +1012,7 @@ const EmployeeRegister = () => {
                     { label: "#", cls: "w-12" },
                     { label: t("full_name") || "Ism familya" },
                     { label: t("department") || "Bo'lim" },
-                    { label: t("col_branch") || "Kelgan" },
+                    { label: t("col_branch") || "Filial" },
                     { label: t("position") || "Lavozim" },
                     { label: t("work_start") || "Kelgan vaqti" },
                     { label: "KPI" },
@@ -475,56 +1055,38 @@ const EmployeeRegister = () => {
                     <tr
                       key={emp.id}
                       className="border-b border-[#F0F0F0] dark:border-[#1A1A1A] hover:bg-[#FAFAFA] dark:hover:bg-[#111] cursor-pointer"
+                      onClick={() => { handleOpenDetail(emp.id); }}
                     >
-                      {/* # */}
                       <td className="px-4 py-3.5 text-sm font-medium dark:text-[#f5f5f5]">
                         {(page - 1) * PAGE_SIZE + i + 1}
                       </td>
 
-                      {/* Ism familya + avatar */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2.5">
-                          {/* {emp.face_image ? (
-                          <img
-                            src={emp.face_image}
-                            alt={emp.full_name}
-                            className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#E5E7EB] dark:border-[#2E2E2E]"
-                            onError={(e) => { e.target.style.display = "none"; }}
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-[#F0F0F0] dark:bg-[#262626] flex items-center justify-center flex-shrink-0 text-[13px] font-semibold text-[#737373]">
-                            {emp.full_name?.charAt(0) || "?"}
-                          </div>
-                        )} */}
                           <span className="text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[180px]">
                             {emp.full_name || ""}
                           </span>
                         </div>
                       </td>
 
-                      {/* Bo'lim */}
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
                         {emp.department_info?.name || ""}
                       </td>
 
-                      {/* Filial */}
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
                         {emp.branch_info?.name || ""}
                       </td>
 
-                      {/* Lavozim */}
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
                         {emp.position_info?.name || ""}
                       </td>
 
-                      {/* Kelgan vaqti */}
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5] tabular-nums">
                         {emp.schedule_info?.work_start_time
                           ? emp.schedule_info.work_start_time.slice(0, 5)
                           : ""}
                       </td>
 
-                      {/* KPI */}
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
                         {emp.discipline_kpi ?? ""}
                       </td>
@@ -574,35 +1136,134 @@ const EmployeeRegister = () => {
         </div>
       </div>
 
+      {/* create / detail modal */}
       <Modal
         height={680}
         isOpen={addEmployeeModal}
-        onClose={() => setAddEmployeeModal(false)}
+        onClose={() => {
+          setAddEmployeeModal(false);
+          setDetailEmployee(null);
+        }}
         header={
-          <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
-                {t("new_employee") || "Yangi xodim"}
-              </h2>
-              <div className="flex items-center gap-1.5 text-[#0a0a0a] dark:text-[#f5f5f5] text-sm">
-                <HugeIcon icon={UserAccountIcon} size={16} />
-                <span>{t("add_employee_subtitle") || "Xodim qo'shish"}</span>
+          detailEmployee ? (
+            /* ── Detail header ── */
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddEmployeeModal(false);
+                      setDetailEmployee(null);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft size={18} className="text-[#0a0a0a] dark:text-white" />
+                  </button>
+                  <h2 className="text-[17px] font-semibold text-[#0A0A0A] dark:text-white">
+                    {t("employee_details") || "Xodim ma'lumotlari"}
+                  </h2>
+                </div>
+
+                {/* 3-nuqta menyu */}
+                <div ref={dotMenuRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setDotMenuOpen((p) => !p)}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                  >
+                    <Ellipsis size={18} className="text-[#0a0a0a] dark:text-white" />
+                  </button>
+                  {dotMenuOpen && (
+                    <div className="absolute right-0 top-[calc(100%+4px)] z-50 bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-xl shadow-lg overflow-hidden min-w-[170px] py-1">
+                      {detailEmployee?.is_blocked ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedEmployee(detailEmployee); // MUHIM!
+                            setDotMenuOpen(false);
+                            setBlockModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                        >
+                          <HugeIcon icon={UserLock01Icon} size={16} />
+                          {t("unblock_employee") || "Blokdan chiqarish"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedEmployee(detailEmployee); // MUHIM!
+                            setDotMenuOpen(false);
+                            setBlockModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                        >
+                          <HugeIcon icon={UserLock01Icon} size={16} />
+                          {t("block_employee") || "Bloklash"}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEmployee(detailEmployee); // MUHIM!
+                          setDotMenuOpen(false);
+                          setFireModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-red-500 dark:text-[#F87171] hover:bg-[#FFF0F0] dark:hover:bg-[#2A1A1A] transition-colors cursor-pointer"
+                      >
+                        <HugeIcon icon={UserRemove02Icon} size={16} />
+                        {t("fire_employee") || "Ishdan chetlatish"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Avatar + ism */}
+              <div className="flex items-center gap-3">
+                {detailEmployee?.face_image ? (
+                  <img
+                    src={detailEmployee.face_image}
+                    alt={detailEmployee.full_name}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0090FF] to-[#6C47FF] flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xl font-bold">
+                      {(detailEmployee?.full_name || "?")[0].toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setAddEmployeeModal(false)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer text-[#0a0a0a]"
-            >
-              <X size={20} />
-            </button>
-          </div>
+          ) : (
+            /* ── Create header ── */
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
+                  {t("new_employee") || "Yangi xodim"}
+                </h2>
+                <div className="flex items-center gap-1.5 text-[#0a0a0a] dark:text-[#f5f5f5] text-sm">
+                  <HugeIcon icon={UserAccountIcon} size={16} />
+                  <span>{t("add_employee_subtitle") || "Xodim qo'shish"}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddEmployeeModal(false)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer text-[#0a0a0a] dark:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          )
         }
       >
-        <div className="flex flex-col gap-4 h-full">
+        <div className="flex flex-col justify-between gap-4 h-full">
 
           {/* ── Form ── */}
-          <div className="grid grid-cols-2 gap-3 flex-1">
+          <div className="grid grid-cols-2 gap-3">
 
             {/* Ism familyasi */}
             <div className="flex flex-col gap-1.5">
@@ -614,36 +1275,40 @@ const EmployeeRegister = () => {
                 placeholder={t("full_name") || "Ism familyasi"}
                 value={form.full_name}
                 onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
-                className="w-full h-11 rounded-lg dark:bg-[#171717]"
+                className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.full_name && "border-red-500!")}
               />
+              {errors.full_name && <span className="text-[11px] text-red-500 font-medium">{errors.full_name}</span>}
             </div>
 
             {/* Parol */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                {t("password_label") || "Tabel raqami"}
+                {t("password_label") || "Parol"}
               </label>
               <Input
                 type="text"
                 placeholder={t("create_password_placeholder") || "Parol yarating"}
-                value={form.tabel}
+                value={form.password}
                 onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                className="w-full h-11 rounded-lg dark:bg-[#171717]"
+                className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.password && "border-red-500!")}
               />
+              {errors.password && <span className="text-[11px] text-red-500 font-medium">{errors.password}</span>}
             </div>
 
-            {/* Tabel */}
+            {/* JSHSHIR */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                {t("tabel_number") || "Tabel raqami"}
+                JSHSHIR
               </label>
               <Input
                 type="text"
-                placeholder={t("tabel_number") || "Tabel raqami"}
+                placeholder={t("jshsh_number") || "JSHSHIR raqami"}
                 value={form.tabel}
                 onChange={(e) => setForm((p) => ({ ...p, tabel: e.target.value }))}
-                className="w-full h-11 rounded-lg dark:bg-[#171717]"
+                className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.tabel && "border-red-500!")}
+                maxLength={14}
               />
+              {errors.tabel && <span className="text-[11px] text-red-500 font-medium">{errors.tabel}</span>}
             </div>
 
             {/* Telefon */}
@@ -657,41 +1322,42 @@ const EmployeeRegister = () => {
                 value={form.phone}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "");
-
                   let formatted = "";
                   if (digits.length === 0) {
                     formatted = "";
                   } else {
                     const local = digits.startsWith("998") ? digits.slice(3) : digits;
-                    const d = local.slice(0, 9); // max 9 ta raqam
+                    const d = local.slice(0, 9);
                     if (d.length <= 2) {
                       formatted = `+998 ${d}`;
                     } else if (d.length <= 5) {
-                      formatted = `+998 ${d.slice(0, 2)}-${d.slice(2)}`;
+                      formatted = `+998 ${d.slice(0, 2)} ${d.slice(2)}`;
                     } else if (d.length <= 7) {
-                      formatted = `+998 ${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
+                      formatted = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5)}`;
                     } else {
-                      formatted = `+998 ${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5, 7)}-${d.slice(7, 9)}`;
+                      formatted = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
                     }
                   }
                   setForm((p) => ({ ...p, phone: formatted }));
                 }}
-                className="w-full h-11 rounded-lg dark:bg-[#171717]"
+                className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.phone && "border-red-500!")}
               />
+              {errors.phone && <span className="text-[11px] text-red-500 font-medium">{errors.phone}</span>}
             </div>
 
             {/* Filial */}
-            <div className="flex flex-col gap-1.5">
+            <div className="col-span-2 flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("col_branch") || "Filial"}
               </label>
-              <Select
-                placeholder={t("select_branch") || "Filialni tanlang"}
-                options={branches}
-                value={form.branch}
-                onChange={(opt) => setForm((p) => ({ ...p, branch: opt?.value ?? null }))}
-                className="bg-transparent! border! border-[#e5e5e5] dark:border-[#404040]"
+              <CustomButton
+                placeholder={t("select_branch")}
+                selected={branches.find(b => b.id === form.branch)?.name}
+                onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("branch"), 100) }}
+                onClear={() => setForm((p) => ({ ...p, branch: null }))}
+                hasError={!!errors.branch}
               />
+              {errors.branch && <span className="text-[11px] text-red-500 font-medium">{errors.branch}</span>}
             </div>
 
             {/* Bo'lim */}
@@ -699,37 +1365,29 @@ const EmployeeRegister = () => {
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("department") || "Bo'lim"}
               </label>
-              <Select
-                placeholder={t("select_department") || "Bo'limni tanlang"}
-                options={departments}
-                value={form.department}
-                onChange={(opt) => setForm((p) => ({ ...p, department: opt?.value ?? null }))}
-                className="bg-transparent! border! border-[#e5e5e5] dark:border-[#404040]"
+              <CustomButton
+                placeholder={t("select_department")}
+                selected={departments.find(d => d.id === form.department)?.name}
+                onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("department"), 100) }}
+                onClear={() => setForm((p) => ({ ...p, department: null }))}
+                hasError={!!errors.department}
               />
+              {errors.department && <span className="text-[11px] text-red-500 font-medium">{errors.department}</span>}
             </div>
-
-            {/* Role */}
-            <Select
-              placeholder={t("select_role") || "Rolni tanlang"}
-              options={roles}
-              value={form.role}
-              onChange={(opt) => setForm((p) => ({ ...p, role: opt?.value ?? null }))}
-              className="bg-transparent! border! border-[#e5e5e5] dark:border-[#404040]"
-              label={t("role")}
-            />
 
             {/* Lavozim */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("position") || "Lavozim"}
               </label>
-              <Select
-                placeholder={t("select_position") || "Lavozimni tanlang"}
-                options={positions}
-                value={form.position}
-                onChange={(opt) => setForm((p) => ({ ...p, position: opt?.value ?? null }))}
-                className="bg-transparent! border! border-[#e5e5e5] dark:border-[#404040]"
+              <CustomButton
+                placeholder={t("select_position")}
+                selected={positions.find(d => d.id === form.position)?.name}
+                onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("position"), 100) }}
+                onClear={() => setForm((p) => ({ ...p, position: null }))}
+                hasError={!!errors.position}
               />
+              {errors.position && <span className="text-[11px] text-red-500 font-medium">{errors.position}</span>}
             </div>
 
             {/* Rol va Ruhsatlar */}
@@ -765,92 +1423,570 @@ const EmployeeRegister = () => {
               <div
                 className={cn(
                   "flex flex-col gap-3 overflow-hidden transition-all duration-500 ease-in-out",
-                  permOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                  permOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
                 )}
               >
+                {/* Ruhsatlar ro'yxati */}
+                <div className="flex flex-col gap-2 divide-y divide-[#F0F0F0] dark:divide-[#1F1F1F]">
 
-                {/* Ruxsatlar ro'yxati */}
-                <div className="flex flex-col divide-y divide-[#F0F0F0] dark:divide-[#1F1F1F]">
+                  {/* Rol selection */}
+                  <CustomButton
+                    placeholder={t("select_role")}
+                    selected={roles.find(d => d.id === form.roles)?.name}
+                    onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("roles"), 100) }}
+                    onClear={() => setForm((p) => ({ ...p, roles: null }))}
+                    hasError={!!errors.roles}
+                  />
+                  {errors.roles && <span className="text-[11px] text-red-500 font-medium mt-1">{errors.roles}</span>}
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      {form.perm_attendance_mark
-                        ? <Check size={20} className="text-[#0090FF]" />
-                        : <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
+                  <div className="flex flex-col divide-y divide-[#F0F0F0] dark:divide-[#1F1F1F]">
+                    {Object.entries(selectedRolePerms).map(([groupKey, items]) => {
+                      const label = GROUP_LABELS[groupKey] || groupKey;
+                      const isOpen = !!openGroups[groupKey];
+                      const multi = isCrudGroup(items);
+
+                      if (!multi) {
+                        return (
+                          <div key={groupKey} className="flex items-center justify-between py-2.5">
+                            <span className="text-sm font-medium text-[#737373] dark:text-[#A3A3A3]">
+                              {items[0]?.name || label}
+                            </span>
+                            <Switch
+                              disabled
+                              checked={true}
+                              containerClassName="w-[40px] h-[21px]"
+                              thumbClassName="w-[17px] h-[17px]"
+                              checkedThumbClassName="translate-x-5"
+                            />
+                          </div>
+                        );
                       }
-                      <span className={cn("text-[13px]", form.perm_attendance_mark ? "font-semibold text-[#0A0A0A] dark:text-white" : "text-[#737373]")}>
-                        {t("perm_attendance_mark") || "Davomatni belgilash"}
-                      </span>
-                    </div>
-                    <Switch checked={form.perm_attendance_mark} onChange={(v) => setForm((p) => ({ ...p, perm_attendance_mark: v }))} />
+
+                      return (
+                        <div key={groupKey} className="flex flex-col gap-2 py-1">
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(groupKey)}
+                            className="flex items-center justify-between w-full py-1.5 cursor-pointer"
+                          >
+                            <span className="text-sm font-medium text-[#737373] dark:text-[#A3A3A3]">
+                              {label}
+                            </span>
+                            <ChevronDownIcon
+                              size={16}
+                              className={cn(
+                                "text-[#737373] transition-transform duration-300",
+                                isOpen && "rotate-180"
+                              )}
+                            />
+                          </button>
+
+                          <div
+                            className={cn(
+                              "grid grid-cols-2 gap-x-4 gap-y-1 overflow-hidden transition-all duration-300 ease-in-out",
+                              isOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                            )}
+                          >
+                            {items.map((perm) => (
+                              <div
+                                key={perm.id}
+                                className="flex items-center justify-between py-2 pl-2"
+                              >
+                                <span className="text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] truncate pr-2">
+                                  {perm.name}
+                                </span>
+                                <Switch
+                                  disabled
+                                  checked={true}
+                                  containerClassName="w-[25px] h-[15px]"
+                                  thumbClassName="w-[11px] h-[11px]"
+                                  checkedThumbClassName="translate-x-3"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {Object.keys(selectedRolePerms).length === 0 && (
+                      <div className="py-6 text-center text-[13px] text-[#A3A3A3]">
+                        {t("select_role_hint") || "Rol tanlang — ruxsatlar ko'rinadi"}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
-                      <span className="text-[13px] text-[#737373]">{t("perm_attendance_view") || "Davomatni ko'rish"}</span>
-                    </div>
-                    <ScopeSelect value={form.perm_attendance_view} onChange={(v) => setForm((p) => ({ ...p, perm_attendance_view: v }))} />
+                </div>
+              </div>
+            </div>
+
+            {/* ish jadvali */}
+            <div className="flex flex-col gap-3 col-span-2">
+
+              {/* Section header */}
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2 text-[15px] font-semibold text-[#0A0A0A] dark:text-[#f5f5f5]">
+                    <HugeIcon icon={Settings05Icon} size={17} />
+                    {t("work_schedule") || "Ish jadvali"}
+                  </div>
+                  <span className="text-[12px] text-[#0A0A0A] dark:text-[#f5f5f5]">
+                    {t("work_schedule_subtitle") || "Xodimning ish jadvali"}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setTableOpen((p) => !p)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                >
+                  <HugeIcon
+                    icon={SquareArrowDown01Icon}
+                    size={18}
+                    className="text-[#0A0A0A] dark:text-[#f5f5f5] transition-transform duration-300"
+                  />
+                </button>
+              </div>
+
+              <div
+                className={cn(
+                  "flex flex-col gap-3 transition-all duration-500 ease-in-out",
+                  tableOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+                )}
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Select
+                      placeholder={t("select_work_schedule") || "Ish grafigini tanlash"}
+                      options={schedules.map((sch) => ({ value: sch.id, label: sch.name }))}
+                      value={form.schedule}
+                      onChange={(opt) => {
+                        setForm((p) => ({ ...p, schedule: opt?.value ?? null }));
+                        setSelectedDay(0);
+                      }}
+                      className={cn(
+                        "w-full rounded-xl border! dark:border-[#404040]!",
+                        errors.schedule && "border-red-500!"
+                      )}
+                    />
+                    {errors.schedule && <span className="text-[11px] text-red-500 font-medium">{errors.schedule}</span>}
                   </div>
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
-                      <span className="text-[13px] text-[#737373]">{t("perm_kpi_view") || "KPI ko'rish"}</span>
-                    </div>
-                    <ScopeSelect value={form.perm_kpi_view} onChange={(v) => setForm((p) => ({ ...p, perm_kpi_view: v }))} />
-                  </div>
+                  {form.schedule && (() => {
+                    const selectedSchedule = schedules.find((s) => s.id === form.schedule);
+                    if (!selectedSchedule) return null;
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
-                      <span className="text-[13px] text-[#737373]">{t("perm_employee_manage") || "Xodim qo'shish / tahrirlash"}</span>
-                    </div>
-                    <Switch checked={form.perm_employee_manage} onChange={(v) => setForm((p) => ({ ...p, perm_employee_manage: v }))} />
-                  </div>
+                    const isMandatory = selectedSchedule.mandatory_days_info?.some(
+                      (d) => d.day_number === selectedDay
+                    );
+                    const isOptional = selectedSchedule.optional_days_info?.some(
+                      (d) => d.day_number === selectedDay
+                    );
+                    const isActiveDay = isMandatory || isOptional;
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
-                      <span className="text-[13px] text-[#737373]">{t("perm_reports_export") || "Hisobotlarni eksport qilish"}</span>
-                    </div>
-                    <Switch checked={form.perm_reports_export} onChange={(v) => setForm((p) => ({ ...p, perm_reports_export: v }))} />
-                  </div>
+                    const formatTime = (timeStr) => {
+                      if (!timeStr) return "—";
+                      return timeStr.slice(0, 5);
+                    };
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
-                      <span className="text-[13px] text-[#737373]">{t("perm_geozone_create") || "Geozona yaratish"}</span>
-                    </div>
-                    <Switch checked={form.perm_geozone_create} onChange={(v) => setForm((p) => ({ ...p, perm_geozone_create: v }))} />
-                  </div>
+                    const weekDays = [
+                      { label: "Du", day_number: 0 },
+                      { label: "Se", day_number: 1 },
+                      { label: "Ch", day_number: 2 },
+                      { label: "Pa", day_number: 3 },
+                      { label: "Ju", day_number: 4 },
+                      { label: "Sh", day_number: 5 },
+                      { label: "Ya", day_number: 6 },
+                    ];
 
-                  <div className="flex items-center justify-between py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3.5 h-0.5 bg-[#A3A3A3] rounded-full inline-block" />
-                      <span className="text-[13px] text-[#737373]">{t("perm_roles_manage") || "Rollarni boshqarish"}</span>
-                    </div>
-                    <Switch checked={form.perm_roles_manage} onChange={(v) => setForm((p) => ({ ...p, perm_roles_manage: v }))} />
-                  </div>
+                    return (
+                      <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Ish boshlanishi */}
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
+                              {t("work_start_time") || "Ish boshlanishi"}
+                            </label>
+                            <Input
+                              type="text"
+                              readOnly
+                              value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : "—"}
+                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
+                            />
+                          </div>
 
+                          {/* Ish tugashi */}
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
+                              {t("work_end_time") || "Ish tugashi"}
+                            </label>
+                            <Input
+                              type="text"
+                              readOnly
+                              value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : "—"}
+                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
+                            />
+                          </div>
+
+                          {/* Tushlik boshlanishi */}
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
+                              {t("lunch_start_time") || "Tushlik boshlanishi"}
+                            </label>
+                            <Input
+                              type="text"
+                              readOnly
+                              value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : "—"}
+                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
+                            />
+                          </div>
+
+                          {/* Tushlik tugashi */}
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
+                              {t("lunch_end_time") || "Tushlik tugashi"}
+                            </label>
+                            <Input
+                              type="text"
+                              readOnly
+                              value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : "—"}
+                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Ish kunlari */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
+                            {t("work_days") || "Ish kunlari"}
+                          </label>
+                          <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-md w-full">
+                            {weekDays.map((day) => {
+                              const isDaySelected = selectedDay === day.day_number;
+                              return (
+                                <button
+                                  key={day.day_number}
+                                  type="button"
+                                  onClick={() => setSelectedDay(day.day_number)}
+                                  className={cn(
+                                    "flex-1 py-2.5 text-[13px] font-medium text-center rounded-sm transition-all cursor-pointer",
+                                    isDaySelected
+                                      ? "bg-white dark:bg-[#171717] text-[#0A0A0A] dark:text-white shadow-sm"
+                                      : "text-[#737373] dark:text-[#A3A3A3] hover:text-[#0A0A0A] dark:hover:text-white"
+                                  )}
+                                >
+                                  {day.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
           </div>
 
           {/* ── Footer ── */}
-          <div className="flex items-center justify-end gap-3 pb-5">
+          <div className="flex items-center justify-end gap-3 sticky bottom-0 z-20">
             <button
               type="button"
-              onClick={handleAddEmployee}
+              onClick={detailEmployee ? handleUpdateEmployee : handleAddEmployee}
               className="px-5 py-2.5 flex items-center gap-2 rounded-xl bg-[#0090FF] text-sm font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
             >
               <HugeIcon icon={CheckmarkSquare01Icon} />
-              {t("addEmployee") || "Saqlash"}
+              {detailEmployee ? (t("save") || "Saqlash") : (t("addEmployee") || "Xodim qo'shish")}
             </button>
           </div>
         </div>
       </Modal>
+
+      {/* selected modal */}
+      <Modal
+        height={600}
+        isOpen={!!openModal}
+        onClose={() => {
+          setOpenModal(null);
+          setTimeout(() => setAddEmployeeModal(true), 100);
+        }}
+        header={
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOpenModal(null);
+                setTimeout(() => setAddEmployeeModal(true), 100);
+              }}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] cursor-pointer"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <span className="text-[16px] font-semibold text-[#0A0A0A] dark:text-white">
+              {modalTitles[openModal]}
+            </span>
+          </div>
+        }
+      >
+        <div className="flex flex-col justify-between h-full gap-3">
+
+          {/* Search */}
+          <div className="flex items-center justify-between gap-2">
+            <Input
+              type="text"
+              value={filterSearch}
+              onChange={(e) => {
+                setFilterSearch(e.target.value)
+                setModalPage(1)
+                setHasMore(true)
+                fetchModalList(openModal, 1, e.target.value)
+              }}
+              placeholder={t("search") || "Qidirish ..."}
+              className="flex-1 rounded-sm! bg-transparent dark:bg-[#0a0a0a] h-8.5 shadow-sm"
+            />
+
+            {openModal !== "roles" && (
+              <button
+                className="flex items-center gap-1 shadow-xs cursor-pointer relative dark:bg-[#0a0a0a] border text-sm border-[#E5E5E5] dark:border-[#404040] rounded-md py-2 px-3"
+                onClick={() => openFilterModalWithFilters(openModal)}
+              >
+                {filters[openModal]?.hasFilter && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>
+                )}
+                <HugeIcon icon={FilterVerticalIcon} size={16} />
+                {t("filter")}
+              </button>
+            )}
+          </div>
+
+          {/* List with infinite scroll */}
+          <div
+            ref={listContainerRef}
+            className="flex flex-col gap-1.5 overflow-y-auto flex-1"
+          >
+            {(openModal === "roles" ? roles : modalOptions[openModal] || []).map((opt) => {
+              const isSelected = modalSelected === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setModalSelected(isSelected ? null : opt.id)}
+                  className={cn(
+                    "flex items-start justify-between w-full px-4 py-3 rounded-lg border text-left cursor-pointer",
+                    isSelected
+                      ? "border-[#171717] dark:border-[#e5e5e5] bg-[#F5F5F5] dark:bg-[#404040]"
+                      : "border-[#E5E7EB] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626]"
+                  )}
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-[#0A0A0A] dark:text-white">
+                      {opt.name}
+                    </span>
+
+                    <span className="text-xs text-[#737373] dark:text-[#A3A3A3]">
+                      {openModal === "branch" ?
+                        `${opt.region_info?.name || ""} ${opt.region_info && opt.district_info ? "/" : ""} ${opt.district_info ? opt.district_info?.name : ""}` :
+                        openModal === "department" ? (opt.branch_info ? opt.branch_info?.name : "") :
+                          openModal === "position" ? (opt.department_info ? opt.department_info?.name : "") :
+                            ""}
+                    </span>
+                  </div>
+
+                  <div className={cn(
+                    "w-5 h-5 rounded-full border-2 flex items-center justify-center bg-[#fafafa] dark:bg-[#0a0a0a]",
+                    isSelected ? "border-[#171717] dark:border-[#737373] dark:bg-transparent!" : "border-[#D4D4D4] dark:border-[#404040]"
+                  )}>
+                    {isSelected && <span className="w-2/5 h-2/5 rounded-full bg-[#171717] dark:bg-[#e5e5e5]" />}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Loading indicator */}
+            {modalLoading && (
+              <div className="flex justify-center py-4">
+                <div className="w-8 h-8 border-4 border-[#0090FF] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-[#F0F0F0] dark:border-[#1F1F1F]">
+            <span className="text-[13px] text-[#737373]">
+              {modalSelected !== null ? `1 ${t("selected_count_label") || "ta tanlangan"}` : `0 ${t("selected_count_label") || "ta tanlangan"}`}
+            </span>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setModalSelected(null)}
+                className="flex items-center gap-1.5 cursor-pointer font-medium text-sm"
+              >
+                <X size={14} /> {t("clear") || "Tozalash"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setForm((prev) => ({ ...prev, [openModal]: modalSelected }));
+                  setOpenModal(null);
+                  setTimeout(() => setAddEmployeeModal(true), 100);
+                }}
+                className="flex items-center gap-1.5 px-5 py-3 rounded-lg bg-[#0090FF] text-[13px] font-semibold text-white hover:opacity-90 cursor-pointer"
+              >
+                <HugeIcon icon={CheckmarkCircle04Icon} size={16} />
+                {t("select") || "Tanlash"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* filter for selected */}
+      <Modal
+        isOpen={!!openFilterModal}
+        onClose={() => {
+          setOpenFilterModal(false)
+          setTimeout(() => setOpenModal(currentFilterModal), 100)
+        }}
+        height={600}
+      >
+        <div className="flex flex-col justify-between h-full">
+          {/* top section */}
+          <div className="flex flex-col gap-3">
+            {/* nav */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span
+                  className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A]"
+                  onClick={() => {
+                    setOpenFilterModal(false)
+                    setTimeout(() => setOpenModal(currentFilterModal), 100)
+                  }}
+                >
+                  <ArrowLeft size={18} />
+                </span>
+                <h1 className="text-[16px] font-semibold">{t("filter_title") || "Filter"}</h1>
+              </div>
+              <span className="text-xs text-[#737373] dark:text-[#A3A3A3]">
+                {t("filter_subtitle") || "Ma'lumotlarni filtrlash"}
+              </span>
+            </div>
+
+            {/* main section */}
+            <div className="grid grid-cols-2 gap-3">
+              {currentFilterModal !== "branch" && (
+                <Select
+                  label={t("branch_fallback") || "Filial"}
+                  placeholder={t("select_branch") || "Filialni tanlang"}
+                  options={branches.map(b => ({ value: b.id, label: b.name }))}
+                  value={tempFilterBranch?.value ?? null}
+                  onChange={(opt) => setTempFilterBranch(opt)}
+                  contanierClassName="col-span-2"
+                />
+              )}
+
+              <Select
+                label={t("region_branch_title") || "Viloyat"}
+                placeholder={t("region_branch_placeholder") || "Viloyatni tanlang"}
+                options={regions.map(r => ({ value: r.id, label: r.name }))}
+                value={tempFilterRegion?.value ?? null}
+                onChange={handleRegionChange}
+              />
+
+              <Select
+                label={t("district_branch_title") || "Tuman"}
+                placeholder={
+                  !tempFilterRegion
+                    ? t("select_region_first") || "Avval viloyat tanlang"
+                    : t("district_branch_placeholder") || "Tuman tanlang"
+                }
+                options={districts}
+                value={tempFilterDistrict?.value ?? null}
+                onChange={(opt) => setTempFilterDistrict(opt)}
+                disabled={!tempFilterRegion}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-5">
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer"
+              onClick={clearFilter}
+            >
+              <X size={14} />
+              {t("clear") || "Tozalash"}
+            </button>
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer bg-[#0090FF] text-white px-3.5 py-2.5 rounded-lg"
+              onClick={applyFilter}
+            >
+              <HugeIcon size={14} icon={Search01Icon} />
+              {t("apply") || "Qo'llash"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* comfirm modal */}
+      <AlertModal
+        isOpen={blockModalOpen}
+        onClose={() => setBlockModalOpen(false)}
+        onConfirm={selectedEmployee?.is_blocked ? handleUnblockEmployee : handleBlockEmployee}
+        title={selectedEmployee?.is_blocked
+          ? t("unblock_employee_title")
+          : t("block_employee_title")
+        }
+        description={selectedEmployee?.is_blocked
+          ? t("block_employee_description")
+          : t("unblock_employee_description")
+        }
+        confirmText={selectedEmployee?.is_blocked ?
+          "Blokdan chiqarish" : (
+            <span className="flex items-center gap-2">
+              <HugeIcon icon={UserLock01Icon} size={16} />
+              {t("block")}
+            </span>
+          )
+        }
+        cancelText={
+          <span className="flex items-center gap-2">
+            <HugeIcon icon={CancelCircleHalfDotIcon} size={16} />
+            {t("cancel")}
+          </span>
+        }
+        confirmVariant="defauld"
+        loading={blockLoading}
+      />
+
+      <AlertModal
+        isOpen={fireModalOpen}
+        onClose={() => setFireModalOpen(false)}
+        onConfirm={handleFireEmployee}
+        title={("fire_employee_title")}
+        description={t("fire_employee_description")}
+        confirmText={
+          <span className="flex items-center gap-2">
+            <HugeIcon icon={UserRemove02Icon} size={16} />
+            {t("fire")}
+          </span>
+        }
+        cancelText={
+          <span className="flex items-center gap-2">
+            <HugeIcon icon={CancelCircleHalfDotIcon} size={16} />
+            {t("cancel")}
+          </span>
+        }
+        confirmVariant="danger"
+        loading={fireLoading}
+      />
+
+      <Toast
+        key={toast.seq}
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
+
     </>
   );
 };
