@@ -304,6 +304,24 @@ export const translations = {
           en: "Help",
           ru: "Помощь"
      },
+     profile: {
+          uz: "Shaxsiy kabinet",
+          cy: "Шахсий кабинет",
+          en: "Profile",
+          ru: "Личный кабинет"
+     },
+     logging_out: {
+          uz: "Chiqilmoqda...",
+          cy: "Чиқилмоқда...",
+          en: "Logging out...",
+          ru: "Выход..."
+     },
+     logout: {
+          uz: "Chiqish",
+          cy: "Чиқиш",
+          en: "Logout",
+          ru: "Выйти"
+     },
 
 
      // home page
