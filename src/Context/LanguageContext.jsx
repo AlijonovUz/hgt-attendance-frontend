@@ -1068,7 +1068,60 @@ export const translations = {
           cy: "Вақтинчалик объект",
           en: "Temporary object",
           ru: "Временный объект"
-     }
+     },
+
+     // ─── Ma'lumotnomalar ───
+     ref_menu_title: { uz: "Ma'lumotnomalar", cy: "Маълумотномалар", en: "References", ru: "Справочники" },
+     ref_coming_soon: { uz: "Bu bo'lim tez orada qo'shiladi", cy: "Бу бўлим тез орада қўшилади", en: "This section is coming soon", ru: "Этот раздел скоро появится" },
+     ref_created: { uz: "Muvaffaqiyatli qo'shildi", cy: "Муваффақиятли қўшилди", en: "Successfully added", ru: "Успешно добавлено" },
+
+     // Menyu yorliqlari
+     ref_m_region: { uz: "Viloyat", cy: "Вилоят", en: "Region", ru: "Область" },
+     ref_m_district: { uz: "Tuman", cy: "Туман", en: "District", ru: "Район" },
+     ref_m_branch: { uz: "Filial", cy: "Филиал", en: "Branch", ru: "Филиал" },
+     ref_m_dept: { uz: "Bo'limlar", cy: "Бўлимлар", en: "Departments", ru: "Отделы" },
+     ref_m_position: { uz: "Lavozimlar", cy: "Лавозимлар", en: "Positions", ru: "Должности" },
+     ref_m_role: { uz: "Rollar", cy: "Роллар", en: "Roles", ru: "Роли" },
+     ref_m_holiday: { uz: "Bayramlar", cy: "Байрамлар", en: "Holidays", ru: "Праздники" },
+     ref_m_schedule: { uz: "Ish jadvali", cy: "Иш жадвали", en: "Work schedule", ru: "График работы" },
+
+     // Sahifa sarlavhalari (H1)
+     ref_t_region: { uz: "Viloyat", cy: "Вилоят", en: "Region", ru: "Область" },
+     ref_t_district: { uz: "Tuman", cy: "Туман", en: "District", ru: "Район" },
+     ref_t_branch: { uz: "Filial", cy: "Филиал", en: "Branch", ru: "Филиал" },
+     ref_t_dept: { uz: "Bo'lim", cy: "Бўлим", en: "Department", ru: "Отдел" },
+     ref_t_position: { uz: "Lavozimlar", cy: "Лавозимлар", en: "Positions", ru: "Должности" },
+
+     // "X qo'shish" (tugma + modal sarlavha + saqlash)
+     ref_add_region: { uz: "Viloyat qo'shish", cy: "Вилоят қўшиш", en: "Add region", ru: "Добавить область" },
+     ref_add_district: { uz: "Tuman qo'shish", cy: "Туман қўшиш", en: "Add district", ru: "Добавить район" },
+     ref_add_branch: { uz: "Filial qo'shish", cy: "Филиал қўшиш", en: "Add branch", ru: "Добавить филиал" },
+     ref_add_dept: { uz: "Bo'lim qo'shish", cy: "Бўлим қўшиш", en: "Add department", ru: "Добавить отдел" },
+     ref_add_position: { uz: "Lavozim qo'shish", cy: "Лавозим қўшиш", en: "Add position", ru: "Добавить должность" },
+
+     // Subtitle ("{n} ta X mavjud")
+     ref_sub_region: { uz: "{n} ta viloyat mavjud", cy: "{n} та вилоят мавжуд", en: "{n} regions available", ru: "Доступно областей: {n}" },
+     ref_sub_district: { uz: "{n} ta tuman mavjud", cy: "{n} та туман мавжуд", en: "{n} districts available", ru: "Доступно районов: {n}" },
+     ref_sub_branch: { uz: "{n} ta filial mavjud", cy: "{n} та филиал мавжуд", en: "{n} branches available", ru: "Доступно филиалов: {n}" },
+     ref_sub_dept: { uz: "{n} ta bo'lim mavjud", cy: "{n} та бўлим мавжуд", en: "{n} departments available", ru: "Доступно отделов: {n}" },
+     ref_sub_position: { uz: "{n} ta lavozim mavjud", cy: "{n} та лавозим мавжуд", en: "{n} positions available", ru: "Доступно должностей: {n}" },
+
+     // Nom maydoni (label + placeholder)
+     ref_name_region: { uz: "Viloyat nomi", cy: "Вилоят номи", en: "Region name", ru: "Название области" },
+     ref_ph_region: { uz: "Viloyat nomini kiriting", cy: "Вилоят номини киритинг", en: "Enter region name", ru: "Введите название области" },
+     ref_name_district: { uz: "Tuman nomi", cy: "Туман номи", en: "District name", ru: "Название района" },
+     ref_ph_district: { uz: "Tuman nomini kiriting", cy: "Туман номини киритинг", en: "Enter district name", ru: "Введите название района" },
+     ref_name_branch: { uz: "Filial nomi", cy: "Филиал номи", en: "Branch name", ru: "Название филиала" },
+     ref_ph_branch: { uz: "Filial nomini kiriting", cy: "Филиал номини киритинг", en: "Enter branch name", ru: "Введите название филиала" },
+     ref_name_dept: { uz: "Bo'lim nomi", cy: "Бўлим номи", en: "Department name", ru: "Название отдела" },
+     ref_ph_dept: { uz: "Bo'lim nomini kiriting", cy: "Бўлим номини киритинг", en: "Enter department name", ru: "Введите название отдела" },
+     ref_name_position: { uz: "Lavozim nomi", cy: "Лавозим номи", en: "Position name", ru: "Название должности" },
+     ref_ph_position: { uz: "Lavozim nomini kiriting", cy: "Лавозим номини киритинг", en: "Enter position name", ru: "Введите название должности" },
+
+     // Ustun / select yorliqlari
+     ref_col_dept: { uz: "Bo'lim", cy: "Бўлим", en: "Department", ru: "Отдел" },
+     ref_col_position: { uz: "Lavozim", cy: "Лавозим", en: "Position", ru: "Должность" },
+     ref_dept_ph: { uz: "Bo'lim tanlang", cy: "Бўлим танланг", en: "Select department", ru: "Выберите отдел" }
 }
 
 export function LanguageProvider({ children }) {
