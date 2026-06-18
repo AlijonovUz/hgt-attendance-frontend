@@ -206,7 +206,7 @@ const Reports = () => {
     if (!date) return
     setSelectedDate(date)
     setPeriod("custom")
-    if (!date.from || (date.from && date.to)) {
+    if (!date.from) {
       setCalendarOpen(false)
     }
   }
@@ -304,6 +304,7 @@ const Reports = () => {
   )
 
   const colCount = 8
+  const hasFilter = filterDistrict || filterRegion || filterStatus
 
   return (
     <div className="p-4 flex flex-col items-start gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
@@ -382,7 +383,7 @@ const Reports = () => {
       <div className="flex items-center justify-between w-full gap-4 flex-wrap">
         {/* Tab toggle */}
         <div className="flex items-center gap-3">
-          <div className="inline-flex items-center rounded-lg bg-[#f5f5f5] dark:bg-[#171717] p-1 shadow-sm">
+          <div className="inline-flex items-center rounded-lg bg-[#f5f5f5] dark:bg-[#171717] p-0.5 shadow-sm">
             {[
               { value: "branch", labelKey: "tab_by_branch" },
               { value: "employee", labelKey: "tab_by_employee" },
@@ -392,7 +393,7 @@ const Reports = () => {
                 type="button"
                 onClick={() => setReportType(tab.value)}
                 className={cn(
-                  "rounded-md px-2 py-1.5 text-[13px] font-semibold text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
+                  "rounded-md px-2 py-[3px] text-[13px] font-semibold text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
                   reportType === tab.value
                     ? "bg-white dark:bg-[#0A0A0A] shadow-sm border-2"
                     : ""
@@ -404,9 +405,10 @@ const Reports = () => {
           </div>
 
           <button
-            className="flex items-center gap-1 cursor-pointer border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3"
+            className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3"
             onClick={() => setOpenFilterModal(true)}
           >
+            {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
             <HugeIcon icon={FilterVerticalIcon} size={16} />
             {t("filter")}
           </button>
@@ -436,7 +438,7 @@ const Reports = () => {
       </div>
 
       {/* ─── Jadval ─── */}
-      <div className="w-full rounded-2xl max-h-[calc(100vh-215px)] border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
+      <div className="w-full h-[calc(100vh-215px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
 
         {/* Scrollable area: thead + tbody */}
         <div className="flex-1 overflow-y-auto">
@@ -446,6 +448,8 @@ const Reports = () => {
                 {[
                   "#",
                   t(isBranch ? "col_branch" : "col_employee"),
+                  t("region"),
+                  t("district"),
                   t("col_total"),
                   t("col_arrived"),
                   t("col_late"),
@@ -468,7 +472,7 @@ const Reports = () => {
 
             <tbody>
               {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
+                Array.from({ length: 9 }).map((_, i) => (
                   <tr key={i} className="border-b border-[#F0F0F0] dark:border-[#1F1F1F]">
                     {Array.from({ length: colCount }).map((__, j) => (
                       <td key={j} className="px-4 py-3.5">
@@ -493,6 +497,12 @@ const Reports = () => {
                     <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A] dark:text-white max-w-[220px] truncate" title={nameOf(r)}>
                       {nameOf(r)}
                     </td>
+                    <td className="px-4 py-3 text-sm">
+                      {r.region}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {r.district}
+                    </td>
                     <td className="px-4 py-3">
                       <Pill>{fmt(r.total_expected)}</Pill>
                     </td>
@@ -514,15 +524,21 @@ const Reports = () => {
                   </tr>
                 ))
               )}
-              {/* Jami qatori — har doim pastda qotib turadi */}
-              {!loading && results.length > 0 && summary && (
-                <tr className="bg-[#EFF4FF] sticky bottom-0 z-10 dark:bg-[#1D2A52]">
-                  <td className="w-12 px-4 py-3.5" />
-                  <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white">
+            </tbody>
+          </table>
+        </div>
+
+        {!loading && results.length > 0 && summary && (
+          <div className="flex-shrink-0">
+            <table className="w-full ">
+              <tbody>
+                {/* Jami qatori — har doim pastda qotib turadi */}
+                <tr className="bg-[#EFF4FF] sticky bottom-0 z-[] dark:bg-[#1D2A52]">
+                  <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white w-[calc(100%-58%)]">
                     {t("total_row")}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white tabular-nums">
-                    {fmt(summary.total_expected)}
+                      {fmt(summary.total_expected)}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#22A565] tabular-nums">
                     {fmt(summary.present)}
@@ -540,10 +556,10 @@ const Reports = () => {
                     {summary.discipline_kpi ?? "—"}
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ─── Toast ─── */}

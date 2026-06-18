@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { useSelector } from "react-redux"
 import { NavLink, useNavigate } from "react-router-dom"
+import { UserDropdown } from "./ui/UserDropdown"
 
 const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const currentUser = useSelector((state) => state.references.currentUser)
@@ -66,13 +67,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      return (
           <div
                className={`
-               flex flex-col justify-between flex-shrink-0
-               h-full
-               bg-[#FAFAFA] dark:bg-[#1C1C1C]
-               border-r border-[#E5E7EB] dark:border-[#2E2E2E]
-               overflow-hidden
-               transition-[width] duration-300 ease-in-out
-               ${sidebarCollapsed ? "w-[60px]" : "w-[255px]"}`}
+               relative z-20 flex flex-col justify-between flex-shrink-0 h-full bg-[#FAFAFA] dark:bg-[#1C1C1C] border-r border-[#E5E7EB] dark:border-[#2E2E2E] transition-[width] duration-300 ease-in-out ${sidebarCollapsed ? "w-[60px]" : "w-[255px]"}`}
                onClick={() => setSidebarCollapsed(sidebarCollapsed ? false : false)}
           >
 
@@ -167,7 +162,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                     </nav>
 
                     {/* Theme Toggle */}
-                    {!sidebarCollapsed &&
+                    {/* {!sidebarCollapsed &&
                          <div className={`
                          mx-2 mt-1 mb-1 flex items-center
                          bg-[#F5F5F5] dark:bg-[#252525] rounded-lg p-0.5
@@ -196,10 +191,10 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                    <Moon size={13} strokeWidth={1.8} />
                               </button>
                          </div>
-                    }
+                    } */}
 
                     {/* User Profile */}
-                    <div className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#252525] rounded-lg transition-colors duration-150 overflow-hidden">
+                    <div className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#252525] rounded-lg">
                          {/* Avatar */}
                          {currentUser?.face_image ? (
                               <img src={currentUser.face_image} alt="user avatar" className="w-8 h-8 rounded-md object-cover flex-shrink-0" />
@@ -222,9 +217,11 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                         {currentUser?.full_name ?? ""}
                                    </p>
                               </div>
-                              <button className="flex-shrink-0 p-1 rounded-md text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#E5E7EB] dark:hover:bg-[#2E2E2E] transition-all duration-150 cursor-pointer">
-                                   <MoreVertical size={15} strokeWidth={1.8} />
-                              </button>
+                              {/* <button
+                                   className="flex-shrink-0 p-1 rounded-md text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#E5E7EB] dark:hover:bg-[#2E2E2E] cursor-pointer"
+                              > */}
+                                   <UserDropdown currentUser={currentUser} />
+                              {/* </button> */}
                          </div>
                     </div>
 

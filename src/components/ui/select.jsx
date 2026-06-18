@@ -61,7 +61,7 @@ export const Select = ({
      }
 
      return (
-          <div ref={wrapperRef} className={`relative w-full font-sans ${className}`}>
+          <div ref={wrapperRef} className={`relative w-full font-sans`}>
                {/* Label */}
                {label && (
                     <label className="block mb-1.5 text-sm text-[#737373] dark:text-[#A3A3A3]">
@@ -79,7 +79,7 @@ export const Select = ({
                     onClick={() => !disabled && setOpen((prev) => !prev)}
                     onKeyDown={handleKeyDown}
                     className={[
-                         "flex items-center justify-between w-full px-3.5 py-3 rounded-xl border-2 text-sm cursor-pointer select-none outline-none transition-all duration-150",
+                         "flex items-center justify-between w-full px-3.5 py-3 rounded-xl border-2 text-sm cursor-pointer select-none outline-none",
                          "bg-white dark:bg-[#171717]",
                          open
                               ? "border-gray-300 ring-2 ring-gray-400/30 dark:border-[#707070] dark:ring-[#303030]/50"
@@ -87,6 +87,7 @@ export const Select = ({
                          disabled
                               ? "bg-gray-100 dark:bg-[#0a0a0a] opacity-60 cursor-not-allowed pointer-events-none"
                               : "",
+                         className
                     ]
                          .filter(Boolean)
                          .join(" ")}
@@ -124,7 +125,7 @@ export const Select = ({
                {open && (
                     <div
                          role="listbox"
-                         className="absolute top-[calc(100%+6px)] left-0 w-full z-50 bg-white dark:bg-[#171717] border border-gray-200 dark:border-[#404040] rounded-xl p-1 shadow-lg overflow-hidden animate-[fadeSlide_0.15s_ease]"
+                         className="absolute top-[calc(100%+6px)] left-0 w-full z-50 bg-white dark:bg-[#171717] border border-gray-200 dark:border-[#404040] rounded-xl p-1 shadow-lg max-h-[200px] overflow-y-auto animate-[fadeSlide_0.15s_ease]"
                          style={{
                               animation: "fadeSlide 0.15s ease",
                          }}
@@ -150,7 +151,7 @@ export const Select = ({
                                              aria-selected={isSelected}
                                              onClick={() => handleSelect(option)}
                                              className={[
-                                                  "flex items-center justify-between px-2 py-3 rounded-lg text-sm cursor-pointer transition-colors duration-100",
+                                                  "flex items-center justify-between px-2 py-2 rounded-lg text-sm cursor-pointer transition-colors duration-100",
                                                   isSelected
                                                        ? "bg-[#F5F5F5] dark:bg-[#0a0a0a] text-[#0a0a0a] dark:text-white font-medium"
                                                        : "text-[#737373] dark:text-[#A3A3A3] hover:bg-gray-50 dark:hover:bg-[#0a0a0a]",

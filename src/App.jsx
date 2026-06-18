@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings } from "./pages"
+import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings, Profile } from "./pages"
 import Layout from "./components/Layout/Layout"
 import { EmptySection } from "./components/EmptySection"
 
@@ -30,6 +30,10 @@ const App = () => {
         {
           path: "/settings",
           element: <Settings />,
+        },
+        {
+          path: "/profile",
+          element: <Profile />,
         },
       ]
     },

@@ -4,7 +4,7 @@ import Sidebar from "../Sidebar";
 import Navbar from "./Navbar";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useDispatch } from "react-redux";
-import { setCurrentUser } from "@/store/slices/referencesSlice";
+import { setCurrentUser, setRegions } from "@/store/slices/referencesSlice";
 
 const Layout = () => {
      const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -18,6 +18,18 @@ const Layout = () => {
                navigate("/login", { replace: true });
           }
      }, [accessToken, navigate]);
+
+     const getRegions = async () => {
+          try {
+               const res = await axiosAPI.get("users/regions/")
+
+               if (res.status === 200) {
+                    dispatch(setRegions(res.data?.data?.results))
+               }
+          } catch (err) {
+               console.error(err);
+          }
+     }
 
      useEffect(() => {
           const getCurrentUser = async () => {
@@ -38,6 +50,7 @@ const Layout = () => {
 
           if (accessToken) {
                getCurrentUser();
+               getRegions()
           }
      }, [accessToken, dispatch, navigate])
 

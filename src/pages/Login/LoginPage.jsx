@@ -272,16 +272,16 @@ const LoginPage = () => {
         <img src={theme === "dark" ? "/bg_dark.png" : "/bg_light.png"} alt="" className="absolute top-0 right-0 z-[-1] h-full w-full" />
 
         <div className="flex flex-col">
-          <h2 className="text-[18px] font-bold text-white dark:text-[#fafafa]">{t('brand_title')}</h2>
-          <p className="text-[14px] text-[#f5f5f5] dark:text-[#a3a3a3]">{t('brand_subtitle')}</p>
+          <h2 className="text-[18px] font-bold text-[#113264] dark:text-[#fafafa]">{t('brand_title')}</h2>
+          <p className="text-[14px] text-[#113264] dark:text-[#a3a3a3]">{t('brand_subtitle')}</p>
         </div>
 
         <div className="flex items-center h-full">
           <div className="">
-            <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-white dark:text-[#fafafa] mb-3">
+            <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-[#113264] dark:text-[#fafafa] mb-3">
               {t('system_title')}
             </h1>
-            <p className="text-[16px] leading-[1.5] max-w-[400px] text-[#f5f5f5] dark:text-[#a3a3a3]">
+            <p className="text-[16px] leading-[1.5] max-w-[400px] text-[#113264] dark:text-[#a3a3a3]">
               {t('system_desc')}
             </p>
           </div>
