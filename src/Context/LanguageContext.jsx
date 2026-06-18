@@ -10,7 +10,7 @@ export const translations = {
           en: "Add",
           ru: "Добавить"
      },
-     delate: {
+     delete: {
           uz: "O‘chirish",
           cy: "Ўчириш",
           en: "Delete",
@@ -28,6 +28,12 @@ export const translations = {
           en: "Edit",
           ru: "Редактировать"
      },
+     save: {
+          uz: "Saqlash",
+          cy: "Сақлаш",
+          en: "Save",
+          ru: "Сохранение"
+     },
      select: {
           uz: "Tanlash",
           cy: "Танлаш",
@@ -35,6 +41,12 @@ export const translations = {
           ru: "Выбор"
      },
      search: {
+          uz: "Qidirish...",
+          cy: "Қидириш...",
+          en: "Search...",
+          ru: "Поиск..."
+     },
+     searchBtn: {
           uz: "Qidirish",
           cy: "Қидириш",
           en: "Search",
@@ -45,6 +57,12 @@ export const translations = {
           cy: "Сана",
           en: "Date",
           ru: "Дата"
+     },
+     view: {
+          uz: "Ko'rish",
+          cy: "Кўриш",
+          en: "View",
+          ru: "Просмотр"
      },
      selectDate: {
           uz: "Sana tanlash",
@@ -160,6 +178,12 @@ export const translations = {
           cy: "Телефон",
           en: "Phone",
           ru: "Телефон"
+     },
+     selected_count_label: {
+          uz: "ta tanlangan",
+          cy: "та танланган",
+          en: "selected",
+          ru: "выбрано"
      },
 
 
@@ -683,11 +707,11 @@ export const translations = {
           en: "Create a password",
           ru: "Создайте пароль"
      },
-     tabel_number: {
-          uz: "Tabel raqami",
-          cy: "Табел рақами",
-          en: "Tab number",
-          ru: "Табельный номер"
+     jshsh_number: {
+          uz: "JSHSHIR raqami",
+          cy: "JSHSHIR рақами",
+          en: "JSHSHIR number",
+          ru: "JSHSHIR номер"
      },
      select_branch: {
           uz: "Filialni tanlang",
@@ -718,6 +742,66 @@ export const translations = {
           cy: "Рол танланг — рухсатлар автоматик мослашади",
           en: "Select role — permissions auto-apply",
           ru: "Выберите роль — права применятся автоматически"
+     },
+     work_schedule: {
+          uz: "Ish jadvali",
+          cy: "Иш жадвали",
+          en: "Work schedule",
+          ru: "График работы"
+     },
+     work_schedule_subtitle: {
+          uz: "Ish grafigini tanlash",
+          cy: "Иш графигини танлаш",
+          en: "Select work schedule",
+          ru: "Выберите график работы"
+     },
+     select_work_schedule: {
+          uz: "Ish grafigini tanlash",
+          cy: "Иш графигини танлаш",
+          en: "Select work schedule",
+          ru: "Выберите график работы"
+     },
+     work_start_time: {
+          uz: "Ish boshlanishi",
+          cy: "Иш бошланиши",
+          en: "Work start time",
+          ru: "Начало работы"
+     },
+     work_end_time: {
+          uz: "Ish tugashi",
+          cy: "Иш тугаши",
+          en: "Work end time",
+          ru: "Окончание работы"
+     },
+     lunch_start_time: {
+          uz: "Tushlik boshlanishi",
+          cy: "Тушлик бошланиши",
+          en: "Lunch start time",
+          ru: "Начало обеда"
+     },
+     lunch_end_time: {
+          uz: "Tushlik tugashi",
+          cy: "Тушлик тугаши",
+          en: "Lunch end time",
+          ru: "Окончание обеда"
+     },
+     work_days: {
+          uz: "Ish kunlari",
+          cy: "Иш кунлари",
+          en: "Work days",
+          ru: "Рабочие дни"
+     },
+     field_required: {
+          uz: "Ushbu maydon majburiy",
+          cy: "Ушбу майдон мажбурий",
+          en: "This field is required",
+          ru: "Это поле обязательно для заполнения"
+     },
+     jshshir_length_error: {
+          uz: "JSHSHIR 14 ta raqamdan iborat bo'lishi kerak",
+          cy: "ЖШШИР 14 та рақамдан иборат бўлиши керак",
+          en: "JSHSHIR must be exactly 14 digits",
+          ru: "ПИНФЛ должен состоять ровно из 14 цифр"
      },
      select_role: {
           uz: "Rolni tanlang",
@@ -767,11 +851,53 @@ export const translations = {
           en: "Manage roles",
           ru: "Управление ролями"
      },
+     all_analytics: {
+          uz: "Barcha analitikasi",
+          cy: "Барча аналитикаси",
+          en: "All analytics",
+          ru: "Вся аналитика"
+     },
+     department_analytics: {
+          uz: "Bo'lim analitikasi",
+          cy: "Бўлим аналитикаси",
+          en: "Department analytics",
+          ru: "Аналитика отдела"
+     },
+     audit_logs: {
+          uz: "Audit loglari",
+          cy: "Аудит логлари",
+          en: "Audit logs",
+          ru: "Аудит логи"
+     },
+     view_my_kpi: {
+          uz: "O'zining KPI ni ko'rish",
+          cy: "Ўзининг КПИ ни кўриш",
+          en: "View my KPI",
+          ru: "Просмотр своего KPI"
+     },
+     geozone: {
+          uz: "Geozona",
+          cy: "Геозона",
+          en: "Geozone",
+          ru: "Геозона"
+     },
      role: {
           uz: "Rol",
           cy: "Рол",
           en: "Role",
           ru: "Рол"
+     },
+     block_employee: {
+          uz: "Bloklash",
+          cy: "Блоклаш",
+          en: "Block",
+          ru: "Заблокировать"
+     },
+     fire_employee: {
+          uz: "Ishdan chetlatish",
+          cy: "Ишдан четлатиш",
+          en: "Dismissal",
+          ru: "Отстранение от работы"
      },
      addEmployee: {
           uz: "Xodim qo'shish",
@@ -913,6 +1039,96 @@ export const translations = {
           en: "Cancel",
           ru: "Отмена"
      },
+     employee_details: {
+          uz: "Xodim ma’lumotlari",
+          cy: "Ходим маълумотлари",
+          en: "Employee data",
+          ru: "Данные сотрудника"
+     },
+     select_role_hint: {
+          uz: "Rol tanlang — ruxsatlar ko'rinadi",
+          cy: "Рол танланг — рухсатлар кўринади",
+          en: "Select a role to see permissions",
+          ru: "Выберите роль — отобразятся разрешения"
+     },
+     block_employee: {
+          uz: "Bloklash",
+          cy: "Блоклаш",
+          en: "Block",
+          ru: "Заблокировать"
+     },
+     unblock_employee: {
+          uz: "Blokdan chiqarish",
+          cy: "Блокдан чиқариш",
+          en: "Unblock",
+          ru: "Разблокировать"
+     },
+     fire_employee: {
+          uz: "Ishdan chetlatish",
+          cy: "Ишдан четлатиш",
+          en: "Fire",
+          ru: "Уволить"
+     },
+     block_employee_title: {
+          uz: "Xodimni bloklash?",
+          cy: "Ходимни блоклаш?",
+          en: "Block employee?",
+          ru: "Заблокировать сотрудника?"
+     },
+     unblock_employee_title: {
+          uz: "Xodimni blokdan chiqarish?",
+          cy: "Ходимни блокдан чиқариш?",
+          en: "Unblock employee?",
+          ru: "Разблокировать сотрудника?"
+     },
+     fire_employee_title: {
+          uz: "Ishdan bo'shatish!",
+          cy: "Ишдан бўшатиш!",
+          en: "Fire employee!",
+          ru: "Уволить сотрудника!"
+     },
+     block_employee_description: {
+          uz: "Bloklangan xodim tizimga kira olmaydi va davomat qayd etolmaydi. Keyinchalik blokdan chiqarish mumkin.",
+          cy: "Блокланган ходим тизимга кира олмайди ва давомат қайд этолмайди. Кейинчалик блокдан чиқариш мумкин.",
+          en: "Blocked employee cannot log in to the system and cannot record attendance. Can be unblocked later.",
+          ru: "Заблокированный сотрудник не может войти в систему и не может отмечать посещаемость. Позже можно разблокировать."
+     },
+     unblock_employee_description: {
+          uz: "Blokdan chiqarilgan xodim tizimga kira oladi va davomat qayd eta oladi.",
+          cy: "Блокдан чиқарилган ходим тизимга кира олади ва давомат қайд эта олади.",
+          en: "Unblocked employee can log in to the system and record attendance.",
+          ru: "Разблокированный сотрудник может войти в систему и отмечать посещаемость."
+     },
+     fire_employee_description: {
+          uz: "Bu xodim faollar ro'yxatidan olib tashlanadi. Ma'lumotlari arxivda saqlanadi. Bu amalni qaytarib bo'lmaydi.",
+          cy: "Бу ходим фаоллар рўйхатидан олиб ташланади. Маълумотлари архивда сақланади. Бу амални қайтариб бўлмайди.",
+          en: "This employee will be removed from the active list. Their data will be stored in the archive. This action cannot be undone.",
+          ru: "Этот сотрудник будет удален из списка активных. Его данные будут сохранены в архиве. Это действие нельзя отменить."
+     },
+     block: {
+          uz: "Bloklash",
+          cy: "Блоклаш",
+          en: "Block",
+          ru: "Заблокировать"
+     },
+     unblock: {
+          uz: "Blokdan chiqarish",
+          cy: "Блокдан чиқариш",
+          en: "Unblock",
+          ru: "Разблокировать"
+     },
+     fire: {
+          uz: "Bo'shatish",
+          cy: "Бўшатиш",
+          en: "Fire",
+          ru: "Уволить"
+     },
+     cancel: {
+          uz: "Bekor qilish",
+          cy: "Бекор қилиш",
+          en: "Cancel",
+          ru: "Отмена"
+     },
      gz_delete_title: {
           uz: "Geozonani o'chirish",
           cy: "Геозонани ўчириш",
@@ -1010,6 +1226,12 @@ export const translations = {
           ru: "Выберите район"
      },
      gz_filial: {
+          uz: "Filial",
+          cy: "Филиал",
+          en: "Branch",
+          ru: "Филиал"
+     },
+     branch: {
           uz: "Filial",
           cy: "Филиал",
           en: "Branch",
@@ -1121,7 +1343,83 @@ export const translations = {
      // Ustun / select yorliqlari
      ref_col_dept: { uz: "Bo'lim", cy: "Бўлим", en: "Department", ru: "Отдел" },
      ref_col_position: { uz: "Lavozim", cy: "Лавозим", en: "Position", ru: "Должность" },
-     ref_dept_ph: { uz: "Bo'lim tanlang", cy: "Бўлим танланг", en: "Select department", ru: "Выберите отдел" }
+     ref_dept_ph: { uz: "Bo'lim tanlang", cy: "Бўлим танланг", en: "Select department", ru: "Выберите отдел" },
+     blocked: {
+          uz: "Bloklangan",
+          cy: "Блокланган",
+          en: "Blocked",
+          ru: "Заблокирован"
+     },
+     unblocked: {
+          uz: "Blokdan chiqarilgan",
+          cy: "Блокдан чиқарилган",
+          en: "Unblocked",
+          ru: "Разблокирован"
+     },
+     regions: { uz: "Viloyatlar", cy: "Вилоятлар", en: "Regions", ru: "Районы" },
+     districts: { uz: "Tumanlar", cy: "Туманлар", en: "Districts", ru: "Округа" },
+     analytics: { uz: "Analitika", cy: "Аналитика", en: "Analytics", ru: "Аналитика" },
+     holidays: { uz: "Bayramlar", cy: "Байрамлар", en: "Holidays", ru: "Праздники" },
+     schedules: { uz: "Ish grafiklari", cy: "Иш графиклари", en: "Schedules", ru: "Графики" },
+     audits: { uz: "Audit", cy: "Аудит", en: "Audit", ru: "Аудит" },
+     positions: { uz: "Lavozimlar", cy: "Лавозимлар", en: "Positions", ru: "Должности" },
+     departments: { uz: "Bo'limlar", cy: "Бўлимлар", en: "Departments", ru: "Отделы" },
+     branchs: { uz: "Filiallar", cy: "Филиаллар", en: "Branches", ru: "Филиалы" },
+     reports: { uz: "Hisobotlar", cy: "Ҳисоботлар", en: "Reports", ru: "Отчёты" },
+     kpis: { uz: "KPI", cy: "KPI", en: "KPI", ru: "KPI" },
+     gps: { uz: "GPS", cy: "GPS", en: "GPS", ru: "GPS" },
+     geozones: { uz: "Geozonalar", cy: "Геозоналар", en: "Geozones", ru: "Геозоны" },
+     attendances: { uz: "Davomat", cy: "Давомат", en: "Attendance", ru: "Посещаемость" },
+     employees: { uz: "Xodimlar", cy: "Ходимлар", en: "Employees", ru: "Сотрудники" },
+
+     employee_added: {
+          uz: "- muvaffaqiyatli qo'shildi",
+          cy: "- муваффақиятли қўшилди",
+          en: "- successfully added",
+          ru: "- успешно добавлен"
+     },
+     employee_updated: {
+          uz: "- muvaffaqiyatli tahrirlandi",
+          cy: "- муваффақиятли таҳрирланди",
+          en: "- successfully updated",
+          ru: "- успешно обновлен"
+     },
+     employee_blocked: {
+          uz: "- bloklandi",
+          cy: "- блокланди",
+          en: "- blocked",
+          ru: "- заблокирован"
+     },
+     employee_unblocked: {
+          uz: "- blokdan chiqarildi",
+          cy: "- блокдан чиқарилди",
+          en: "- unblocked",
+          ru: "- разблокирован"
+     },
+     employee_fired: {
+          uz: "- ishdan bo'shatildi",
+          cy: "- ишдан бўшатилди",
+          en: "- fired",
+          ru: "- уволен"
+     },
+     no_data_to_export: {
+          uz: "Eksport qilish uchun ma'lumot yo'q",
+          cy: "Экспорт қилиш учун маълумот йўқ",
+          en: "No data to export",
+          ru: "Нет данных для экспорта"
+     },
+     export_success: {
+          uz: "Excel fayl muvaffaqiyatli yuklandi",
+          cy: "Excel файл муваффақиятли юкланди",
+          en: "Excel file successfully downloaded",
+          ru: "Excel файл успешно загружен"
+     },
+     export_error: {
+          uz: "Excel faylni yuklashda xatolik yuz berdi",
+          cy: "Excel файлни юклашда хатолик юз берди",
+          en: "Error exporting Excel file",
+          ru: "Ошибка при экспорте Excel файла"
+     }
 }
 
 export function LanguageProvider({ children }) {
