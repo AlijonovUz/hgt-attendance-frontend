@@ -961,6 +961,84 @@ export const translations = {
           en: "Invalid coordinate (e.g. 41.3110, 69.2797)",
           ru: "Неверная координата (например: 41.3110, 69.2797)"
      },
+     gz_search_ph: {
+          uz: "Qidirish ... (filial nomi)",
+          cy: "Қидириш ... (филиал номи)",
+          en: "Search ... (branch name)",
+          ru: "Поиск ... (название филиала)"
+     },
+     gz_filter: {
+          uz: "Filter",
+          cy: "Фильтр",
+          en: "Filter",
+          ru: "Фильтр"
+     },
+     gz_filter_title: {
+          uz: "Filtrlash",
+          cy: "Фильтрлаш",
+          en: "Filter",
+          ru: "Фильтрация"
+     },
+     gz_filter_subtitle: {
+          uz: "Kerakli filtrlarni tanlang, natijalar shunga qarab saralanadi",
+          cy: "Керакли фильтрларни танланг, натижалар шунга қараб сараланади",
+          en: "Select the filters you need, results will be sorted accordingly",
+          ru: "Выберите нужные фильтры, результаты будут отсортированы соответственно"
+     },
+     gz_region: {
+          uz: "Viloyat",
+          cy: "Вилоят",
+          en: "Region",
+          ru: "Область"
+     },
+     gz_region_ph: {
+          uz: "Viloyat tanlang",
+          cy: "Вилоят танланг",
+          en: "Select region",
+          ru: "Выберите область"
+     },
+     gz_district: {
+          uz: "Tuman",
+          cy: "Туман",
+          en: "District",
+          ru: "Район"
+     },
+     gz_district_ph: {
+          uz: "Tuman tanlang",
+          cy: "Туман танланг",
+          en: "Select district",
+          ru: "Выберите район"
+     },
+     gz_filial: {
+          uz: "Filial",
+          cy: "Филиал",
+          en: "Branch",
+          ru: "Филиал"
+     },
+     gz_branch_ph: {
+          uz: "Filial tanlang",
+          cy: "Филиал танланг",
+          en: "Select branch",
+          ru: "Выберите филиал"
+     },
+     gz_select_region_first: {
+          uz: "Avval viloyatni tanlang",
+          cy: "Аввал вилоятни танланг",
+          en: "Select a region first",
+          ru: "Сначала выберите область"
+     },
+     gz_clear: {
+          uz: "Tozalash",
+          cy: "Тозалаш",
+          en: "Clear",
+          ru: "Очистить"
+     },
+     gz_search_btn: {
+          uz: "Qidirish",
+          cy: "Қидириш",
+          en: "Search",
+          ru: "Поиск"
+     },
      zt_main_office: {
           uz: "Markaziy apparat",
           cy: "Марказий аппарат",
