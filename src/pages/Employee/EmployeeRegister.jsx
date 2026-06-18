@@ -964,7 +964,7 @@ const EmployeeRegister = () => {
             <div className="w-[200px]">
               <Select
                 placeholder={t("all_branches") || "Barcha filiallar"}
-                options={branches}
+                options={branches.map(b => ({ value: b.id, label: b.name }))}
                 value={branchFilter}
                 onChange={(opt) => {
                   setBranchFilter(opt?.value ?? null);
@@ -979,7 +979,7 @@ const EmployeeRegister = () => {
             <div className="w-[200px]">
               <Select
                 placeholder={t("all_departments") || "Barcha bo'limlar"}
-                options={departments}
+                options={departments.map(d => ({ value: d.id, label: d.name }))}
                 value={departmentFilter}
                 onChange={(opt) => {
                   setDepartmentFilter(opt?.value ?? null);
