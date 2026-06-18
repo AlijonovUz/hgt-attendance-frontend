@@ -10,6 +10,16 @@ const routeMap = {
      "reports": "reports",
      "geozones": "geozone",
      "settings": "settings",
+     // Ma'lumotnomalar
+     "references": "ref_menu_title",
+     "regions": "ref_m_region",
+     "districts": "ref_m_district",
+     "branches": "ref_m_branch",
+     "departments": "ref_m_dept",
+     "positions": "ref_m_position",
+     "roles": "ref_m_role",
+     "holidays": "ref_m_holiday",
+     "schedule": "ref_m_schedule",
 }
 
 const Navbar = ({ sidebarCollapsed, setSidebarCollapsed }) => {

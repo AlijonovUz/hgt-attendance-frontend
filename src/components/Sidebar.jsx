@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
 import {
@@ -10,10 +11,24 @@ import {
      Sun,
      Moon,
      MoreVertical,
+     FileText,
+     ChevronDown,
 } from "lucide-react"
 import { useSelector } from "react-redux"
-import { NavLink, useNavigate } from "react-router-dom"
+import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { UserDropdown } from "./ui/UserDropdown"
+
+// Ma'lumotnomalar ichki bo'limlari
+const REF_CHILDREN = [
+     { key: "regions", labelKey: "ref_m_region" },
+     { key: "districts", labelKey: "ref_m_district" },
+     { key: "branches", labelKey: "ref_m_branch" },
+     { key: "departments", labelKey: "ref_m_dept" },
+     { key: "positions", labelKey: "ref_m_position" },
+     { key: "roles", labelKey: "ref_m_role" },
+     { key: "holidays", labelKey: "ref_m_holiday" },
+     { key: "schedule", labelKey: "ref_m_schedule" },
+]
 
 const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const currentUser = useSelector((state) => state.references.currentUser)
@@ -21,6 +36,10 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const { t } = useLanguage()
      const { theme, setTheme } = useTheme()
      const navigate = useNavigate()
+     const location = useLocation()
+
+     const [refOpen, setRefOpen] = useState(() => location.pathname.startsWith("/references"))
+     const refActive = location.pathname.startsWith("/references")
 
      const sidebarItems = [
           {
@@ -125,6 +144,45 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                    </NavLink>
                               )
                          })}
+
+                         {/* ─── Ma'lumotnomalar (ochiluvchi) ─── */}
+                         <button
+                              type="button"
+                              onClick={() => setRefOpen((p) => !p)}
+                              title={sidebarCollapsed ? t("ref_menu_title") : undefined}
+                              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
+                                   ${refActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
+                         >
+                              <FileText size={18} className="flex-shrink-0" strokeWidth={1.7} />
+                              <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
+                                   ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
+                                   {t("ref_menu_title")}
+                              </span>
+                              {!sidebarCollapsed && (
+                                   <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
+                              )}
+                         </button>
+
+                         {/* Ichki bo'limlar */}
+                         {refOpen && !sidebarCollapsed && (
+                              <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
+                                   {REF_CHILDREN.map((child) => (
+                                        <NavLink
+                                             key={child.key}
+                                             to={`/references/${child.key}`}
+                                             className={({ isActive }) =>
+                                                  `px-3 py-2 rounded-lg text-[13px] transition-colors truncate
+                                                  ${isActive
+                                                       ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                       : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                  }`
+                                             }
+                                        >
+                                             {t(child.labelKey)}
+                                        </NavLink>
+                                   ))}
+                              </div>
+                         )}
                     </nav>
                </div>
 
