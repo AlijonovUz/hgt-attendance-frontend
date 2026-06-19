@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
@@ -121,6 +121,9 @@ const REF_CONFIGS = {
   },
 }
 
+// Har bir so'rovda nechta yozuv olib kelinadi (infinite scroll uchun)
+const PAGE_SIZE = 20
+
 const emptyForm = (cfg) =>
   Object.fromEntries(cfg.fields.map((f) => [f.name, f.type === "select" || f.type === "date" ? null : ""]))
 
@@ -140,6 +143,12 @@ const ReferencePage = () => {
   const [rows, setRows] = useState([])
   const [count, setCount] = useState(0)
   const [loading, setLoading] = useState(true)
+
+  // Infinite scroll holati
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const scrollRef = useRef(null)
 
   const [addModal, setAddModal] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -165,21 +174,38 @@ const ReferencePage = () => {
     return e?.errorMsg || fallback
   }
 
-  // ─── Ro'yxatni yuklash ───
-  const fetchList = async (cfg) => {
-    setLoading(true)
+  // ─── Ro'yxatni yuklash (sahifalab) ───
+  // pageNum === 1 bo'lsa ro'yxat almashtiriladi, aks holda mavjudiga qo'shiladi
+  const fetchList = async (cfg, pageNum = 1) => {
+    if (pageNum === 1) setLoading(true)
+    else setLoadingMore(true)
     try {
-      const res = await axiosAPI.get(cfg.endpoint)
+      const res = await axiosAPI.get(cfg.endpoint, { params: { page: pageNum, page_size: PAGE_SIZE } })
       if (res.status === 200) {
-        setRows(res.data?.data?.results || [])
-        setCount(res.data?.data?.count ?? (res.data?.data?.results || []).length)
+        const newRows = res.data?.data?.results || []
+        setRows((prev) => (pageNum === 1 ? newRows : [...prev, ...newRows]))
+        setCount(res.data?.data?.count ?? newRows.length)
+        setHasMore(newRows.length === PAGE_SIZE)
+        setPage(pageNum)
       }
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
+
+  // ─── Scroll oxiriga yetganda keyingi sahifani yuklash ───
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || loading || loadingMore || !hasMore) return
+    const { scrollTop, scrollHeight, clientHeight } = el
+    if (scrollTop + clientHeight >= scrollHeight - 80) {
+      fetchList(config, page + 1)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, loadingMore, hasMore, page, config])
 
   // ─── Select variantlarini yuklash ───
   const loadOptions = async (field, parentValue) => {
@@ -202,7 +228,10 @@ const ReferencePage = () => {
     setOptions({})
     setErrors({})
     setRows([])
-    fetchList(config)
+    setPage(1)
+    setHasMore(true)
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    fetchList(config, 1)
     // Bog'liq bo'lmagan select'lar variantlarini darhol yuklaymiz
     config.fields
       .filter((f) => f.type === "select" && !f.dependsOn)
@@ -277,7 +306,10 @@ const ReferencePage = () => {
         setAddModal(false)
         setForm(emptyForm(config))
         setErrors({})
-        await fetchList(config)
+        setPage(1)
+        setHasMore(true)
+        if (scrollRef.current) scrollRef.current.scrollTop = 0
+        await fetchList(config, 1)
         showToast(t("ref_created"))
       }
     } catch (err) {
@@ -311,7 +343,7 @@ const ReferencePage = () => {
   const colCount = config.columns.length + 1
 
   return (
-    <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
+    <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white h-[calc(100vh-3.5rem)] overflow-hidden">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between w-full gap-4 flex-wrap">
@@ -347,13 +379,13 @@ const ReferencePage = () => {
       </div>
 
       {/* ── Jadval ── */}
-      <div className="w-full overflow-x-auto">
+      <div ref={scrollRef} onScroll={handleScroll} className="w-full flex-1 min-h-0 overflow-auto">
         <table className="w-full border-collapse text-left">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="bg-[#FAFAFA] dark:bg-[#1A1A1A] rounded-lg">
-              <th className="px-4 py-3 text-[13px] font-medium text-[#6B7280] dark:text-[#737373] w-16">#</th>
+              <th className="px-4 py-3 text-[13px] font-medium text-[#6B7280] dark:text-[#737373] w-16 bg-[#FAFAFA] dark:bg-[#1A1A1A]">#</th>
               {config.columns.map((c, i) => (
-                <th key={i} className="px-4 py-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white whitespace-nowrap">
+                <th key={i} className="px-4 py-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white whitespace-nowrap bg-[#FAFAFA] dark:bg-[#1A1A1A]">
                   {t(c.headerKey)}
                 </th>
               ))}
@@ -387,6 +419,13 @@ const ReferencePage = () => {
                   ))}
                 </tr>
               ))
+            )}
+            {loadingMore && (
+              <tr>
+                <td colSpan={colCount} className="px-4 py-4 text-center text-sm text-[#737373]">
+                  {t("loading") || "..."}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

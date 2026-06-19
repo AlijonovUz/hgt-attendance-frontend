@@ -32,6 +32,8 @@ const EmployeeRegister = () => {
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef(null);
 
+  const [regionFilter, setRegionFilter] = useState(null);
+  const [districtFilter, setDistrictFilter] = useState(null);
   const [branchFilter, setBranchFilter] = useState(null);
   const [departmentFilter, setDepartmentFilter] = useState(null);
 
@@ -41,6 +43,8 @@ const EmployeeRegister = () => {
   const [roles, setRoles] = useState([])
 
   const [districts, setDistricts] = useState([])
+  // Top filter row districts (separate from modal filter districts)
+  const [filterDistricts, setFilterDistricts] = useState([])
 
   // Modal list pagination states
   const [modalPage, setModalPage] = useState(1)
@@ -104,6 +108,8 @@ const EmployeeRegister = () => {
 
   const [addEmployeeModal, setAddEmployeeModal] = useState(false)
   const [errors, setErrors] = useState({});
+  // Refs to form field wrappers — used to scroll to the first error
+  const fieldRefs = useRef({});
   const [detailEmployee, setDetailEmployee] = useState(null); // null = create mode
   const [dotMenuOpen, setDotMenuOpen] = useState(false);
   const dotMenuRef = useRef(null);
@@ -179,6 +185,8 @@ const EmployeeRegister = () => {
         params: {
           page,
           search: search || undefined,
+          region: regionFilter || undefined,
+          district: districtFilter || undefined,
           branch: branchFilter || undefined,
           department: departmentFilter || undefined,
           ...params,
@@ -279,7 +287,9 @@ const EmployeeRegister = () => {
           setHasMore(newData.length === PAGE_SIZE)
         }
       } else if (type === "department") {
-        if (filterData.branch?.value) params.branch = filterData.branch.value
+        // Cascade: departments are limited to the branch chosen in the form
+        if (form.branch) params.branch = form.branch
+        else if (filterData.branch?.value) params.branch = filterData.branch.value
         if (filterData.region?.value) params.region = filterData.region.value
         res = await axiosAPI.get("users/departments/", { params })
         if (res.status === 200) {
@@ -293,7 +303,10 @@ const EmployeeRegister = () => {
           setHasMore(newData.length === PAGE_SIZE)
         }
       } else if (type === "position") {
-        if (filterData.branch?.value) params.branch = filterData.branch.value
+        // Cascade: positions are limited to the department chosen in the form
+        if (form.department) params.department = form.department
+        if (form.branch) params.branch = form.branch
+        else if (filterData.branch?.value) params.branch = filterData.branch.value
         if (filterData.region?.value) params.region = filterData.region.value
         res = await axiosAPI.get("users/positions/", { params })
         if (res.status === 200) {
@@ -509,7 +522,52 @@ const EmployeeRegister = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [page, search, branchFilter, departmentFilter]);
+  }, [page, search, regionFilter, districtFilter, branchFilter, departmentFilter]);
+
+  // Fetch districts for the top filter row (cascades from region)
+  const fetchFilterDistricts = async (regionId) => {
+    try {
+      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
+      if (res.status === 200) {
+        setFilterDistricts(
+          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // Order in which fields appear in the form — used to find the first error
+  const FIELD_ORDER = ["full_name", "password", "tabel", "phone", "branch", "department", "position", "roles", "schedule"];
+
+  // Scroll the modal to the first field that has an error
+  const scrollToFirstError = (errs) => {
+    const first = FIELD_ORDER.find((k) => errs?.[k]);
+    if (!first) return;
+    const collapsed = first === "roles" || first === "schedule";
+    if (first === "roles") setPermOpen(true);
+    if (first === "schedule") setTableOpen(true);
+    setTimeout(() => {
+      fieldRefs.current[first]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, collapsed ? 350 : 60);
+  };
+
+  // Day numbers that are actual work days in a schedule (mandatory + optional)
+  const getScheduleWorkDays = (scheduleId) => {
+    const s = schedules.find((x) => x.id === scheduleId);
+    if (!s) return [];
+    const set = new Set();
+    (s.mandatory_days_info || []).forEach((d) => set.add(d.day_number));
+    (s.optional_days_info || []).forEach((d) => set.add(d.day_number));
+    return [...set].sort((a, b) => a - b);
+  };
+
+  // First work day of a schedule (so time fields show real data instead of "—")
+  const getScheduleFirstWorkDay = (scheduleId) => {
+    const days = getScheduleWorkDays(scheduleId);
+    return days.length ? days[0] : 0;
+  };
 
   const handleAddEmployee = async () => {
     const newErrors = {};
@@ -547,6 +605,7 @@ const EmployeeRegister = () => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      scrollToFirstError(newErrors);
       return;
     }
     setErrors({});
@@ -608,9 +667,7 @@ const EmployeeRegister = () => {
           backendErrors[key] = Array.isArray(messages) ? messages[0] : messages;
         });
         setErrors(backendErrors);
-        // Auto-open collapsed sections if they have errors
-        if (backendErrors.roles) setPermOpen(true);
-        if (backendErrors.schedule) setTableOpen(true);
+        scrollToFirstError(backendErrors);
       }
     }
   };
@@ -651,7 +708,7 @@ const EmployeeRegister = () => {
           perm_geozone_create: false,
           perm_roles_manage: false,
         });
-        setSelectedDay(0);
+        setSelectedDay(getScheduleFirstWorkDay(emp?.schedule_info?.id || null));
         setErrors({});
         setAddEmployeeModal(true);
       }
@@ -705,8 +762,7 @@ const EmployeeRegister = () => {
           backendErrors[key] = Array.isArray(messages) ? messages[0] : messages;
         });
         setErrors(backendErrors);
-        if (backendErrors.roles) setPermOpen(true);
-        if (backendErrors.schedule) setTableOpen(true);
+        scrollToFirstError(backendErrors);
       }
     }
   };
@@ -858,7 +914,7 @@ const EmployeeRegister = () => {
     }
   };
 
-  const COLS = 7;
+  const COLS = 9;
 
   const CustomButton = ({ placeholder, onclick, onClear, selected, hasError }) => {
     return (
@@ -960,6 +1016,42 @@ const EmployeeRegister = () => {
               className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
             />
 
+            {/* Region filter */}
+            <div className="w-[200px]">
+              <Select
+                placeholder={t("all_regions") || "Barcha viloyatlar"}
+                options={regions.map(r => ({ value: r.id, label: r.name }))}
+                value={regionFilter}
+                onChange={(opt) => {
+                  setRegionFilter(opt?.value ?? null);
+                  setDistrictFilter(null);
+                  setFilterDistricts([]);
+                  if (opt?.value) fetchFilterDistricts(opt.value);
+                  setPage(1);
+                }}
+                className="py-[6.5px]! rounded-md! border! dark:border-[#404040]! shadow-sm border-[#e5e5e5] dark:bg-[#0a0a0a]!"
+              />
+            </div>
+
+            {/* District filter */}
+            <div className="w-[200px]">
+              <Select
+                placeholder={
+                  !regionFilter
+                    ? (t("select_region_first") || "Avval viloyat tanlang")
+                    : (t("all_districts") || "Barcha tumanlar")
+                }
+                options={filterDistricts}
+                value={districtFilter}
+                onChange={(opt) => {
+                  setDistrictFilter(opt?.value ?? null);
+                  setPage(1);
+                }}
+                disabled={!regionFilter}
+                className="py-[6.5px]! rounded-md! border! dark:border-[#404040]! shadow-sm border-[#e5e5e5] dark:bg-[#0a0a0a]!"
+              />
+            </div>
+
             {/* Branch filter */}
             <div className="w-[200px]">
               <Select
@@ -1011,8 +1103,8 @@ const EmployeeRegister = () => {
                   {[
                     { label: "#", cls: "w-12" },
                     { label: t("full_name") || "Ism familya" },
-                    { label: t("region") || "Bo'lim" },
-                    { label: t("district") || "Bo'lim" },
+                    { label: t("region") || "Viloyat" },
+                    { label: t("district") || "Tuman" },
                     { label: t("department") || "Bo'lim" },
                     { label: t("col_branch") || "Filial" },
                     { label: t("position") || "Lavozim" },
@@ -1572,7 +1664,7 @@ const EmployeeRegister = () => {
                       value={form.schedule}
                       onChange={(opt) => {
                         setForm((p) => ({ ...p, schedule: opt?.value ?? null }));
-                        setSelectedDay(0);
+                        setSelectedDay(getScheduleFirstWorkDay(opt?.value ?? null));
                       }}
                       className={cn(
                         "w-full rounded-xl border! dark:border-[#404040]!",
@@ -1672,7 +1764,11 @@ const EmployeeRegister = () => {
                           </label>
                           <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-md w-full">
                             {weekDays.map((day) => {
-                              const isDaySelected = selectedDay === day.day_number;
+                              // Work days come from the selected schedule (mandatory + optional)
+                              const isWorkDay =
+                                selectedSchedule.mandatory_days_info?.some((d) => d.day_number === day.day_number) ||
+                                selectedSchedule.optional_days_info?.some((d) => d.day_number === day.day_number);
+                              const isViewing = selectedDay === day.day_number;
                               return (
                                 <button
                                   key={day.day_number}
@@ -1680,9 +1776,10 @@ const EmployeeRegister = () => {
                                   onClick={() => setSelectedDay(day.day_number)}
                                   className={cn(
                                     "flex-1 py-2.5 text-[13px] font-medium text-center rounded-sm transition-all cursor-pointer",
-                                    isDaySelected
+                                    isWorkDay
                                       ? "bg-white dark:bg-[#171717] text-[#0A0A0A] dark:text-white shadow-sm"
-                                      : "text-[#737373] dark:text-[#A3A3A3] hover:text-[#0A0A0A] dark:hover:text-white"
+                                      : "text-[#A3A3A3] dark:text-[#5c5c5c] opacity-60 hover:text-[#737373] dark:hover:text-[#A3A3A3]",
+                                    isViewing && "ring-2 ring-[#0090FF] ring-inset"
                                   )}
                                 >
                                   {day.label}
@@ -1837,7 +1934,19 @@ const EmployeeRegister = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setForm((prev) => ({ ...prev, [openModal]: modalSelected }));
+                  setForm((prev) => {
+                    const next = { ...prev, [openModal]: modalSelected };
+                    // Cascade resets: branch change clears department + position,
+                    // department change clears position
+                    if (openModal === "branch" && prev.branch !== modalSelected) {
+                      next.department = null;
+                      next.position = null;
+                    }
+                    if (openModal === "department" && prev.department !== modalSelected) {
+                      next.position = null;
+                    }
+                    return next;
+                  });
                   setOpenModal(null);
                   setTimeout(() => setAddEmployeeModal(true), 100);
                 }}
@@ -1972,7 +2081,7 @@ const EmployeeRegister = () => {
         isOpen={fireModalOpen}
         onClose={() => setFireModalOpen(false)}
         onConfirm={handleFireEmployee}
-        title={("fire_employee_title")}
+        title={t("fire_employee_title")}
         description={t("fire_employee_description")}
         confirmText={
           <span className="flex items-center gap-2">

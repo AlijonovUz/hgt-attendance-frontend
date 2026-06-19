@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
 import { Toast } from "@/components/ui/Toast"
+import { GeoMap } from "@/components/ui/GeoMap"
 
 const RADIUS_MIN = 50
 const RADIUS_MAX = 500
@@ -47,18 +48,6 @@ const fmtCoord = (lat, lng) => {
   return `${a.toFixed(4)}, ${b.toFixed(4)}`
 }
 
-// ─── GPS ikonka (Figma SVG, currentColor orqali rangga moslashadi) ───
-const GpsIcon = ({ size = 15, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
-    <path d="M13.6771 7.99992C13.6771 11.1295 11.14 13.6666 8.01042 13.6666C4.8808 13.6666 2.34375 11.1295 2.34375 7.99992C2.34375 4.8703 4.8808 2.33325 8.01042 2.33325C11.14 2.33325 13.6771 4.8703 13.6771 7.99992Z" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M15.0013 8H13.668" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M2.33333 8H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8 0.999919L8 2.33325" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8 13.6667V15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9.99997 8C9.99997 9.10457 9.10454 10 7.99997 10C6.8954 10 5.99997 9.10457 5.99997 8C5.99997 6.89543 6.8954 6 7.99997 6C9.10454 6 9.99997 6.89543 9.99997 8Z" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
-)
-
 // ─── Radius slider (detail + modal'da qayta ishlatiladi) ───
 const RadiusSlider = ({ value, onChange, theme }) => {
   const percent = ((value - RADIUS_MIN) / (RADIUS_MAX - RADIUS_MIN)) * 100
@@ -80,46 +69,6 @@ const RadiusSlider = ({ value, onChange, theme }) => {
         "[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#171717] dark:[&::-moz-range-thumb]:border-[#F5F5F5]"
       )}
     />
-  )
-}
-
-// ─── Markaz + radius doirasi vizualizatsiyasi ───
-const ZoneCircle = ({ lat, lng, radius, theme, t }) => {
-  // 50m -> 90px, 500m -> 250px
-  const diameter = Math.round(90 + ((radius - RADIUS_MIN) / (RADIUS_MAX - RADIUS_MIN)) * 160)
-  const gridStyle =
-    theme === "dark"
-      ? {
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }
-      : {}
-
-  return (
-    <div
-      className="relative w-full h-[300px] rounded-2xl overflow-hidden bg-[#F5F5F5] dark:bg-[#1F1F1F] flex items-center justify-center"
-      style={gridStyle}
-    >
-      {/* Koordinata pill */}
-      <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
-        <GpsIcon size={15} className="text-[#0A0A0A] dark:text-[#fafafa] opacity-50" />
-        {fmtCoord(lat, lng)}
-      </div>
-
-      {/* Doira */}
-      <div
-        className="rounded-full flex items-center justify-center border-2 border-[#0090FF] bg-[#0090FF]/10 dark:bg-[#5EB1EF]/15 transition-all duration-200"
-        style={{ width: diameter, height: diameter }}
-      >
-        <span className="w-2.5 h-2.5 rounded-full bg-[#0090FF]" />
-      </div>
-
-      {/* Radius label */}
-      <div className="absolute bottom-3 right-3 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
-        {radius} {t("gz_meter")}
-      </div>
-    </div>
   )
 }
 
@@ -559,13 +508,12 @@ const Geozones = () => {
                 </button>
               </div>
 
-              {/* Circle */}
-              <ZoneCircle
+              {/* Haqiqiy xarita */}
+              <GeoMap
+                key={selected.id}
                 lat={selected.latitude}
                 lng={selected.longitude}
                 radius={detailRadius}
-                theme={theme}
-                t={t}
               />
 
               {/* Info grid */}
@@ -635,7 +583,7 @@ const Geozones = () => {
       <Modal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
-        height={640}
+        height={760}
         header={
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t("gz_new")}</h2>
@@ -671,6 +619,25 @@ const Geozones = () => {
               value={form.zone_type}
               onChange={(opt) => setForm((p) => ({ ...p, zone_type: opt?.value ?? null }))}
             />
+
+            {/* Xaritadan koordinata tanlash */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
+                {t("gz_center_coord")}
+              </label>
+              <GeoMap
+                lat={form.latitude}
+                lng={form.longitude}
+                radius={form.radius}
+                onPick={(la, lo) =>
+                  setForm((p) => ({
+                    ...p,
+                    latitude: la.toFixed(6),
+                    longitude: lo.toFixed(6),
+                  }))
+                }
+              />
+            </div>
 
             {/* Koordinatalar */}
             <div className="grid grid-cols-2 gap-3">
