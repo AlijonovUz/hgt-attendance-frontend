@@ -59,10 +59,11 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
-    const center = hasCoord ? [validLat, validLng] : [41.3111, 69.2797] // default: Toshkent
+    // Koordinata bo'lmasa — butun O'zbekiston ko'rinadi
+    const center = hasCoord ? [validLat, validLng] : [41.377491, 64.585262]
     const map = L.map(containerRef.current, {
       center,
-      zoom: 15,
+      zoom: hasCoord ? 15 : 6,
       zoomControl: true,
       attributionControl: true,
     })

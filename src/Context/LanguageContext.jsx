@@ -1536,6 +1536,54 @@ export const translations = {
           en: "dd.mm.yyyy",
           ru: "дд.мм.гггг"
      },
+
+     // ─── Rollar ───
+     ref_t_role: { uz: "Rollar", cy: "Роллар", en: "Roles", ru: "Роли" },
+     ref_sub_role: { uz: "{n} ta rol mavjud", cy: "{n} та рол мавжуд", en: "{n} roles available", ru: "Доступно ролей: {n}" },
+     ref_add_role: { uz: "Rol qo'shish", cy: "Рол қўшиш", en: "Add role", ru: "Добавить роль" },
+     ref_col_role: { uz: "Rol", cy: "Рол", en: "Role", ru: "Роль" },
+     ref_name_role: { uz: "Rol nomi", cy: "Рол номи", en: "Role name", ru: "Название роли" },
+     ref_ph_role: { uz: "Rol nomini kiriting", cy: "Рол номини киритинг", en: "Enter role name", ru: "Введите название роли" },
+     ref_permissions: { uz: "Ruxsatlar", cy: "Рухсатлар", en: "Permissions", ru: "Разрешения" },
+     ref_no_permissions: { uz: "Ruxsatlar topilmadi", cy: "Рухсатлар топилмади", en: "No permissions found", ru: "Разрешения не найдены" },
+
+     // ─── Ish jadvali ───
+     ref_t_schedule: { uz: "Ish jadvali", cy: "Иш жадвали", en: "Work schedule", ru: "График работы" },
+     ref_sub_schedule: { uz: "{n} ta ish jadvali mavjud", cy: "{n} та иш жадвали мавжуд", en: "{n} schedules available", ru: "Доступно графиков: {n}" },
+     ref_add_schedule: { uz: "Jadval qo'shish", cy: "Жадвал қўшиш", en: "Add schedule", ru: "Добавить график" },
+     ref_col_schedule: { uz: "Ish jadvali", cy: "Иш жадвали", en: "Work schedule", ru: "График" },
+     ref_col_work_start: { uz: "Ish boshlanishi", cy: "Иш бошланиши", en: "Work start", ru: "Начало работы" },
+     ref_col_work_end: { uz: "Ish tugashi", cy: "Иш тугаши", en: "Work end", ru: "Конец работы" },
+     ref_col_lunch_start: { uz: "Tushlik boshlanishi", cy: "Тушлик бошланиши", en: "Lunch start", ru: "Начало обеда" },
+     ref_col_lunch_end: { uz: "Tushlik tugashi", cy: "Тушлик тугаши", en: "Lunch end", ru: "Конец обеда" },
+     ref_name_schedule: { uz: "Jadval nomi", cy: "Жадвал номи", en: "Schedule name", ru: "Название графика" },
+     ref_ph_schedule: { uz: "Ish jadval nomi kiriting", cy: "Иш жадвал номини киритинг", en: "Enter schedule name", ru: "Введите название графика" },
+     sch_no_lunch: { uz: "Tushliksiz", cy: "Тушликсиз", en: "No lunch", ru: "Без обеда" },
+     sch_time_ph: { uz: "--:--", cy: "--:--", en: "--:--", ru: "--:--" },
+
+     // ─── Sozlamalar ───
+     settings_subtitle: { uz: "Tizimning oddiy sozlamalari", cy: "Тизимнинг оддий созламалари", en: "Basic system settings", ru: "Основные настройки системы" },
+     set_lang_title: { uz: "Interfeys tili", cy: "Интерфейс тили", en: "Interface language", ru: "Язык интерфейса" },
+     set_lang_sub: { uz: "Lotin yoki kirill yozuvi", cy: "Лотин ёки кирилл ёзуви", en: "Latin or Cyrillic script", ru: "Латиница или кириллица" },
+     set_theme_title: { uz: "Rang rejimi", cy: "Ранг режими", en: "Color mode", ru: "Цветовой режим" },
+     set_theme_sub: { uz: "Yorug' yoki tungi ko'rinish", cy: "Ёруғ ёки тунги кўриниш", en: "Light or dark appearance", ru: "Светлый или тёмный вид" },
+     set_notif_title: { uz: "Bildirishnomalar", cy: "Билдиришномалар", en: "Notifications", ru: "Уведомления" },
+     set_notif_sub: { uz: "Tizim bildirishnomalarini ko'rsatish", cy: "Тизим билдиришномаларини кўрсатиш", en: "Show system notifications", ru: "Показывать системные уведомления" },
+     set_sound_title: { uz: "Ovozli signal", cy: "Овозли сигнал", en: "Sound alert", ru: "Звуковой сигнал" },
+     set_sound_sub: { uz: "Yangi bildirishnomada ovoz", cy: "Янги билдиришномада овоз", en: "Sound on new notification", ru: "Звук при новом уведомлении" },
+     set_version_title: { uz: "Tizim versiyasi", cy: "Тизим версияси", en: "System version", ru: "Версия системы" },
+     set_lang_latin: { uz: "Lotin", cy: "Лотин", en: "Latin", ru: "Lotin" },
+     set_lang_cyrillic: { uz: "Кирил", cy: "Кирил", en: "Cyrillic", ru: "Кирил" },
+     set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", ru: "Русский" },
+
+     // ─── Profil (Mening profilim) ───
+     profile_title: { uz: "Mening profilim", cy: "Менинг профилим", en: "My profile", ru: "Мой профиль" },
+     prof_filial: { uz: "Filial", cy: "Филиал", en: "Branch", ru: "Филиал" },
+     prof_dept: { uz: "Bo'lim", cy: "Бўлим", en: "Department", ru: "Отдел" },
+     prof_region: { uz: "Viloyat", cy: "Вилоят", en: "Region", ru: "Область" },
+     prof_district: { uz: "Tuman", cy: "Туман", en: "District", ru: "Район" },
+     prof_phone: { uz: "Telefon", cy: "Телефон", en: "Phone", ru: "Телефон" },
+     prof_empty: { uz: "Ma'lumot yo'q", cy: "Маълумот йўқ", en: "No data", ru: "Нет данных" },
 }
 
 export function LanguageProvider({ children }) {

@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings, Profile, ReferencePage } from "./pages"
+import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings, ReferencePage, PrivacyPolicy } from "./pages"
 import Layout from "./components/Layout/Layout"
 import { EmptySection } from "./components/EmptySection"
 
@@ -35,15 +35,16 @@ const App = () => {
           path: "/settings",
           element: <Settings />,
         },
-        {
-          path: "/profile",
-          element: <Profile />,
-        },
       ]
     },
     {
       path: "/login",
       element: <LoginPage />,
+    },
+    {
+      // Umumiy sahifa — login talab qilinmaydi (Layout'dan tashqarida)
+      path: "/privacy-policy",
+      element: <PrivacyPolicy />,
     },
   ])
 

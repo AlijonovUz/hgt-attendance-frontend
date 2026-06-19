@@ -32,10 +32,18 @@ const EmployeeRegister = () => {
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef(null);
 
+  // Committed list filters ({ value, label } | null) — drive the employee fetch
   const [regionFilter, setRegionFilter] = useState(null);
   const [districtFilter, setDistrictFilter] = useState(null);
   const [branchFilter, setBranchFilter] = useState(null);
   const [departmentFilter, setDepartmentFilter] = useState(null);
+
+  // List filter modal (Reports-style) + its temporary selections
+  const [openListFilter, setOpenListFilter] = useState(false);
+  const [tmpRegion, setTmpRegion] = useState(null);
+  const [tmpDistrict, setTmpDistrict] = useState(null);
+  const [tmpBranch, setTmpBranch] = useState(null);
+  const [tmpDepartment, setTmpDepartment] = useState(null);
 
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -185,10 +193,10 @@ const EmployeeRegister = () => {
         params: {
           page,
           search: search || undefined,
-          region: regionFilter || undefined,
-          district: districtFilter || undefined,
-          branch: branchFilter || undefined,
-          department: departmentFilter || undefined,
+          region: regionFilter?.value || undefined,
+          district: districtFilter?.value || undefined,
+          branch: branchFilter?.value || undefined,
+          department: departmentFilter?.value || undefined,
           ...params,
         },
       });
@@ -524,7 +532,7 @@ const EmployeeRegister = () => {
     fetchEmployees();
   }, [page, search, regionFilter, districtFilter, branchFilter, departmentFilter]);
 
-  // Fetch districts for the top filter row (cascades from region)
+  // Fetch districts for the list filter modal (cascades from region)
   const fetchFilterDistricts = async (regionId) => {
     try {
       const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
@@ -536,6 +544,50 @@ const EmployeeRegister = () => {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const hasListFilter = !!(regionFilter || districtFilter || branchFilter || departmentFilter)
+
+  // Open the list filter modal seeded with the currently applied filters
+  const openListFilterModal = () => {
+    setTmpRegion(regionFilter)
+    setTmpDistrict(districtFilter)
+    setTmpBranch(branchFilter)
+    setTmpDepartment(departmentFilter)
+    if (regionFilter?.value) fetchFilterDistricts(regionFilter.value)
+    setOpenListFilter(true)
+  }
+
+  // Region change inside the modal — reset district + reload its options
+  const handleListRegionChange = (opt) => {
+    setTmpRegion(opt)
+    setFilterDistricts([])
+    setTmpDistrict(null)
+    if (opt?.value) fetchFilterDistricts(opt.value)
+  }
+
+  // Apply: commit temp selections (triggers the employee fetch via deps)
+  const applyListFilter = () => {
+    setRegionFilter(tmpRegion)
+    setDistrictFilter(tmpDistrict)
+    setBranchFilter(tmpBranch)
+    setDepartmentFilter(tmpDepartment)
+    setPage(1)
+    setOpenListFilter(false)
+  }
+
+  // Clear both temp and applied filters
+  const clearListFilter = () => {
+    setTmpRegion(null)
+    setTmpDistrict(null)
+    setTmpBranch(null)
+    setTmpDepartment(null)
+    setFilterDistricts([])
+    setRegionFilter(null)
+    setDistrictFilter(null)
+    setBranchFilter(null)
+    setDepartmentFilter(null)
+    setPage(1)
   }
 
   // Order in which fields appear in the form — used to find the first error
@@ -1016,70 +1068,16 @@ const EmployeeRegister = () => {
               className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
             />
 
-            {/* Region filter */}
-            <div className="w-[200px]">
-              <Select
-                placeholder={t("all_regions") || "Barcha viloyatlar"}
-                options={regions.map(r => ({ value: r.id, label: r.name }))}
-                value={regionFilter}
-                onChange={(opt) => {
-                  setRegionFilter(opt?.value ?? null);
-                  setDistrictFilter(null);
-                  setFilterDistricts([]);
-                  if (opt?.value) fetchFilterDistricts(opt.value);
-                  setPage(1);
-                }}
-                className="py-[6.5px]! rounded-md! border! dark:border-[#404040]! shadow-sm border-[#e5e5e5] dark:bg-[#0a0a0a]!"
-              />
-            </div>
-
-            {/* District filter */}
-            <div className="w-[200px]">
-              <Select
-                placeholder={
-                  !regionFilter
-                    ? (t("select_region_first") || "Avval viloyat tanlang")
-                    : (t("all_districts") || "Barcha tumanlar")
-                }
-                options={filterDistricts}
-                value={districtFilter}
-                onChange={(opt) => {
-                  setDistrictFilter(opt?.value ?? null);
-                  setPage(1);
-                }}
-                disabled={!regionFilter}
-                className="py-[6.5px]! rounded-md! border! dark:border-[#404040]! shadow-sm border-[#e5e5e5] dark:bg-[#0a0a0a]!"
-              />
-            </div>
-
-            {/* Branch filter */}
-            <div className="w-[200px]">
-              <Select
-                placeholder={t("all_branches") || "Barcha filiallar"}
-                options={branches.map(b => ({ value: b.id, label: b.name }))}
-                value={branchFilter}
-                onChange={(opt) => {
-                  setBranchFilter(opt?.value ?? null);
-                  setPage(1);
-                }}
-                className="py-[6.5px]! rounded-md! border! dark:border-[#404040]! shadow-sm border-[#e5e5e5] dark:bg-[#0a0a0a]!"
-
-              />
-            </div>
-
-            {/* Department filter */}
-            <div className="w-[200px]">
-              <Select
-                placeholder={t("all_departments") || "Barcha bo'limlar"}
-                options={departments.map(d => ({ value: d.id, label: d.name }))}
-                value={departmentFilter}
-                onChange={(opt) => {
-                  setDepartmentFilter(opt?.value ?? null);
-                  setPage(1);
-                }}
-                className="py-[6.5px]! rounded-md! border! dark:border-[#404040]! shadow-sm border-[#e5e5e5] dark:bg-[#0a0a0a]!"
-              />
-            </div>
+            {/* Filter button (opens the list filter modal) */}
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
+              onClick={openListFilterModal}
+            >
+              {hasListFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+              <HugeIcon icon={FilterVerticalIcon} size={16} />
+              {t("filter")}
+            </button>
           </div>
 
           {/* Excel export */}
@@ -2041,6 +2039,95 @@ const EmployeeRegister = () => {
             >
               <HugeIcon size={14} icon={Search01Icon} />
               {t("apply") || "Qo'llash"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* List filter modal (Reports-style) */}
+      <Modal
+        isOpen={openListFilter}
+        onClose={() => setOpenListFilter(false)}
+        height={600}
+      >
+        <div className="flex flex-col justify-between h-full">
+          {/* top section */}
+          <div className="flex flex-col gap-3">
+            {/* nav */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span
+                  className="w-11 h-11 cursor-pointer flex items-center justify-center rounded-lg hover:bg-slate-100 transition dark:hover:bg-[#0a0a0a]"
+                  onClick={() => setOpenListFilter(false)}
+                >
+                  <ArrowLeft size={24} />
+                </span>
+                <h1 className="text-2xl font-semibold">{t("filter_title")}</h1>
+              </div>
+              <span className="text-sm text-[#737373] dark:text-[#A3A3A3]">
+                {t("filter_subtitle")}
+              </span>
+            </div>
+
+            {/* main section */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Region */}
+              <Select
+                label={t("region_branch_title") || "Viloyat"}
+                placeholder={t("region_branch_placeholder") || "Viloyatni tanlang"}
+                options={regions.map((r) => ({ value: r.id, label: r.name }))}
+                value={tmpRegion?.value ?? null}
+                onChange={handleListRegionChange}
+              />
+
+              {/* District — region tanlanmasa disabled */}
+              <Select
+                label={t("district_branch_title") || "Tuman"}
+                placeholder={
+                  !tmpRegion
+                    ? t("select_region_first")
+                    : t("district_branch_placeholder") || "Tumanni tanlang"
+                }
+                options={filterDistricts}
+                value={tmpDistrict?.value ?? null}
+                onChange={(opt) => setTmpDistrict(opt)}
+                disabled={!tmpRegion}
+              />
+
+              {/* Branch */}
+              <Select
+                label={t("col_branch") || "Filial"}
+                placeholder={t("select_branch") || "Filialni tanlang"}
+                options={branches.map((b) => ({ value: b.id, label: b.name }))}
+                value={tmpBranch?.value ?? null}
+                onChange={(opt) => setTmpBranch(opt)}
+              />
+
+              {/* Department */}
+              <Select
+                label={t("department") || "Bo'lim"}
+                placeholder={t("select_department") || "Bo'limni tanlang"}
+                options={departments.map((d) => ({ value: d.id, label: d.name }))}
+                value={tmpDepartment?.value ?? null}
+                onChange={(opt) => setTmpDepartment(opt)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-5">
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer"
+              onClick={clearListFilter}
+            >
+              <X size={14} />
+              {t("clear")}
+            </button>
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer bg-[#0090FF] text-white px-3.5 py-2.5 rounded-lg"
+              onClick={applyListFilter}
+            >
+              <HugeIcon size={14} icon={Search01Icon} />
+              {t("search")}
             </button>
           </div>
         </div>
