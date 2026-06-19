@@ -12,6 +12,8 @@ const Layout = () => {
      const accessToken = localStorage.getItem("access");
      const navigate = useNavigate();
 
+     const [loading, setLoading] = useState(true);
+
      const [roles, setRoles] = useState([]);
      const currentUser = useSelector((state) => state.references.currentUser);
 
@@ -44,6 +46,7 @@ const Layout = () => {
      };
 
      const getCurrentUser = async () => {
+          setLoading(true)
           try {
                const res = await axiosAPI.get("users/auth/profile/");
                if (res.status === 200) {
@@ -55,6 +58,8 @@ const Layout = () => {
                localStorage.removeItem("refresh");
                dispatch(setCurrentUser(null));
                navigate("/login", { replace: true });
+          } finally {
+               setLoading(false)
           }
      };
 
@@ -77,6 +82,14 @@ const Layout = () => {
                dispatch(setUserPermission(permissions));
           }
      }, [findRole, dispatch, navigate]);
+
+     if (loading) {
+          return (
+               <div className="h-screen flex items-center justify-center">
+                    Loading...
+               </div>
+          );
+     }
 
      return (
           <div className="flex h-screen overflow-hidden">
