@@ -3,15 +3,17 @@ import { useParams } from "react-router-dom"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
-import { Plus, X, FileText } from "lucide-react"
+import { Plus, X, FileText, ArrowLeft } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, CheckmarkSquare01Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
 import { Toast } from "@/components/ui/Toast"
 import { DatePicker } from "@/components/ui/DatePicker"
 import { AddButton } from "@/components/ui/customAddButton"
+import { RoleModal } from "./RoleModal"
+import { ScheduleModal } from "./ScheduleModal"
 
 // "yyyy-mm-dd" (API'dan kelgan) -> "dd.mm.yyyy" (jadvalda ko'rsatish uchun)
 const formatDate = (value) => {
@@ -19,6 +21,12 @@ const formatDate = (value) => {
   const [y, m, d] = String(value).split("-")
   if (!y || !m || !d) return value
   return `${d}.${m}.${y}`
+}
+
+// "HH:MM:SS" yoki "HH:MM" -> "HH:MM" (jadvalda ko'rsatish uchun)
+const formatTime = (value) => {
+  if (!value) return "—"
+  return String(value).slice(0, 5)
 }
 
 // Date obyekti -> "yyyy-mm-dd" (backendga yuborish uchun, mahalliy vaqt bo'yicha)
@@ -57,6 +65,9 @@ const REF_CONFIGS = {
       { type: "text", name: "name", labelKey: "ref_name_district", phKey: "ref_ph_district", required: true },
       { type: "select", name: "region", labelKey: "gz_region", phKey: "gz_region_ph", optionsEndpoint: "users/regions/", required: true },
     ],
+    filters: [
+      { name: "region", labelKey: "gz_region", phKey: "gz_region_ph", optionsEndpoint: "users/regions/" },
+    ],
   },
   branches: {
     endpoint: "users/branches/",
@@ -73,6 +84,10 @@ const REF_CONFIGS = {
       { type: "select", name: "region", labelKey: "gz_region", phKey: "gz_region_ph", optionsEndpoint: "users/regions/" },
       { type: "select", name: "district", labelKey: "gz_district", phKey: "gz_district_ph", optionsEndpoint: "users/districts/", dependsOn: "region", param: "region" },
     ],
+    filters: [
+      { name: "region", labelKey: "gz_region", phKey: "gz_region_ph", optionsEndpoint: "users/regions/" },
+      { name: "district", labelKey: "gz_district", phKey: "gz_district_ph", optionsEndpoint: "users/districts/", dependsOn: "region", param: "region" },
+    ],
   },
   departments: {
     endpoint: "users/departments/",
@@ -87,6 +102,11 @@ const REF_CONFIGS = {
       { type: "text", name: "name", labelKey: "ref_name_dept", phKey: "ref_ph_dept", required: true },
       { type: "select", name: "branch", labelKey: "gz_filial", phKey: "gz_branch_ph", optionsEndpoint: "users/branches/", required: true },
     ],
+    filters: [
+      { name: "region", labelKey: "gz_region", phKey: "gz_region_ph", optionsEndpoint: "users/regions/" },
+      { name: "district", labelKey: "gz_district", phKey: "gz_district_ph", optionsEndpoint: "users/districts/", dependsOn: "region", param: "region" },
+      { name: "branch", labelKey: "gz_filial", phKey: "gz_branch_ph", optionsEndpoint: "users/branches/", dependsOn: "district", param: "district" },
+    ],
   },
   positions: {
     endpoint: "users/positions/",
@@ -100,6 +120,10 @@ const REF_CONFIGS = {
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_position", phKey: "ref_ph_position", required: true },
       { type: "select", name: "department", labelKey: "ref_col_dept", phKey: "ref_dept_ph", optionsEndpoint: "users/departments/", required: true },
+    ],
+    filters: [
+      { name: "branch", labelKey: "gz_filial", phKey: "gz_branch_ph", optionsEndpoint: "users/branches/" },
+      { name: "department", labelKey: "ref_col_dept", phKey: "ref_dept_ph", optionsEndpoint: "users/departments/", dependsOn: "branch", param: "branch" },
     ],
   },
   holidays: {
@@ -119,13 +143,34 @@ const REF_CONFIGS = {
       { type: "date", name: "end_date", labelKey: "ref_name_holiday_end", phKey: "gz_date_ph", required: true, pairWith: "start_date" },
     ],
   },
+  // Rollar — oddiy fields o'rniga maxsus modal (ruxsatlar akkordeoni) ishlatadi
+  roles: {
+    endpoint: "users/roles/",
+    titleKey: "ref_t_role",
+    addKey: "ref_add_role",
+    subKey: "ref_sub_role",
+    custom: "roles",
+    columns: [{ headerKey: "ref_col_role", accessor: (r) => r.name }],
+  },
+  // Ish jadvali — maxsus modal (vaqt maydonlari + ish kunlari)
+  schedule: {
+    endpoint: "users/schedules/",
+    titleKey: "ref_t_schedule",
+    addKey: "ref_add_schedule",
+    subKey: "ref_sub_schedule",
+    custom: "schedule",
+    columns: [
+      { headerKey: "ref_col_schedule", accessor: (r) => r.name },
+      { headerKey: "ref_col_work_start", accessor: (r) => formatTime(r.work_start_time) },
+      { headerKey: "ref_col_work_end", accessor: (r) => formatTime(r.work_end_time) },
+      { headerKey: "ref_col_lunch_start", accessor: (r) => formatTime(r.lunch_start_time) },
+      { headerKey: "ref_col_lunch_end", accessor: (r) => formatTime(r.lunch_end_time) },
+    ],
+  },
 }
 
-// Har bir so'rovda nechta yozuv olib kelinadi (infinite scroll uchun)
-const PAGE_SIZE = 20
-
 const emptyForm = (cfg) =>
-  Object.fromEntries(cfg.fields.map((f) => [f.name, f.type === "select" || f.type === "date" ? null : ""]))
+  Object.fromEntries((cfg.fields || []).map((f) => [f.name, f.type === "select" || f.type === "date" ? null : ""]))
 
 // Qizil border (input ham, select ham) — Select komponenti className'ni o'z
 // root elementiga uzatishi kerak; agar uzatmasa, Select komponenti ichida
@@ -160,6 +205,19 @@ const ReferencePage = () => {
   // Majburiy/yaroqsiz maydonlar: { fieldName: true }
   const [errors, setErrors] = useState({})
 
+  // ─── Qidiruv va filtrlar ───
+  const [searchInput, setSearchInput] = useState("")
+  const [search, setSearch] = useState("")
+  const searchTimer = useRef(null)
+
+  const [openFilterModal, setOpenFilterModal] = useState(false)
+  const [filterValues, setFilterValues] = useState({}) // qo'llangan: { filterName: {value,label} }
+  const [tmpFilters, setTmpFilters] = useState({})      // modaldagi vaqtinchalik tanlov
+  const [filterOpts, setFilterOpts] = useState({})      // { filterName: [{value,label}] }
+
+  // Joriy so'rov parametrlari (infinite scroll bir xil filtr bilan davom etishi uchun)
+  const activeParamsRef = useRef({})
+
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
   const showToast = (message) => setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
 
@@ -174,18 +232,41 @@ const ReferencePage = () => {
     return e?.errorMsg || fallback
   }
 
+  // Qidiruv + qo'llangan filtrlardan so'rov parametrlarini yig'ish
+  const buildFilterParams = (searchVal, filtersVal) => {
+    const p = {}
+    if (searchVal?.trim()) p.search = searchVal.trim()
+    Object.entries(filtersVal || {}).forEach(([key, opt]) => {
+      if (opt?.value) p[key] = opt.value
+    })
+    return p
+  }
+
+  // Yangi qidiruv/filtr qo'llab, 1-sahifadan qayta yuklash
+  const applyQuery = (searchVal, filtersVal) => {
+    const params = buildFilterParams(searchVal, filtersVal)
+    activeParamsRef.current = params
+    setPage(1)
+    setHasMore(true)
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    fetchList(config, 1, params)
+  }
+
   // ─── Ro'yxatni yuklash (sahifalab) ───
   // pageNum === 1 bo'lsa ro'yxat almashtiriladi, aks holda mavjudiga qo'shiladi
-  const fetchList = async (cfg, pageNum = 1) => {
+  // extraParams berilmasa, joriy faol filtr parametrlari ishlatiladi (scroll uchun)
+  const fetchList = async (cfg, pageNum = 1, extraParams = activeParamsRef.current) => {
     if (pageNum === 1) setLoading(true)
     else setLoadingMore(true)
     try {
-      const res = await axiosAPI.get(cfg.endpoint, { params: { page: pageNum, page_size: PAGE_SIZE } })
+      const res = await axiosAPI.get(cfg.endpoint, { params: { page: pageNum, ...(extraParams || {}) } })
       if (res.status === 200) {
-        const newRows = res.data?.data?.results || []
+        const data = res.data?.data || {}
+        const newRows = data.results || []
         setRows((prev) => (pageNum === 1 ? newRows : [...prev, ...newRows]))
-        setCount(res.data?.data?.count ?? newRows.length)
-        setHasMore(newRows.length === PAGE_SIZE)
+        setCount(data.count ?? newRows.length)
+        // Keyingi sahifa bor-yo'qligini backend `next` maydoniga qarab aniqlaymiz
+        setHasMore(!!data.next)
         setPage(pageNum)
       }
     } catch (err) {
@@ -221,6 +302,70 @@ const ReferencePage = () => {
     }
   }
 
+  // ─── Filter select variantlarini yuklash ───
+  const loadFilterOptions = async (filter, parentValue) => {
+    try {
+      const params = filter.dependsOn && parentValue ? { [filter.param]: parentValue } : {}
+      const res = await axiosAPI.get(filter.optionsEndpoint, { params })
+      if (res.status === 200) {
+        const opts = (res.data?.data?.results || res.data?.results || []).map((o) => ({ value: o.id, label: o.name }))
+        setFilterOpts((prev) => ({ ...prev, [filter.name]: opts }))
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // Qidiruv inputi (debounce bilan)
+  const handleSearchChange = (e) => {
+    const val = e.target.value
+    setSearchInput(val)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setSearch(val)
+      applyQuery(val, filterValues)
+    }, 400)
+  }
+
+  // Filter modalini joriy qo'llangan filtrlar bilan ochish
+  const openFilters = () => {
+    setTmpFilters(filterValues)
+    ;(config.filters || []).forEach((f) => {
+      if (!f.dependsOn) loadFilterOptions(f)
+      else if (filterValues[f.dependsOn]?.value) loadFilterOptions(f, filterValues[f.dependsOn].value)
+    })
+    setOpenFilterModal(true)
+  }
+
+  // Modaldagi filtr o'zgarishi — bog'liq filtrlarni tozalab, qayta yuklash
+  const handleFilterChange = (filter, opt) => {
+    setTmpFilters((prev) => {
+      const next = { ...prev, [filter.name]: opt }
+      ;(config.filters || [])
+        .filter((f) => f.dependsOn === filter.name)
+        .forEach((dep) => {
+          next[dep.name] = null
+          setFilterOpts((o) => ({ ...o, [dep.name]: [] }))
+          if (opt?.value) loadFilterOptions(dep, opt.value)
+        })
+      return next
+    })
+  }
+
+  // Qo'llash / Tozalash
+  const applyFilters = () => {
+    setFilterValues(tmpFilters)
+    setOpenFilterModal(false)
+    applyQuery(search, tmpFilters)
+  }
+  const clearFilters = () => {
+    setTmpFilters({})
+    setFilterOpts({})
+    setFilterValues({})
+    applyQuery(search, {})
+  }
+  const hasFilter = Object.values(filterValues).some((v) => v?.value)
+
   // Sahifa (type) o'zgarganda hammasini qayta sozlash
   useEffect(() => {
     if (!config) return
@@ -230,10 +375,17 @@ const ReferencePage = () => {
     setRows([])
     setPage(1)
     setHasMore(true)
+    // Qidiruv va filtrlarni tozalash
+    setSearchInput("")
+    setSearch("")
+    setFilterValues({})
+    setTmpFilters({})
+    setFilterOpts({})
+    activeParamsRef.current = {}
     if (scrollRef.current) scrollRef.current.scrollTop = 0
-    fetchList(config, 1)
+    fetchList(config, 1, {})
     // Bog'liq bo'lmagan select'lar variantlarini darhol yuklaymiz
-    config.fields
+    ;(config.fields || [])
       .filter((f) => f.type === "select" && !f.dependsOn)
       .forEach((f) => loadOptions(f))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -320,6 +472,16 @@ const ReferencePage = () => {
     }
   }
 
+  // Maxsus modal (roles/schedule) muvaffaqiyatli yaratgandan keyin ro'yxatni yangilash
+  const handleAfterCreate = () => {
+    setAddModal(false)
+    setPage(1)
+    setHasMore(true)
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    fetchList(config, 1)
+    showToast(t("ref_created"))
+  }
+
   const renderDateInput = (f) => (
     <DatePicker
       key={f.name}
@@ -378,6 +540,29 @@ const ReferencePage = () => {
 
       </div>
 
+      {/* ── Qidiruv + Filter qatori ── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Input
+          type="text"
+          value={searchInput}
+          onChange={handleSearchChange}
+          placeholder={t("search") || "Qidirish..."}
+          className="h-9! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
+        />
+
+        {config.filters?.length > 0 && (
+          <button
+            type="button"
+            className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
+            onClick={openFilters}
+          >
+            {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+            <HugeIcon icon={FilterVerticalIcon} size={16} />
+            {t("filter")}
+          </button>
+        )}
+      </div>
+
       {/* ── Jadval ── */}
       <div ref={scrollRef} onScroll={handleScroll} className="w-full flex-1 min-h-0 overflow-auto">
         <table className="w-full border-collapse text-left">
@@ -432,6 +617,11 @@ const ReferencePage = () => {
       </div>
 
       {/* ── Qo'shish modali ── */}
+      {config.custom === "roles" ? (
+        <RoleModal isOpen={addModal} onClose={() => setAddModal(false)} onCreated={handleAfterCreate} />
+      ) : config.custom === "schedule" ? (
+        <ScheduleModal isOpen={addModal} onClose={() => setAddModal(false)} onCreated={handleAfterCreate} />
+      ) : (
       <Modal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
@@ -551,6 +741,70 @@ const ReferencePage = () => {
             >
               <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
               {t(config.addKey)}
+            </button>
+          </div>
+        </div>
+      </Modal>
+      )}
+
+      {/* ── Filter modali (Reports uslubida) ── */}
+      <Modal
+        isOpen={openFilterModal}
+        onClose={() => setOpenFilterModal(false)}
+        height={600}
+      >
+        <div className="flex flex-col justify-between h-full">
+          <div className="flex flex-col gap-3">
+            {/* nav */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <span
+                  className="w-11 h-11 cursor-pointer flex items-center justify-center rounded-lg hover:bg-slate-100 transition dark:hover:bg-[#0a0a0a]"
+                  onClick={() => setOpenFilterModal(false)}
+                >
+                  <ArrowLeft size={24} />
+                </span>
+                <h1 className="text-2xl font-semibold">{t("filter_title")}</h1>
+              </div>
+              <span className="text-sm text-[#737373] dark:text-[#A3A3A3]">
+                {t("filter_subtitle")}
+              </span>
+            </div>
+
+            {/* filter select'lari */}
+            <div className="grid grid-cols-2 gap-3">
+              {(config.filters || []).map((f) => {
+                const parentVal = f.dependsOn ? tmpFilters[f.dependsOn]?.value : null
+                const isDisabled = !!f.dependsOn && !parentVal
+                return (
+                  <Select
+                    key={f.name}
+                    label={t(f.labelKey)}
+                    placeholder={isDisabled ? t("gz_select_region_first") : t(f.phKey)}
+                    options={filterOpts[f.name] || []}
+                    value={tmpFilters[f.name]?.value ?? null}
+                    onChange={(opt) => handleFilterChange(f, opt)}
+                    disabled={isDisabled}
+                  />
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-5">
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer"
+              onClick={clearFilters}
+            >
+              <X size={14} />
+              {t("clear")}
+            </button>
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer bg-[#0090FF] text-white px-3.5 py-2.5 rounded-lg"
+              onClick={applyFilters}
+            >
+              <HugeIcon size={14} icon={Search01Icon} />
+              {t("search")}
             </button>
           </div>
         </div>
