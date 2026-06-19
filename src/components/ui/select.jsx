@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Check, X } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Check, Search } from "lucide-react";
 import { useLanguage } from "@/Context/LanguageContext";
 import { HugeIcon } from "./HugeIcon";
 import { ArrowDown01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
@@ -12,15 +12,28 @@ export const Select = ({
      onChange,
      disabled = false,
      className = "",
-     contanierClassName
+     contanierClassName,
+     searchable,
 }) => {
      const { t } = useLanguage()
 
      const [open, setOpen] = useState(false);
+     const [query, setQuery] = useState("");
      const [selected, setSelected] = useState(
           value !== undefined ? (options.find((o) => o.value === value) ?? null) : null
      );
      const wrapperRef = useRef(null);
+     const searchRef = useRef(null);
+
+     // Qidiruv: aniq `searchable` berilsa o'sha, aks holda ro'yxat uzun bo'lsa avtomatik
+     const showSearch = searchable ?? options.length > 6;
+
+     // Qidiruvga mos variantlar
+     const filteredOptions = useMemo(() => {
+          if (!showSearch || !query.trim()) return options;
+          const q = query.trim().toLowerCase();
+          return options.filter((o) => String(o.label).toLowerCase().includes(q));
+     }, [options, query, showSearch]);
 
      // Sync controlled value
      useEffect(() => {
@@ -39,6 +52,19 @@ export const Select = ({
           document.addEventListener("mousedown", handleClickOutside);
           return () => document.removeEventListener("mousedown", handleClickOutside);
      }, []);
+
+     // Ochilganda qidiruvni tozalab, inputga fokus beramiz; yopilganda tozalaymiz
+     useEffect(() => {
+          if (open) {
+               setQuery("");
+               if (showSearch) {
+                    const id = setTimeout(() => searchRef.current?.focus(), 0);
+                    return () => clearTimeout(id);
+               }
+          } else {
+               setQuery("");
+          }
+     }, [open, showSearch]);
 
      const handleSelect = (option) => {
           setSelected(option);
@@ -138,12 +164,30 @@ export const Select = ({
                            }
                          `}</style>
 
-                         {options.length === 0 ? (
+                         {/* Qidiruv */}
+                         {showSearch && (
+                              <div className="sticky top-0 z-10 bg-white dark:bg-[#171717] p-1 mb-1">
+                                   <div className="relative">
+                                        <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#737373]" />
+                                        <input
+                                             ref={searchRef}
+                                             type="text"
+                                             value={query}
+                                             onChange={(e) => setQuery(e.target.value)}
+                                             onKeyDown={(e) => e.stopPropagation()}
+                                             placeholder={t("search") || "Qidirish..."}
+                                             className="w-full h-9 rounded-lg border border-gray-200 dark:border-[#404040] bg-white dark:bg-[#0F0F0F] pl-8 pr-2.5 text-sm text-[#0a0a0a] dark:text-white placeholder:text-[#737373] outline-none focus:border-gray-300 dark:focus:border-[#707070]"
+                                        />
+                                   </div>
+                              </div>
+                         )}
+
+                         {filteredOptions.length === 0 ? (
                               <div className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
                                    {t("no_data_found")}
                               </div>
                          ) : (
-                              options.map((option) => {
+                              filteredOptions.map((option) => {
                                    const isSelected = selected?.value === option.value;
                                    return (
                                         <div
