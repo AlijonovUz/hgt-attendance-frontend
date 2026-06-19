@@ -3,7 +3,7 @@ import { MoreVertical } from "lucide-react"
 import { useTheme } from "@/Context/ThemeContext"
 import { useNavigate } from "react-router-dom"
 import { HugeIcon } from "./HugeIcon"
-import { LogoutCircle02Icon, Male02Icon, Moon02Icon, Spinner, Sun03Icon } from "@hugeicons/core-free-icons"
+import { LogoutCircle02Icon, Moon02Icon, Spinner, Sun03Icon } from "@hugeicons/core-free-icons"
 import { useLanguage } from "@/Context/LanguageContext"
 
 export const UserDropdown = ({ currentUser }) => {
@@ -66,18 +66,6 @@ export const UserDropdown = ({ currentUser }) => {
                                    />
                               </button>
                          </div>
-
-                         <div className="h-px bg-[#E5E7EB] dark:bg-[#2E2E2E] mx-2 my-0.5" />
-
-                         {/* Profile */}
-                         <button
-                              onClick={() => { navigate("/profile"); setOpen(false) }}
-                              disabled={isLoggingOut}
-                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#252525] cursor-pointer disabled:opacity-50"
-                         >
-                              <HugeIcon icon={Male02Icon} size={17} className="text-[#0a0a0a] dark:text-[#f5f5f5]" />
-                              {t("profile")}
-                         </button>
 
                          <div className="h-px bg-[#E5E7EB] dark:bg-[#2E2E2E] mx-2 my-0.5" />
 
