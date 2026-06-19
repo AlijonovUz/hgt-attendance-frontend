@@ -713,6 +713,18 @@ export const translations = {
           en: "Search ... (name, or tab number)",
           ru: "Поиск ... (ФИО или табельный номер)"
      },
+     all_regions: {
+          uz: "Barcha viloyatlar",
+          cy: "Барча вилоятлар",
+          en: "All regions",
+          ru: "Все регионы"
+     },
+     all_districts: {
+          uz: "Barcha tumanlar",
+          cy: "Барча туманлар",
+          en: "All districts",
+          ru: "Все районы"
+     },
      all_branches: {
           uz: "Barcha fililar",
           cy: "Барча филиллар",
