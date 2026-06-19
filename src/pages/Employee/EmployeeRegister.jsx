@@ -20,8 +20,15 @@ const PAGE_SIZE = 20;
 
 const EmployeeRegister = () => {
   const { t } = useLanguage();
-
   const regions = useSelector((state) => state.references.regions)
+  const userPermission = useSelector((state) => state.references.userPermission)
+
+  const viewEmpP = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_view_profile")
+  const addEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_add")
+  const editEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_edit")
+  const blockEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_block")
+  const fireEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_fire")
+
 
   const [employees, setEmployees] = useState([]);
   const [count, setCount] = useState(0);
@@ -593,18 +600,6 @@ const EmployeeRegister = () => {
   // Order in which fields appear in the form — used to find the first error
   const FIELD_ORDER = ["full_name", "password", "tabel", "phone", "branch", "department", "position", "roles", "schedule"];
 
-  // Scroll the modal to the first field that has an error
-  const scrollToFirstError = (errs) => {
-    const first = FIELD_ORDER.find((k) => errs?.[k]);
-    if (!first) return;
-    const collapsed = first === "roles" || first === "schedule";
-    if (first === "roles") setPermOpen(true);
-    if (first === "schedule") setTableOpen(true);
-    setTimeout(() => {
-      fieldRefs.current[first]?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, collapsed ? 350 : 60);
-  };
-
   // Day numbers that are actual work days in a schedule (mandatory + optional)
   const getScheduleWorkDays = (scheduleId) => {
     const s = schedules.find((x) => x.id === scheduleId);
@@ -966,9 +961,28 @@ const EmployeeRegister = () => {
     }
   };
 
+  const scrollToFirstError = (errs) => {
+    const first = FIELD_ORDER.find((k) => errs?.[k]);
+    if (!first) return;
+
+    if (first === "roles") setPermOpen(true);
+    if (first === "schedule") setTableOpen(true);
+
+    setTimeout(() => {
+      const el = fieldRefs.current[first];
+      const container = document.getElementById("modal-scroll-body");
+      if (!el || !container) return;
+
+      container.scrollTo({
+        top: el.offsetTop - 20,
+        behavior: "smooth",
+      });
+    }, first === "roles" || first === "schedule" ? 400 : 60);
+  };
+
   const COLS = 9;
 
-  const CustomButton = ({ placeholder, onclick, onClear, selected, hasError }) => {
+  const CustomButton = ({ placeholder, onclick, onClear, selected, hasError, disabled }) => {
     return (
       <button
         type="button"
@@ -979,6 +993,7 @@ const EmployeeRegister = () => {
             ? "border-red-500!"
             : "border-gray-200 dark:border-[#404040]"
         )}
+        disabled={disabled}
       >
         <span
           className={
@@ -997,7 +1012,7 @@ const EmployeeRegister = () => {
             className={`text-[#0a0a0a] dark:text-[#fafafa] flex-shrink-0`}
           />
 
-          {selected &&
+          {selected && !disabled &&
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onClear() }}
@@ -1027,32 +1042,34 @@ const EmployeeRegister = () => {
             </span>
           </div>
 
-          <AddButton
-            onOpen={() => {
-              setDetailEmployee(null);
-              setForm({
-                full_name: "",
-                password: "",
-                tabel: "",
-                phone: "",
-                branch: null,
-                department: null,
-                position: null,
-                roles: null,
-                schedule: null,
-                perm_attendance_mark: false,
-                perm_attendance_view: "self",
-                perm_kpi_view: "self",
-                perm_employee_manage: false,
-                perm_reports_export: false,
-                perm_geozone_create: false,
-                perm_roles_manage: false,
-              });
-              setErrors({});
-              setAddEmployeeModal(true);
-            }}
-            title={t("new_employee")}
-          />
+          {addEmp &&
+            <AddButton
+              onOpen={() => {
+                setDetailEmployee(null);
+                setForm({
+                  full_name: "",
+                  password: "",
+                  tabel: "",
+                  phone: "",
+                  branch: null,
+                  department: null,
+                  position: null,
+                  roles: null,
+                  schedule: null,
+                  perm_attendance_mark: false,
+                  perm_attendance_view: "self",
+                  perm_kpi_view: "self",
+                  perm_employee_manage: false,
+                  perm_reports_export: false,
+                  perm_geozone_create: false,
+                  perm_roles_manage: false,
+                });
+                setErrors({});
+                setAddEmployeeModal(true);
+              }}
+              title={t("new_employee")}
+            />
+          }
 
         </div>
 
@@ -1146,8 +1163,8 @@ const EmployeeRegister = () => {
                   employees.map((emp, i) => (
                     <tr
                       key={emp.id}
-                      className="border-b border-[#F0F0F0] dark:border-[#1A1A1A] hover:bg-[#FAFAFA] dark:hover:bg-[#111] cursor-pointer"
-                      onClick={() => { handleOpenDetail(emp.id); }}
+                      className={`border-b border-[#F0F0F0] dark:border-[#1A1A1A] hover:bg-[#FAFAFA] dark:hover:bg-[#111] ${(viewEmpP || editEmp) && "cursor-pointer"}`}
+                      onClick={() => { (viewEmpP || editEmp) && handleOpenDetail(emp.id); }}
                     >
                       <td className="px-4 py-3.5 text-sm font-medium dark:text-[#f5f5f5]">
                         {(page - 1) * PAGE_SIZE + i + 1}
@@ -1246,7 +1263,6 @@ const EmployeeRegister = () => {
         }}
         header={
           detailEmployee ? (
-            /* ── Detail header ── */
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1265,62 +1281,64 @@ const EmployeeRegister = () => {
                   </h2>
                 </div>
 
-                {/* 3-nuqta menyu */}
-                <div ref={dotMenuRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setDotMenuOpen((p) => !p)}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
-                  >
-                    <Ellipsis size={18} className="text-[#0a0a0a] dark:text-white" />
-                  </button>
-                  {dotMenuOpen && (
-                    <div className="absolute right-0 top-[calc(100%+4px)] z-50 bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-xl shadow-lg overflow-hidden min-w-[170px] py-1">
-                      {detailEmployee?.is_blocked ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedEmployee(detailEmployee); // MUHIM!
-                            setDotMenuOpen(false);
-                            setBlockModalOpen(true);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
-                        >
-                          <HugeIcon icon={UserLock01Icon} size={16} />
-                          {t("unblock_employee") || "Blokdan chiqarish"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedEmployee(detailEmployee); // MUHIM!
-                            setDotMenuOpen(false);
-                            setBlockModalOpen(true);
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
-                        >
-                          <HugeIcon icon={UserLock01Icon} size={16} />
-                          {t("block_employee") || "Bloklash"}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedEmployee(detailEmployee); // MUHIM!
-                          setDotMenuOpen(false);
-                          setFireModalOpen(true);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-red-500 dark:text-[#F87171] hover:bg-[#FFF0F0] dark:hover:bg-[#2A1A1A] transition-colors cursor-pointer"
-                      >
-                        <HugeIcon icon={UserRemove02Icon} size={16} />
-                        {t("fire_employee") || "Ishdan chetlatish"}
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {(blockEmp || fireEmp) &&
+                  <div ref={dotMenuRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setDotMenuOpen((p) => !p)}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                    >
+                      <Ellipsis size={18} className="text-[#0a0a0a] dark:text-white" />
+                    </button>
+                    {dotMenuOpen && (
+                      <div className="absolute right-0 top-[calc(100%+4px)] z-50 bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-xl shadow-lg overflow-hidden min-w-[170px] py-1">
+                        {!detailEmployee?.is_active ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEmployee(detailEmployee);
+                              setDotMenuOpen(false);
+                              setBlockModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                          >
+                            <HugeIcon icon={UserLock01Icon} size={16} />
+                            {t("unblock_employee") || "Blokdan chiqarish"}
+                          </button>
+                        ) : (
+                          blockEmp && <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEmployee(detailEmployee);
+                              setDotMenuOpen(false);
+                              setBlockModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+                          >
+                            <HugeIcon icon={UserLock01Icon} size={16} />
+                            {t("block_employee") || "Bloklash"}
+                          </button>
+                        )}
+                        {fireEmp &&
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEmployee(detailEmployee);
+                              setDotMenuOpen(false);
+                              setFireModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-red-500 dark:text-[#F87171] hover:bg-[#FFF0F0] dark:hover:bg-[#2A1A1A] transition-colors cursor-pointer"
+                          >
+                            <HugeIcon icon={UserRemove02Icon} size={16} />
+                            {t("fire_employee") || "Ishdan chetlatish"}
+                          </button>
+                        }
+                      </div>
+                    )}
+                  </div>
+                }
               </div>
 
-              {/* Avatar + ism */}
               <div className="flex items-center gap-3">
                 {detailEmployee?.face_image ? (
                   <img
@@ -1338,7 +1356,6 @@ const EmployeeRegister = () => {
               </div>
             </div>
           ) : (
-            /* ── Create header ── */
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
@@ -1362,11 +1379,10 @@ const EmployeeRegister = () => {
       >
         <div className="flex flex-col justify-between gap-4 h-full">
 
-          {/* ── Form ── */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 pb-5">
 
             {/* Ism familyasi */}
-            <div className="flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.full_name = el} className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("full_name") || "Ism familyasi"}
               </label>
@@ -1376,12 +1392,13 @@ const EmployeeRegister = () => {
                 value={form.full_name}
                 onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
                 className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.full_name && "border-red-500!")}
+                disabled={!editEmp}
               />
               {errors.full_name && <span className="text-[11px] text-red-500 font-medium">{errors.full_name}</span>}
             </div>
 
             {/* Parol */}
-            <div className="flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.password = el} className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("password_label") || "Parol"}
               </label>
@@ -1391,12 +1408,13 @@ const EmployeeRegister = () => {
                 value={form.password}
                 onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
                 className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.password && "border-red-500!")}
+                disabled={!editEmp}
               />
               {errors.password && <span className="text-[11px] text-red-500 font-medium">{errors.password}</span>}
             </div>
 
             {/* JSHSHIR */}
-            <div className="flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.tabel = el} className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 JSHSHIR
               </label>
@@ -1407,12 +1425,13 @@ const EmployeeRegister = () => {
                 onChange={(e) => setForm((p) => ({ ...p, tabel: e.target.value }))}
                 className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.tabel && "border-red-500!")}
                 maxLength={14}
+                disabled={!editEmp}
               />
               {errors.tabel && <span className="text-[11px] text-red-500 font-medium">{errors.tabel}</span>}
             </div>
 
             {/* Telefon */}
-            <div className="flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.phone = el} className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("phone") || "Telefon"}
               </label>
@@ -1428,72 +1447,78 @@ const EmployeeRegister = () => {
                   } else {
                     const local = digits.startsWith("998") ? digits.slice(3) : digits;
                     const d = local.slice(0, 9);
-                    if (d.length <= 2) {
-                      formatted = `+998 ${d}`;
-                    } else if (d.length <= 5) {
-                      formatted = `+998 ${d.slice(0, 2)} ${d.slice(2)}`;
-                    } else if (d.length <= 7) {
-                      formatted = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5)}`;
-                    } else {
-                      formatted = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
-                    }
+                    if (d.length <= 2) formatted = `+998 ${d}`;
+                    else if (d.length <= 5) formatted = `+998 ${d.slice(0, 2)} ${d.slice(2)}`;
+                    else if (d.length <= 7) formatted = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5)}`;
+                    else formatted = `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7, 9)}`;
                   }
                   setForm((p) => ({ ...p, phone: formatted }));
                 }}
                 className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.phone && "border-red-500!")}
+                disabled={!editEmp}
               />
               {errors.phone && <span className="text-[11px] text-red-500 font-medium">{errors.phone}</span>}
             </div>
 
             {/* Filial */}
-            <div className="col-span-2 flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.branch = el} className="col-span-2 flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("col_branch") || "Filial"}
               </label>
               <CustomButton
                 placeholder={t("select_branch")}
-                selected={branches.find(b => b.id === form.branch)?.name}
+                selected={
+                  branches.find(b => b.id === form.branch)?.name ||
+                  (detailEmployee?.branch_info?.id === form.branch ? detailEmployee?.branch_info?.name : null)
+                }
                 onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("branch"), 100) }}
                 onClear={() => setForm((p) => ({ ...p, branch: null }))}
                 hasError={!!errors.branch}
+                disabled={!editEmp}
               />
               {errors.branch && <span className="text-[11px] text-red-500 font-medium">{errors.branch}</span>}
             </div>
 
             {/* Bo'lim */}
-            <div className="flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.department = el} className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("department") || "Bo'lim"}
               </label>
               <CustomButton
                 placeholder={t("select_department")}
-                selected={departments.find(d => d.id === form.department)?.name}
+                selected={
+                  departments.find(d => d.id === form.department)?.name ||
+                  (detailEmployee?.department_info?.id === form.department ? detailEmployee?.department_info?.name : null)
+                }
                 onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("department"), 100) }}
                 onClear={() => setForm((p) => ({ ...p, department: null }))}
                 hasError={!!errors.department}
+                disabled={!editEmp}
               />
               {errors.department && <span className="text-[11px] text-red-500 font-medium">{errors.department}</span>}
             </div>
 
             {/* Lavozim */}
-            <div className="flex flex-col gap-1.5">
+            <div ref={el => fieldRefs.current.position = el} className="flex flex-col gap-1.5">
               <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                 {t("position") || "Lavozim"}
               </label>
               <CustomButton
                 placeholder={t("select_position")}
-                selected={positions.find(d => d.id === form.position)?.name}
+                selected={
+                  positions.find(d => d.id === form.position)?.name ||
+                  (detailEmployee?.position_info?.id === form.position ? detailEmployee?.position_info?.name : null)
+                }
                 onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("position"), 100) }}
                 onClear={() => setForm((p) => ({ ...p, position: null }))}
                 hasError={!!errors.position}
+                disabled={!editEmp}
               />
               {errors.position && <span className="text-[11px] text-red-500 font-medium">{errors.position}</span>}
             </div>
 
-            {/* Rol va Ruhsatlar */}
+            {/* Rol va Ruxsatlar */}
             <div className="flex flex-col gap-3 col-span-2">
-
-              {/* Section header */}
               <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2 text-[15px] font-semibold text-[#0A0A0A] dark:text-[#f5f5f5]">
@@ -1504,38 +1529,30 @@ const EmployeeRegister = () => {
                     {t("role_permissions_subtitle") || "Rol tanlang — ruxsatlar avtomatik moslashadi"}
                   </span>
                 </div>
-
-                {/* ── Toggle tugmasi ── */}
                 <button
                   type="button"
                   onClick={() => setPermOpen((p) => !p)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer"
                 >
-                  <HugeIcon
-                    icon={SquareArrowDown01Icon}
-                    size={18}
-                    className="text-[#0A0A0A] dark:text-[#f5f5f5] transition-transform duration-300"
-                  />
+                  <HugeIcon icon={SquareArrowDown01Icon} size={18} className="text-[#0A0A0A] dark:text-[#f5f5f5]" />
                 </button>
               </div>
 
-              {/* ── Collapsible qism ── */}
-              <div
-                className={cn(
-                  "flex flex-col gap-3 overflow-hidden transition-all duration-500 ease-in-out",
-                  permOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-                )}
-              >
-                {/* Ruhsatlar ro'yxati */}
-                <div className="flex flex-col gap-2 divide-y divide-[#F0F0F0] dark:divide-[#1F1F1F]">
-
-                  {/* Rol selection */}
+              <div className={cn(
+                "flex flex-col gap-3 overflow-hidden transition-all duration-500 ease-in-out",
+                permOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+              )}>
+                <div ref={el => fieldRefs.current.roles = el} className="flex flex-col gap-2 divide-y divide-[#F0F0F0] dark:divide-[#1F1F1F]">
                   <CustomButton
                     placeholder={t("select_role")}
-                    selected={roles.find(d => d.id === form.roles)?.name}
+                    selected={
+                      roles.find(d => d.id === form.roles)?.name ||
+                      (detailEmployee?.role_info?.id === form.roles ? detailEmployee?.role_info?.name : null)
+                    }
                     onclick={() => { setAddEmployeeModal(false); setTimeout(() => setOpenModal("roles"), 100) }}
                     onClear={() => setForm((p) => ({ ...p, roles: null }))}
                     hasError={!!errors.roles}
+                    disabled={!editEmp}
                   />
                   {errors.roles && <span className="text-[11px] text-red-500 font-medium mt-1">{errors.roles}</span>}
 
@@ -1551,13 +1568,7 @@ const EmployeeRegister = () => {
                             <span className="text-sm font-medium text-[#737373] dark:text-[#A3A3A3]">
                               {items[0]?.name || label}
                             </span>
-                            <Switch
-                              disabled
-                              checked={true}
-                              containerClassName="w-[40px] h-[21px]"
-                              thumbClassName="w-[17px] h-[17px]"
-                              checkedThumbClassName="translate-x-5"
-                            />
+                            <Switch disabled checked={true} containerClassName="w-[40px] h-[21px]" thumbClassName="w-[17px] h-[17px]" checkedThumbClassName="translate-x-5" />
                           </div>
                         );
                       }
@@ -1569,39 +1580,17 @@ const EmployeeRegister = () => {
                             onClick={() => toggleGroup(groupKey)}
                             className="flex items-center justify-between w-full py-1.5 cursor-pointer"
                           >
-                            <span className="text-sm font-medium text-[#737373] dark:text-[#A3A3A3]">
-                              {label}
-                            </span>
-                            <ChevronDownIcon
-                              size={16}
-                              className={cn(
-                                "text-[#737373] transition-transform duration-300",
-                                isOpen && "rotate-180"
-                              )}
-                            />
+                            <span className="text-sm font-medium text-[#737373] dark:text-[#A3A3A3]">{label}</span>
+                            <ChevronDownIcon size={16} className={cn("text-[#737373] transition-transform duration-300", isOpen && "rotate-180")} />
                           </button>
-
-                          <div
-                            className={cn(
-                              "grid grid-cols-2 gap-x-4 gap-y-1 overflow-hidden transition-all duration-300 ease-in-out",
-                              isOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-                            )}
-                          >
+                          <div className={cn(
+                            "grid grid-cols-2 gap-x-4 gap-y-1 overflow-hidden transition-all duration-300 ease-in-out",
+                            isOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+                          )}>
                             {items.map((perm) => (
-                              <div
-                                key={perm.id}
-                                className="flex items-center justify-between py-2 pl-2"
-                              >
-                                <span className="text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] truncate pr-2">
-                                  {perm.name}
-                                </span>
-                                <Switch
-                                  disabled
-                                  checked={true}
-                                  containerClassName="w-[25px] h-[15px]"
-                                  thumbClassName="w-[11px] h-[11px]"
-                                  checkedThumbClassName="translate-x-3"
-                                />
+                              <div key={perm.id} className="flex items-center justify-between py-2 pl-2">
+                                <span className="text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] truncate pr-2">{perm.name}</span>
+                                <Switch disabled checked={true} containerClassName="w-[25px] h-[15px]" thumbClassName="w-[11px] h-[11px]" checkedThumbClassName="translate-x-3" />
                               </div>
                             ))}
                           </div>
@@ -1615,15 +1604,12 @@ const EmployeeRegister = () => {
                       </div>
                     )}
                   </div>
-
                 </div>
               </div>
             </div>
 
-            {/* ish jadvali */}
-            <div className="flex flex-col gap-3 col-span-2">
-
-              {/* Section header */}
+            {/* Ish jadvali */}
+            <div ref={el => fieldRefs.current.schedule = el} className="flex flex-col gap-3 col-span-2">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2 text-[15px] font-semibold text-[#0A0A0A] dark:text-[#f5f5f5]">
@@ -1634,177 +1620,128 @@ const EmployeeRegister = () => {
                     {t("work_schedule_subtitle") || "Xodimning ish jadvali"}
                   </span>
                 </div>
-
                 <button
                   type="button"
                   onClick={() => setTableOpen((p) => !p)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer"
                 >
-                  <HugeIcon
-                    icon={SquareArrowDown01Icon}
-                    size={18}
-                    className="text-[#0A0A0A] dark:text-[#f5f5f5] transition-transform duration-300"
-                  />
+                  <HugeIcon icon={SquareArrowDown01Icon} size={18} className="text-[#0A0A0A] dark:text-[#f5f5f5]" />
                 </button>
               </div>
 
-              <div
-                className={cn(
-                  "flex flex-col gap-3 transition-all duration-500 ease-in-out",
-                  tableOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
-                )}
-              >
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Select
-                      placeholder={t("select_work_schedule") || "Ish grafigini tanlash"}
-                      options={schedules.map((sch) => ({ value: sch.id, label: sch.name }))}
-                      value={form.schedule}
-                      onChange={(opt) => {
-                        setForm((p) => ({ ...p, schedule: opt?.value ?? null }));
-                        setSelectedDay(getScheduleFirstWorkDay(opt?.value ?? null));
-                      }}
-                      className={cn(
-                        "w-full rounded-xl border! dark:border-[#404040]!",
-                        errors.schedule && "border-red-500!"
-                      )}
-                    />
-                    {errors.schedule && <span className="text-[11px] text-red-500 font-medium">{errors.schedule}</span>}
-                  </div>
+              <div className={cn(
+                "flex flex-col gap-3 transition-all duration-500 ease-in-out",
+                tableOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+              )}>
+                <div className="flex flex-col gap-1.5">
+                  <Select
+                    placeholder={t("select_work_schedule") || "Ish grafigini tanlash"}
+                    options={[
+                      ...schedules.map(sch => ({ value: sch.id, label: sch.name })),
+                      ...(detailEmployee?.schedule_info?.id && !schedules.find(s => s.id === detailEmployee.schedule_info.id)
+                        ? [{ value: detailEmployee.schedule_info.id, label: detailEmployee.schedule_info.name }]
+                        : [])
+                    ]}
+                    value={form.schedule}
+                    onChange={(opt) => {
+                      setForm((p) => ({ ...p, schedule: opt?.value ?? null }));
+                      setSelectedDay(getScheduleFirstWorkDay(opt?.value ?? null));
+                    }}
+                    className={cn("w-full rounded-xl border! dark:border-[#404040]!", errors.schedule && "border-red-500!")}
+                    disabled={!editEmp}
+                  />
+                  {errors.schedule && <span className="text-[11px] text-red-500 font-medium">{errors.schedule}</span>}
+                </div>
 
-                  {form.schedule && (() => {
-                    const selectedSchedule = schedules.find((s) => s.id === form.schedule);
-                    if (!selectedSchedule) return null;
+                {form.schedule && (() => {
+                  const selectedSchedule =
+                    schedules.find((s) => s.id === form.schedule) ||
+                    (detailEmployee?.schedule_info?.id === form.schedule ? detailEmployee.schedule_info : null);
+                  if (!selectedSchedule) return null;
 
-                    const isMandatory = selectedSchedule.mandatory_days_info?.some(
-                      (d) => d.day_number === selectedDay
-                    );
-                    const isOptional = selectedSchedule.optional_days_info?.some(
-                      (d) => d.day_number === selectedDay
-                    );
-                    const isActiveDay = isMandatory || isOptional;
+                  const isMandatory = selectedSchedule.mandatory_days_info?.some(d => d.day_number === selectedDay);
+                  const isOptional = selectedSchedule.optional_days_info?.some(d => d.day_number === selectedDay);
+                  const isActiveDay = isMandatory || isOptional;
+                  const formatTime = (t) => t ? t.slice(0, 5) : "—";
 
-                    const formatTime = (timeStr) => {
-                      if (!timeStr) return "—";
-                      return timeStr.slice(0, 5);
-                    };
+                  const weekDays = [
+                    { label: "Du", day_number: 0 },
+                    { label: "Se", day_number: 1 },
+                    { label: "Ch", day_number: 2 },
+                    { label: "Pa", day_number: 3 },
+                    { label: "Ju", day_number: 4 },
+                    { label: "Sh", day_number: 5 },
+                    { label: "Ya", day_number: 6 },
+                  ];
 
-                    const weekDays = [
-                      { label: "Du", day_number: 0 },
-                      { label: "Se", day_number: 1 },
-                      { label: "Ch", day_number: 2 },
-                      { label: "Pa", day_number: 3 },
-                      { label: "Ju", day_number: 4 },
-                      { label: "Sh", day_number: 5 },
-                      { label: "Ya", day_number: 6 },
-                    ];
-
-                    return (
-                      <div className="flex flex-col gap-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          {/* Ish boshlanishi */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                              {t("work_start_time") || "Ish boshlanishi"}
-                            </label>
-                            <Input
-                              type="text"
-                              readOnly
-                              value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : "—"}
-                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
-                            />
-                          </div>
-
-                          {/* Ish tugashi */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                              {t("work_end_time") || "Ish tugashi"}
-                            </label>
-                            <Input
-                              type="text"
-                              readOnly
-                              value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : "—"}
-                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
-                            />
-                          </div>
-
-                          {/* Tushlik boshlanishi */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                              {t("lunch_start_time") || "Tushlik boshlanishi"}
-                            </label>
-                            <Input
-                              type="text"
-                              readOnly
-                              value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : "—"}
-                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
-                            />
-                          </div>
-
-                          {/* Tushlik tugashi */}
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                              {t("lunch_end_time") || "Tushlik tugashi"}
-                            </label>
-                            <Input
-                              type="text"
-                              readOnly
-                              value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : "—"}
-                              className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Ish kunlari */}
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">
-                            {t("work_days") || "Ish kunlari"}
-                          </label>
-                          <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-md w-full">
-                            {weekDays.map((day) => {
-                              // Work days come from the selected schedule (mandatory + optional)
-                              const isWorkDay =
-                                selectedSchedule.mandatory_days_info?.some((d) => d.day_number === day.day_number) ||
-                                selectedSchedule.optional_days_info?.some((d) => d.day_number === day.day_number);
-                              const isViewing = selectedDay === day.day_number;
-                              return (
-                                <button
-                                  key={day.day_number}
-                                  type="button"
-                                  onClick={() => setSelectedDay(day.day_number)}
-                                  className={cn(
-                                    "flex-1 py-2.5 text-[13px] font-medium text-center rounded-sm transition-all cursor-pointer",
-                                    isWorkDay
-                                      ? "bg-white dark:bg-[#171717] text-[#0A0A0A] dark:text-white shadow-sm"
-                                      : "text-[#A3A3A3] dark:text-[#5c5c5c] opacity-60 hover:text-[#737373] dark:hover:text-[#A3A3A3]",
-                                    isViewing && "ring-2 ring-[#0090FF] ring-inset"
-                                  )}
-                                >
-                                  {day.label}
-                                </button>
-                              );
-                            })}
-                          </div>
+                          <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_start_time") || "Ish boshlanishi"}</label>
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_end_time") || "Ish tugashi"}</label>
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("lunch_start_time") || "Tushlik boshlanishi"}</label>
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("lunch_end_time") || "Tushlik tugashi"}</label>
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                       </div>
-                    );
-                  })()}
-                </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_days") || "Ish kunlari"}</label>
+                        <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-md w-full">
+                          {weekDays.map((day) => {
+                            const isWorkDay =
+                              selectedSchedule.mandatory_days_info?.some(d => d.day_number === day.day_number) ||
+                              selectedSchedule.optional_days_info?.some(d => d.day_number === day.day_number);
+                            const isViewing = selectedDay === day.day_number;
+                            return (
+                              <button
+                                key={day.day_number}
+                                type="button"
+                                onClick={() => setSelectedDay(day.day_number)}
+                                className={cn(
+                                  "flex-1 py-2.5 text-[13px] font-medium text-center rounded-sm transition-all cursor-pointer",
+                                  isWorkDay
+                                    ? "bg-white dark:bg-[#171717] text-[#0A0A0A] dark:text-white shadow-sm"
+                                    : "text-[#A3A3A3] dark:text-[#5c5c5c] opacity-60 hover:text-[#737373] dark:hover:text-[#A3A3A3]",
+                                  isViewing && "ring-2 ring-[#e5e5e5] dark:ring-[#a3a3a3] ring-inset"
+                                )}
+                              >
+                                {day.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
 
-          {/* ── Footer ── */}
-          <div className="flex items-center justify-end gap-3 sticky bottom-0 z-20">
-            <button
-              type="button"
-              onClick={detailEmployee ? handleUpdateEmployee : handleAddEmployee}
-              className="px-5 py-2.5 flex items-center gap-2 rounded-xl bg-[#0090FF] text-sm font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
-            >
-              <HugeIcon icon={CheckmarkSquare01Icon} />
-              {detailEmployee ? (t("save") || "Saqlash") : (t("addEmployee") || "Xodim qo'shish")}
-            </button>
-          </div>
+          {/* Footer */}
+          {editEmp &&
+            <div className="flex items-center justify-end gap-3 sticky bottom-0 z-20">
+              <button
+                type="button"
+                onClick={detailEmployee ? handleUpdateEmployee : handleAddEmployee}
+                className="px-5 py-2.5 flex items-center gap-2 rounded-xl bg-[#0090FF] text-sm font-semibold text-white hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <HugeIcon icon={CheckmarkSquare01Icon} />
+                {detailEmployee ? (t("save") || "Saqlash") : (t("addEmployee") || "Xodim qo'shish")}
+              </button>
+            </div>
+          }
         </div>
       </Modal>
 
@@ -2137,17 +2074,17 @@ const EmployeeRegister = () => {
       <AlertModal
         isOpen={blockModalOpen}
         onClose={() => setBlockModalOpen(false)}
-        onConfirm={selectedEmployee?.is_blocked ? handleUnblockEmployee : handleBlockEmployee}
-        title={selectedEmployee?.is_blocked
+        onConfirm={!selectedEmployee?.is_active ? handleUnblockEmployee : handleBlockEmployee}
+        title={!selectedEmployee?.is_active
           ? t("unblock_employee_title")
           : t("block_employee_title")
         }
-        description={selectedEmployee?.is_blocked
+        description={selectedEmployee?.is_active
           ? t("block_employee_description")
           : t("unblock_employee_description")
         }
-        confirmText={selectedEmployee?.is_blocked ?
-          "Blokdan chiqarish" : (
+        confirmText={!selectedEmployee?.is_active ?
+          t("unblock_employee") : (
             <span className="flex items-center gap-2">
               <HugeIcon icon={UserLock01Icon} size={16} />
               {t("block")}

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
-import { Plus, X, FileText, ArrowLeft } from "lucide-react"
+import { Pencil, Trash2, Plus, X, FileText, ArrowLeft } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
 import { Calendar02Icon, CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
@@ -14,6 +14,7 @@ import { DatePicker } from "@/components/ui/DatePicker"
 import { AddButton } from "@/components/ui/customAddButton"
 import { RoleModal } from "./RoleModal"
 import { ScheduleModal } from "./ScheduleModal"
+import { useSelector } from "react-redux"
 
 // "yyyy-mm-dd" (API'dan kelgan) -> "dd.mm.yyyy" (jadvalda ko'rsatish uchun)
 const formatDate = (value) => {
@@ -47,6 +48,8 @@ const REF_CONFIGS = {
   regions: {
     endpoint: "users/regions/",
     titleKey: "ref_t_region",
+    permKey: "regions",      // userPermission dagi kalit
+    permPrefix: "region",
     addKey: "ref_add_region",
     subKey: "ref_sub_region",
     columns: [{ headerKey: "gz_region", accessor: (r) => r.name }],
@@ -56,6 +59,10 @@ const REF_CONFIGS = {
     endpoint: "users/districts/",
     titleKey: "ref_t_district",
     addKey: "ref_add_district",
+    permKey: "districts",
+    permPrefix: "district",
+    permKey: "branchs",      // JSON da "branchs" (s bilan)
+    permPrefix: "branch",
     subKey: "ref_sub_district",
     columns: [
       { headerKey: "gz_district", accessor: (r) => r.name },
@@ -73,6 +80,8 @@ const REF_CONFIGS = {
     endpoint: "users/branches/",
     titleKey: "ref_t_branch",
     addKey: "ref_add_branch",
+    permKey: "branchs",      // JSON da "branchs" (s bilan)
+    permPrefix: "branch",
     subKey: "ref_sub_branch",
     columns: [
       { headerKey: "gz_filial", accessor: (r) => r.name },
@@ -94,6 +103,8 @@ const REF_CONFIGS = {
     titleKey: "ref_t_dept",
     addKey: "ref_add_dept",
     subKey: "ref_sub_dept",
+    permKey: "departments",
+    permPrefix: "department",
     columns: [
       { headerKey: "ref_col_dept", accessor: (r) => r.name },
       { headerKey: "gz_filial", accessor: (r) => r.branch_info?.name || "—" },
@@ -112,6 +123,8 @@ const REF_CONFIGS = {
     endpoint: "users/positions/",
     titleKey: "ref_t_position",
     addKey: "ref_add_position",
+    permKey: "positions",
+    permPrefix: "position",
     subKey: "ref_sub_position",
     columns: [
       { headerKey: "ref_col_position", accessor: (r) => r.name },
@@ -130,6 +143,8 @@ const REF_CONFIGS = {
     endpoint: "users/holidays/",
     titleKey: "ref_t_holiday",
     addKey: "ref_add_holiday",
+    permKey: "holidays",
+    permPrefix: "holiday",
     subKey: "ref_sub_holiday",
     columns: [
       // DIQQAT: maydon nomi "title" (pastdagi fields'ga mos), shuning uchun r.title
@@ -148,6 +163,8 @@ const REF_CONFIGS = {
     endpoint: "users/roles/",
     titleKey: "ref_t_role",
     addKey: "ref_add_role",
+    permKey: "roles",
+    permPrefix: "role",
     subKey: "ref_sub_role",
     custom: "roles",
     columns: [{ headerKey: "ref_col_role", accessor: (r) => r.name }],
@@ -157,6 +174,8 @@ const REF_CONFIGS = {
     endpoint: "users/schedules/",
     titleKey: "ref_t_schedule",
     addKey: "ref_add_schedule",
+    permKey: "schedules",    // JSON da "schedules"
+    permPrefix: "schedule",
     subKey: "ref_sub_schedule",
     custom: "schedule",
     columns: [
@@ -184,6 +203,16 @@ const ReferencePage = () => {
   const currentLang = language || "uz"
   const { type } = useParams()
   const config = REF_CONFIGS[type]
+
+  const userPermission = useSelector((state) => state.references.userPermission)
+
+  const permKey = config?.permKey
+  const permPrefix = config?.permPrefix
+
+  const canCreate = userPermission?.[permKey]?.some(e => e.code === `${permPrefix}_create`) ?? false
+  const canEdit = userPermission?.[permKey]?.some(e => e.code === `${permPrefix}_edit`) ?? false
+  const canDelete = userPermission?.[permKey]?.some(e => e.code === `${permPrefix}_delete`) ?? false
+
 
   const [rows, setRows] = useState([])
   const [count, setCount] = useState(0)
@@ -214,6 +243,13 @@ const ReferencePage = () => {
   const [filterValues, setFilterValues] = useState({}) // qo'llangan: { filterName: {value,label} }
   const [tmpFilters, setTmpFilters] = useState({})      // modaldagi vaqtinchalik tanlov
   const [filterOpts, setFilterOpts] = useState({})      // { filterName: [{value,label}] }
+
+  const [editModal, setEditModal] = useState(false)
+  const [editRow, setEditRow] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [editErrors, setEditErrors] = useState({})
+  const [editSaving, setEditSaving] = useState(false)
+
 
   // Joriy so'rov parametrlari (infinite scroll bir xil filtr bilan davom etishi uchun)
   const activeParamsRef = useRef({})
@@ -330,10 +366,10 @@ const ReferencePage = () => {
   // Filter modalini joriy qo'llangan filtrlar bilan ochish
   const openFilters = () => {
     setTmpFilters(filterValues)
-    ;(config.filters || []).forEach((f) => {
-      if (!f.dependsOn) loadFilterOptions(f)
-      else if (filterValues[f.dependsOn]?.value) loadFilterOptions(f, filterValues[f.dependsOn].value)
-    })
+      ; (config.filters || []).forEach((f) => {
+        if (!f.dependsOn) loadFilterOptions(f)
+        else if (filterValues[f.dependsOn]?.value) loadFilterOptions(f, filterValues[f.dependsOn].value)
+      })
     setOpenFilterModal(true)
   }
 
@@ -341,13 +377,13 @@ const ReferencePage = () => {
   const handleFilterChange = (filter, opt) => {
     setTmpFilters((prev) => {
       const next = { ...prev, [filter.name]: opt }
-      ;(config.filters || [])
-        .filter((f) => f.dependsOn === filter.name)
-        .forEach((dep) => {
-          next[dep.name] = null
-          setFilterOpts((o) => ({ ...o, [dep.name]: [] }))
-          if (opt?.value) loadFilterOptions(dep, opt.value)
-        })
+        ; (config.filters || [])
+          .filter((f) => f.dependsOn === filter.name)
+          .forEach((dep) => {
+            next[dep.name] = null
+            setFilterOpts((o) => ({ ...o, [dep.name]: [] }))
+            if (opt?.value) loadFilterOptions(dep, opt.value)
+          })
       return next
     })
   }
@@ -384,10 +420,10 @@ const ReferencePage = () => {
     activeParamsRef.current = {}
     if (scrollRef.current) scrollRef.current.scrollTop = 0
     fetchList(config, 1, {})
-    // Bog'liq bo'lmagan select'lar variantlarini darhol yuklaymiz
-    ;(config.fields || [])
-      .filter((f) => f.type === "select" && !f.dependsOn)
-      .forEach((f) => loadOptions(f))
+      // Bog'liq bo'lmagan select'lar variantlarini darhol yuklaymiz
+      ; (config.fields || [])
+        .filter((f) => f.type === "select" && !f.dependsOn)
+        .forEach((f) => loadOptions(f))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type])
 
@@ -421,6 +457,25 @@ const ReferencePage = () => {
         delete next[field.name]
         return next
       })
+    }
+  }
+
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const handleDelete = async (row) => {
+    if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
+    setDeleteLoading(true)
+    try {
+      await axiosAPI.delete(`${config.endpoint}${row.id}/`)
+      showToast(t("ref_deleted") || "O'chirildi")
+      setPage(1)
+      setHasMore(true)
+      if (scrollRef.current) scrollRef.current.scrollTop = 0
+      fetchList(config, 1)
+    } catch (err) {
+      showToast(getErrMsg(err, t("gz_error")))
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -469,6 +524,66 @@ const ReferencePage = () => {
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleEdit = (row) => {
+    setEditRow(row)
+    // Formani mavjud qiymatlar bilan to'ldirish
+    const initial = {}
+    config.fields?.forEach((f) => {
+      if (f.type === "select") {
+        initial[f.name] = row[f.name] ?? row[`${f.name}_info`]?.id ?? null
+      } else if (f.type === "date") {
+        initial[f.name] = row[f.name] ? new Date(row[f.name]) : null
+      } else {
+        initial[f.name] = row[f.name] ?? ""
+      }
+    })
+    setEditForm(initial)
+    setEditErrors({})
+    setEditModal(true)
+  }
+
+  const handleUpdate = async () => {
+    const newErrors = {}
+    config.fields?.forEach((f) => {
+      if (f.required) {
+        const v = editForm[f.name]
+        if (v === null || v === undefined || (typeof v === "string" && !v.trim())) {
+          newErrors[f.name] = true
+        }
+      }
+    })
+    if (Object.keys(newErrors).length > 0) {
+      setEditErrors(newErrors)
+      showToast(t("gz_validation"))
+      return
+    }
+
+    const payload = {}
+    config.fields?.forEach((f) => {
+      const v = editForm[f.name]
+      if (f.type === "text") payload[f.name] = String(v).trim()
+      else if (f.type === "date") { if (v) payload[f.name] = toISODate(v) }
+      else if (v) payload[f.name] = v
+    })
+
+    setEditSaving(true)
+    try {
+      const res = await axiosAPI.patch(`${config.endpoint}${editRow.id}/`, payload)
+      if (res.status === 200) {
+        setEditModal(false)
+        showToast(t("ref_updated") || "Yangilandi")
+        setPage(1)
+        setHasMore(true)
+        if (scrollRef.current) scrollRef.current.scrollTop = 0
+        fetchList(config, 1)
+      }
+    } catch (err) {
+      showToast(getErrMsg(err, t("gz_error")))
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -533,11 +648,12 @@ const ReferencePage = () => {
           </button>
         </div> */}
 
-        <AddButton
-          onOpen={() => setAddModal(true)}
-          title={t(config.addKey)}
-        />
-
+        {canCreate &&
+          <AddButton
+            onOpen={() => setAddModal(true)}
+            title={t(config.addKey)}
+          />
+        }
       </div>
 
       {/* ── Qidiruv + Filter qatori ── */}
@@ -574,6 +690,11 @@ const ReferencePage = () => {
                   {t(c.headerKey)}
                 </th>
               ))}
+              {(canEdit || canDelete) && (
+                <th className="px-4 py-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white bg-[#FAFAFA] dark:bg-[#1A1A1A]">
+                  {t("actions") || "Amallar"}
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -602,6 +723,31 @@ const ReferencePage = () => {
                       {c.accessor(row)}
                     </td>
                   ))}
+
+                  {(canEdit || canDelete) && (
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(row)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer text-[#737373] hover:text-[#0A0A0A] dark:hover:text-white"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(row)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#FFF0F0] dark:hover:bg-[#2A1A1A] transition-colors cursor-pointer text-[#737373] hover:text-red-500"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -622,50 +768,79 @@ const ReferencePage = () => {
       ) : config.custom === "schedule" ? (
         <ScheduleModal isOpen={addModal} onClose={() => setAddModal(false)} onCreated={handleAfterCreate} />
       ) : (
-      <Modal
-        isOpen={addModal}
-        onClose={() => setAddModal(false)}
-        height={600}
-        header={
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t(config.addKey)}</h2>
-            <button
-              type="button"
-              onClick={() => setAddModal(false)}
-              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer text-[#0A0A0A] dark:text-white"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        }
-      >
-        <div className="flex flex-col justify-between h-full gap-4 pb-2">
-          <div className="flex flex-col gap-4">
-            {config.fields.map((f, i) => {
-              // pairWith bilan belgilangan ikkinchi maydon: birinchisi bilan birga chiqadi
-              if (f.pairWith) return null
+        <Modal
+          isOpen={addModal}
+          onClose={() => setAddModal(false)}
+          height={600}
+          header={
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t(config.addKey)}</h2>
+              <button
+                type="button"
+                onClick={() => setAddModal(false)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer text-[#0A0A0A] dark:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          }
+        >
+          <div className="flex flex-col justify-between h-full gap-4 pb-2">
+            <div className="flex flex-col gap-4">
+              {config.fields.map((f, i) => {
+                // pairWith bilan belgilangan ikkinchi maydon: birinchisi bilan birga chiqadi
+                if (f.pairWith) return null
 
-              // Sana juftligi (masalan boshlanish/tugash sanasi) — yonma-yon
-              const datePair = f.type === "date" ? config.fields.find((x) => x.pairWith === f.name) : null
-              if (f.type === "date" && datePair) {
-                return (
-                  <div key={i} className="grid grid-cols-2 gap-3">
-                    {renderDateInput(f)}
-                    {renderDateInput(datePair)}
-                  </div>
-                )
-              }
-              if (f.type === "date") {
-                return renderDateInput(f)
-              }
+                // Sana juftligi (masalan boshlanish/tugash sanasi) — yonma-yon
+                const datePair = f.type === "date" ? config.fields.find((x) => x.pairWith === f.name) : null
+                if (f.type === "date" && datePair) {
+                  return (
+                    <div key={i} className="grid grid-cols-2 gap-3">
+                      {renderDateInput(f)}
+                      {renderDateInput(datePair)}
+                    </div>
+                  )
+                }
+                if (f.type === "date") {
+                  return renderDateInput(f)
+                }
 
-              // Maxsus joylashuv: region + district yonma-yon (faqat branches'da)
-              if (f.type === "select" && f.dependsOn) return null // pastda juftlikda chiqadi
-              const pairDep = config.fields.find((x) => x.dependsOn === f.name)
-              if (f.type === "select" && pairDep) {
-                return (
-                  <div key={i} className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1.5">
+                // Maxsus joylashuv: region + district yonma-yon (faqat branches'da)
+                if (f.type === "select" && f.dependsOn) return null // pastda juftlikda chiqadi
+                const pairDep = config.fields.find((x) => x.dependsOn === f.name)
+                if (f.type === "select" && pairDep) {
+                  return (
+                    <div key={i} className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Select
+                          label={t(f.labelKey)}
+                          placeholder={t(f.phKey)}
+                          options={options[f.name] || []}
+                          value={form[f.name] ?? null}
+                          onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
+                          className={cn(errors[f.name] && errorInputClass)}
+                        />
+                        {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Select
+                          label={t(pairDep.labelKey)}
+                          placeholder={!form[f.name] ? t("gz_select_region_first") : t(pairDep.phKey)}
+                          options={options[pairDep.name] || []}
+                          value={form[pairDep.name] ?? null}
+                          onChange={(opt) => handleFieldChange(pairDep, opt?.value ?? null)}
+                          disabled={!form[f.name]}
+                          className={cn(errors[pairDep.name] && errorInputClass)}
+                        />
+                        {errors[pairDep.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                      </div>
+                    </div>
+                  )
+                }
+
+                if (f.type === "select") {
+                  return (
+                    <div key={i} className="flex flex-col gap-1.5">
                       <Select
                         label={t(f.labelKey)}
                         placeholder={t(f.phKey)}
@@ -676,75 +851,46 @@ const ReferencePage = () => {
                       />
                       {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      <Select
-                        label={t(pairDep.labelKey)}
-                        placeholder={!form[f.name] ? t("gz_select_region_first") : t(pairDep.phKey)}
-                        options={options[pairDep.name] || []}
-                        value={form[pairDep.name] ?? null}
-                        onChange={(opt) => handleFieldChange(pairDep, opt?.value ?? null)}
-                        disabled={!form[f.name]}
-                        className={cn(errors[pairDep.name] && errorInputClass)}
-                      />
-                      {errors[pairDep.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
-                    </div>
-                  </div>
-                )
-              }
+                  )
+                }
 
-              if (f.type === "select") {
+                // text
                 return (
                   <div key={i} className="flex flex-col gap-1.5">
-                    <Select
-                      label={t(f.labelKey)}
+                    <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t(f.labelKey)}</label>
+                    <Input
+                      type="text"
                       placeholder={t(f.phKey)}
-                      options={options[f.name] || []}
-                      value={form[f.name] ?? null}
-                      onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
-                      className={cn(errors[f.name] && errorInputClass)}
+                      value={form[f.name] ?? ""}
+                      onChange={(e) => handleFieldChange(f, e.target.value)}
+                      className={cn(
+                        "w-full h-11 rounded-lg dark:bg-[#171717]",
+                        errors[f.name] && errorInputClass
+                      )}
                     />
                     {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                   </div>
                 )
-              }
+              })}
+            </div>
 
-              // text
-              return (
-                <div key={i} className="flex flex-col gap-1.5">
-                  <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t(f.labelKey)}</label>
-                  <Input
-                    type="text"
-                    placeholder={t(f.phKey)}
-                    value={form[f.name] ?? ""}
-                    onChange={(e) => handleFieldChange(f, e.target.value)}
-                    className={cn(
-                      "w-full h-11 rounded-lg dark:bg-[#171717]",
-                      errors[f.name] && errorInputClass
-                    )}
-                  />
-                  {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
-                </div>
-              )
-            })}
+            {/* Footer */}
+            <div className="flex items-center justify-end pt-2">
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={creating}
+                className={cn(
+                  "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                  creating ? "bg-[#7EC0FF] cursor-default" : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
+                )}
+              >
+                <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
+                {t(config.addKey)}
+              </button>
+            </div>
           </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-end pt-2">
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={creating}
-              className={cn(
-                "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
-                creating ? "bg-[#7EC0FF] cursor-default" : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
-              )}
-            >
-              <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
-              {t(config.addKey)}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>
       )}
 
       {/* ── Filter modali (Reports uslubida) ── */}
@@ -805,6 +951,90 @@ const ReferencePage = () => {
             >
               <HugeIcon size={14} icon={Search01Icon} />
               {t("search")}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Tahrirlash modali ── */}
+      <Modal
+        isOpen={editModal}
+        onClose={() => setEditModal(false)}
+        height={600}
+        header={
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
+              {t("edit") || "Tahrirlash"}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setEditModal(false)}
+              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer text-[#0A0A0A] dark:text-white"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        }
+      >
+        <div className="flex flex-col justify-between h-full gap-4 pb-2">
+          <div className="flex flex-col gap-4">
+            {(config.fields || []).map((f, i) => {
+              if (f.pairWith) return null
+              const datePair = f.type === "date" ? config.fields.find((x) => x.pairWith === f.name) : null
+
+              if (f.type === "date" && datePair) {
+                return (
+                  <div key={i} className="grid grid-cols-2 gap-3">
+                    <DatePicker className="w-full" currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
+                    <DatePicker className="w-full" currentLang={currentLang} label={t(datePair.labelKey)} placeholder={t(datePair.phKey)} value={editForm[datePair.name]} onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))} error={!!editErrors[datePair.name]} />
+                  </div>
+                )
+              }
+              if (f.type === "date") {
+                return <DatePicker key={i} currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
+              }
+              if (f.type === "select") {
+                return (
+                  <div key={i} className="flex flex-col gap-1.5">
+                    <Select
+                      label={t(f.labelKey)}
+                      placeholder={t(f.phKey)}
+                      options={options[f.name] || []}
+                      value={editForm[f.name] ?? null}
+                      onChange={(opt) => setEditForm(p => ({ ...p, [f.name]: opt?.value ?? null }))}
+                      className={cn(editErrors[f.name] && errorInputClass)}
+                    />
+                    {editErrors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                  </div>
+                )
+              }
+              return (
+                <div key={i} className="flex flex-col gap-1.5">
+                  <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t(f.labelKey)}</label>
+                  <Input
+                    type="text"
+                    placeholder={t(f.phKey)}
+                    value={editForm[f.name] ?? ""}
+                    onChange={(e) => setEditForm(p => ({ ...p, [f.name]: e.target.value }))}
+                    className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", editErrors[f.name] && errorInputClass)}
+                  />
+                  {editErrors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex items-center justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleUpdate}
+              disabled={editSaving}
+              className={cn(
+                "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                editSaving ? "bg-[#7EC0FF] cursor-default" : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
+              )}
+            >
+              <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
+              {t("save") || "Saqlash"}
             </button>
           </div>
         </div>

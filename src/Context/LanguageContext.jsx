@@ -322,6 +322,12 @@ export const translations = {
           en: "Settings",
           ru: "Настройки"
      },
+     actions: {
+          uz: "Amallar",
+          cy: "Амаллар",
+          en: "Actions",
+          ru: "Действия"
+     },
      help: {
           uz: "Yordam",
           cy: "Ёрдам",
@@ -1536,6 +1542,12 @@ export const translations = {
           en: "dd.mm.yyyy",
           ru: "дд.мм.гггг"
      },
+     ref_delete_confirm: {
+          uz: "O'chirishni tasdiqlaysizmi?",
+          cy: "Ўчиришни тасдиқлайсизми?",
+          en: "Confirm deletion?",
+          ru: "Подтвердить удаление?"
+     },
 
      // ─── Rollar ───
      ref_t_role: { uz: "Rollar", cy: "Роллар", en: "Roles", ru: "Роли" },
@@ -1572,7 +1584,7 @@ export const translations = {
      set_sound_title: { uz: "Ovozli signal", cy: "Овозли сигнал", en: "Sound alert", ru: "Звуковой сигнал" },
      set_sound_sub: { uz: "Yangi bildirishnomada ovoz", cy: "Янги билдиришномада овоз", en: "Sound on new notification", ru: "Звук при новом уведомлении" },
      set_version_title: { uz: "Tizim versiyasi", cy: "Тизим версияси", en: "System version", ru: "Версия системы" },
-     set_lang_latin: { uz: "Lotin", cy: "Лотин", en: "Latin", ru: "Lotin" },
+     set_lang_latin: { uz: "Lotin", cy: "Lotin", en: "Lotin", ru: "Lotin" },
      set_lang_cyrillic: { uz: "Кирил", cy: "Кирил", en: "Cyrillic", ru: "Кирил" },
      set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", ru: "Русский" },
 

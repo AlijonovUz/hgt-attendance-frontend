@@ -70,7 +70,6 @@ const Reports = () => {
   const showToast = (message) =>
     setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
 
-  // Reports.jsx — faqat o'zgargan qismlar ko'rsatilgan
 
   // 1. State'lar qo'shiladi (mavjud state'lar tagiga)
   const [regions, setRegions] = useState([])

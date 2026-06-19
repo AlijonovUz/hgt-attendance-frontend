@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
 import { Toast } from "@/components/ui/Toast"
 import { GeoMap } from "@/components/ui/GeoMap"
+import { useSelector } from "react-redux"
 
 const RADIUS_MIN = 50
 const RADIUS_MAX = 500
@@ -49,7 +50,7 @@ const fmtCoord = (lat, lng) => {
 }
 
 // ─── Radius slider (detail + modal'da qayta ishlatiladi) ───
-const RadiusSlider = ({ value, onChange, theme }) => {
+const RadiusSlider = ({ value, onChange, theme, disabled }) => {
   const percent = ((value - RADIUS_MIN) / (RADIUS_MAX - RADIUS_MIN)) * 100
   const fill = theme === "dark" ? "#F5F5F5" : "#171717"
   const track = theme === "dark" ? "#404040" : "#E5E5E5"
@@ -58,13 +59,14 @@ const RadiusSlider = ({ value, onChange, theme }) => {
       type="range"
       min={RADIUS_MIN}
       max={RADIUS_MAX}
+      disabled={disabled}
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
       style={{
         background: `linear-gradient(to right, ${fill} 0%, ${fill} ${percent}%, ${track} ${percent}%, ${track} 100%)`,
       }}
       className={cn(
-        "w-full h-1.5 appearance-none cursor-pointer rounded-full outline-none",
+        "w-full h-1.5 appearance-none cursor-pointer disabled:cursor-default rounded-full outline-none",
         "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#171717] dark:[&::-webkit-slider-thumb]:border-[#F5F5F5] [&::-webkit-slider-thumb]:shadow-sm",
         "[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#171717] dark:[&::-moz-range-thumb]:border-[#F5F5F5]"
       )}
@@ -75,6 +77,11 @@ const RadiusSlider = ({ value, onChange, theme }) => {
 const Geozones = () => {
   const { t } = useLanguage()
   const { theme } = useTheme()
+  const userPermission = useSelector((state) => state.references.userPermission)
+
+  const addGeo = userPermission?.geozones && userPermission?.geozones.some(e => e.code === "geozone_create")
+  const editGeo = userPermission?.geozones && userPermission?.geozones.some(e => e.code === "geozone_edit")
+  const delGeo = userPermission?.geozones && userPermission?.geozones.some(e => e.code === "geozone_delete")
 
   const [geozones, setGeozones] = useState([])
   const [loading, setLoading] = useState(true)
@@ -370,23 +377,25 @@ const Geozones = () => {
         </div>
 
         {/* Ikkita borderli tugma — orasida bo'shliqsiz */}
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={() => setAddModal(true)}
-            className="inline-flex items-center h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
-          >
-            {t("gz_new")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setAddModal(true)}
-            title={t("gz_new")}
-            className="inline-flex items-center justify-center h-[38px] w-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors text-[#0A0A0A] dark:text-white"
-          >
-            <MapPinned size={16} />
-          </button>
-        </div>
+        {addGeo &&
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setAddModal(true)}
+              className="inline-flex items-center h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
+            >
+              {t("gz_new")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddModal(true)}
+              title={t("gz_new")}
+              className="inline-flex items-center justify-center h-[38px] w-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors text-[#0A0A0A] dark:text-white"
+            >
+              <MapPinned size={16} />
+            </button>
+          </div>
+        }
       </div>
 
       {/* ─── Body: list + detail ─── */}
@@ -420,66 +429,66 @@ const Geozones = () => {
 
           {/* Ro'yxat */}
           <div className="flex flex-col gap-2.5 h-[calc(100vh-235px)] overflow-y-auto pr-1">
-          {loading ? (
-            Array.from({ length: 7 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[74px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0"
-              />
-            ))
-          ) : geozones.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 h-full text-[#737373]">
-              <MapPin size={28} strokeWidth={1.5} />
-              <span className="text-sm">{t("gz_empty")}</span>
-            </div>
-          ) : (
-            geozones.map((g) => {
-              const active = g.id === selectedId
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setSelectedId(g.id)}
-                  className={cn(
-                    "group flex items-center gap-3 w-full text-left rounded-2xl border p-3.5 transition-colors flex-shrink-0 cursor-pointer",
-                    active
-                      ? "border-[#D4D4D4] dark:border-[#525252] bg-[#FAFAFA] dark:bg-[#1A1A1A] shadow-sm"
-                      : "border-[#E5E7EB] dark:border-[#2E2E2E] hover:bg-[#FAFAFA] dark:hover:bg-[#141414]"
-                  )}
-                >
-                  {/* Ikona */}
-                  <div
+            {loading ? (
+              Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[74px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0"
+                />
+              ))
+            ) : geozones.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 h-full text-[#737373]">
+                <MapPin size={28} strokeWidth={1.5} />
+                <span className="text-sm">{t("gz_empty")}</span>
+              </div>
+            ) : (
+              geozones.map((g) => {
+                const active = g.id === selectedId
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedId(g.id)}
                     className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                      active ? "bg-white dark:bg-[#262626] shadow-sm" : "bg-[#F5F5F5] dark:bg-[#1F1F1F]"
+                      "group flex items-center gap-3 w-full text-left rounded-2xl border p-3.5 transition-colors flex-shrink-0 cursor-pointer",
+                      active
+                        ? "border-[#D4D4D4] dark:border-[#525252] bg-[#FAFAFA] dark:bg-[#1A1A1A] shadow-sm"
+                        : "border-[#E5E7EB] dark:border-[#2E2E2E] hover:bg-[#FAFAFA] dark:hover:bg-[#141414]"
                     )}
                   >
-                    <MapPin size={18} className="text-[#0A0A0A] dark:text-white" />
-                  </div>
+                    {/* Ikona */}
+                    <div
+                      className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                        active ? "bg-white dark:bg-[#262626] shadow-sm" : "bg-[#F5F5F5] dark:bg-[#1F1F1F]"
+                      )}
+                    >
+                      <MapPin size={18} className="text-[#0A0A0A] dark:text-white" />
+                    </div>
 
-                  {/* Nom + meta */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
-                      {g.name}
-                    </p>
-                    <p className="text-[13px] text-[#737373] truncate">
-                      {ztLabel(g.zone_type)} - {g.radius} {t("gz_meter_short")}
-                    </p>
-                  </div>
+                    {/* Nom + meta */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
+                        {g.name}
+                      </p>
+                      <p className="text-[13px] text-[#737373] truncate">
+                        {ztLabel(g.zone_type)} - {g.radius} {t("gz_meter_short")}
+                      </p>
+                    </div>
 
-                  {/* Radio */}
-                  <span
-                    className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                      active ? "border-[#0090FF]" : "border-[#D4D4D4] dark:border-[#525252]"
-                    )}
-                  >
-                    {active && <span className="w-2.5 h-2.5 rounded-full bg-[#0090FF]" />}
-                  </span>
-                </button>
-              )
-            })
-          )}
+                    {/* Radio */}
+                    <span
+                      className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                        active ? "border-[#0090FF]" : "border-[#D4D4D4] dark:border-[#525252]"
+                      )}
+                    >
+                      {active && <span className="w-2.5 h-2.5 rounded-full bg-[#0090FF]" />}
+                    </span>
+                  </button>
+                )
+              })
+            )}
           </div>
         </div>
 
@@ -498,14 +507,16 @@ const Geozones = () => {
                 <h2 className="text-xl font-semibold text-[#0A0A0A] dark:text-white truncate">
                   {selected.name}
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(selected)}
-                  title={t("gz_delete")}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737373] hover:text-[#EF4444] hover:bg-[#FEF2F2] dark:hover:bg-[#2A1416] transition-colors cursor-pointer flex-shrink-0"
-                >
-                  <Trash2 size={18} />
-                </button>
+                {delGeo &&
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(selected)}
+                    title={t("gz_delete")}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737373] hover:text-[#EF4444] hover:bg-[#FEF2F2] dark:hover:bg-[#2A1416] transition-colors cursor-pointer flex-shrink-0"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                }
               </div>
 
               {/* Haqiqiy xarita */}
@@ -552,7 +563,7 @@ const Geozones = () => {
                     {detailRadius} {t("gz_meter")}
                   </span>
                 </div>
-                <RadiusSlider value={detailRadius} onChange={setDetailRadius} theme={theme} />
+                <RadiusSlider disabled={!editGeo} value={detailRadius} onChange={setDetailRadius} theme={theme} />
                 <div className="flex items-center justify-between text-[13px] text-[#737373]">
                   <span>{RADIUS_MIN} {t("gz_meter_short")}</span>
                   <span>{RADIUS_MAX} {t("gz_meter_short")}</span>
@@ -560,20 +571,22 @@ const Geozones = () => {
               </div>
 
               {/* Save */}
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || !radiusDirty}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors",
-                  saving || !radiusDirty
-                    ? "bg-[#7EC0FF] cursor-default"
-                    : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
-                )}
-              >
-                <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
-                {t("gz_save")}
-              </button>
+              {editGeo &&
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving || !radiusDirty || !editGeo}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                    saving || !radiusDirty
+                      ? "bg-[#7EC0FF] cursor-default"
+                      : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
+                  )}
+                >
+                  <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
+                  {t("gz_save")}
+                </button>
+              }
             </div>
           )}
         </div>
