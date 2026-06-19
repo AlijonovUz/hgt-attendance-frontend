@@ -403,6 +403,42 @@ export const translations = {
           en: "attendance",
           ru: "посещаемость"
      },
+     trend_vs_yesterday: {
+          uz: "o'tgan kunga nisbatan",
+          cy: "ўтган кунга нисбатан",
+          en: "vs previous day",
+          ru: "по сравнению с прошлым днём"
+     },
+     trend_vs_last_week: {
+          uz: "o'tgan haftaga nisbatan",
+          cy: "ўтган ҳафтага нисбатан",
+          en: "vs last week",
+          ru: "по сравнению с прошлой неделей"
+     },
+     trend_vs_last_month: {
+          uz: "o'tgan oyga nisbatan",
+          cy: "ўтган ойга нисбатан",
+          en: "vs last month",
+          ru: "по сравнению с прошлым месяцем"
+     },
+     trend_vs_last_quarter: {
+          uz: "o'tgan chorakka nisbatan",
+          cy: "ўтган чоракка нисбатан",
+          en: "vs last quarter",
+          ru: "по сравнению с прошлым кварталом"
+     },
+     trend_vs_last_year: {
+          uz: "o'tgan yilga nisbatan",
+          cy: "ўтган йилга нисбатан",
+          en: "vs last year",
+          ru: "по сравнению с прошлым годом"
+     },
+     trend_vs_period: {
+          uz: "tanlangan davrga nisbatan",
+          cy: "танланган даврга нисбатан",
+          en: "vs selected period",
+          ru: "по сравнению с выбранным периодом"
+     },
      latecomers: {
           uz: "Kechikib kelganlar",
           cy: "Кечикиб келганлар",

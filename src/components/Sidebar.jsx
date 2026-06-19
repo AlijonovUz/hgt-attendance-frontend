@@ -269,16 +269,16 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                          `}>
                               <div className="flex-1 min-w-0">
                                    <p className="text-[13px] font-medium text-[#1A1A1A] dark:text-white truncate leading-tight whitespace-nowrap">
-                                        {currentUser?.role_info?.name || ""}
+                                        {currentUser?.full_name ?? ""}
                                    </p>
                                    <p className="text-[11px] text-[#6B7280] dark:text-[#9CA3AF] truncate leading-tight whitespace-nowrap">
-                                        {currentUser?.full_name ?? ""}
+                                        {currentUser?.role_info?.name || ""}
                                    </p>
                               </div>
                               {/* <button
                                    className="flex-shrink-0 p-1 rounded-md text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#E5E7EB] dark:hover:bg-[#2E2E2E] cursor-pointer"
                               > */}
-                                   <UserDropdown currentUser={currentUser} />
+                              <UserDropdown currentUser={currentUser} />
                               {/* </button> */}
                          </div>
                     </div>

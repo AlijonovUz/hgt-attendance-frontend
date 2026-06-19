@@ -44,7 +44,12 @@ const HomePage = () => {
   const regions = useSelector((state) => state.references.regions)
 
   const [loadingData, setLoadingData] = useState(false)
-  const [allStats, setAllStats] = useState(null)
+
+  // Har bir API uchun alohida state
+  const [summary, setSummary] = useState(null)
+  const [branchRatingsData, setBranchRatingsData] = useState(null)
+  const [todayStatusData, setTodayStatusData] = useState(null)
+  const [weeklyDynamicsData, setWeeklyDynamicsData] = useState(null)
 
   const isInitialLoad = useRef(true)
 
@@ -52,83 +57,141 @@ const HomePage = () => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
 
+  const [dateParams, setDateParams] = useState({ period: "daily" })
+
   const [weeklyParams, setWeeklyParams] = useState({})
   const [statusParams, setStatusParams] = useState({})
 
 
-  const getDashboardData = async (params = {}) => {
-    setLoadingData(true)
+  const fetchSummary = async (params = {}) => {
     try {
-      const res = await axiosAPI.get("analytics/kpi/dashboard-stats/", { params })
-
+      const res = await axiosAPI.get("analytics/dashboard/summary/", { params })
       if (res.status == 200) {
-        setAllStats(res.data?.data)
+        setSummary(res.data?.data)
       }
     } catch (err) {
       console.error(err);
     }
-    finally {
+  }
+
+  const fetchBranchRatings = async (params = {}) => {
+    try {
+      const res = await axiosAPI.get("analytics/dashboard/branch-ratings/", { params })
+      if (res.status == 200) {
+        setBranchRatingsData(res.data?.data)
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const fetchTodayStatus = async (params = {}) => {
+    try {
+      const res = await axiosAPI.get("analytics/dashboard/today-status/", { params })
+      if (res.status == 200) {
+        setTodayStatusData(res.data?.data)
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const fetchWeeklyDynamics = async (params = {}) => {
+    try {
+      const res = await axiosAPI.get("analytics/dashboard/weekly-dynamics/", { params })
+      if (res.status == 200) {
+        setWeeklyDynamicsData(res.data?.data)
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const fetchAllDashboardData = async (dateP = dateParams, weeklyP = weeklyParams, statusP = statusParams) => {
+    setLoadingData(true)
+    try {
+      await Promise.all([
+        fetchSummary({ ...dateP }),
+        fetchBranchRatings({ ...dateP }),
+        fetchTodayStatus({ ...statusP }),
+        fetchWeeklyDynamics({ ...weeklyP }),
+      ])
+    } finally {
       setLoadingData(false)
-      // Birinchi marta yuklangandan so'ng false qilamiz
       isInitialLoad.current = false
     }
   }
 
+  const fetchDateFilteredData = async (dateP) => {
+    await Promise.all([
+      fetchSummary({ ...dateP }),
+      fetchBranchRatings({ ...dateP }),
+    ])
+  }
+
   useEffect(() => {
-    getDashboardData()
+    fetchAllDashboardData()
   }, [])
 
   const handleChangeDate = (value) => {
     setTimeRange(value);
     setSelectedDate(null);
-    const props = {};
-    if (value === "") props;
-    else if (value !== "") { props.period = value }
 
-    getDashboardData(props)
+    const newDateParams = {};
+    if (value !== "") newDateParams.period = value
+
+    setDateParams(newDateParams)
+    fetchDateFilteredData(newDateParams)
   };
 
   const handleSelectDate = (date) => {
     if (!date) return;
     setSelectedDate(date);
     setTimeRange("sana");
+
+    const newDateParams = {};
+    if (date.from) {
+      newDateParams.start_date = dayjs(date.from).format("YYYY-MM-DD")
+      newDateParams.end_date = date.to ? dayjs(date.to).format("YYYY-MM-DD") : dayjs(date.from).format("YYYY-MM-DD")
+    } else {
+      newDateParams.start_date = dayjs(date).format("YYYY-MM-DD")
+    }
+
+    setDateParams(newDateParams)
+    fetchDateFilteredData(newDateParams)
+
     if (!date.from) {
       setCalendarOpen(false);
     }
   };
 
+  const handleClearDate = () => {
+    setSelectedDate(null);
+    setTimeRange("");
+    setDateParams({})
+    fetchDateFilteredData({})
+  };
+
   const handleWeeklyFilter = (regionId, districtId) => {
-    const params = { ...weeklyParams }
-    if (regionId !== undefined) params.region_id = regionId ?? undefined
-    if (districtId !== undefined) params.district_id = districtId ?? undefined
-    setWeeklyParams(params)
-    getDashboardData({ ...params })   // period/date param'lari ham birga jo'nating kerak bo'lsa
+    setWeeklyParams(prev => {
+      const params = { ...prev }
+      if (regionId !== undefined) params.region = regionId || undefined
+      if (districtId !== undefined) params.district = districtId || undefined
+      fetchWeeklyDynamics(params)
+      return params
+    })
   }
 
   const handleStatusFilter = (regionId, districtId) => {
-    const params = { ...statusParams }
-    if (regionId !== undefined) params.region_id = regionId ?? undefined
-    if (districtId !== undefined) params.district_id = districtId ?? undefined
-    setStatusParams(params)
-    getDashboardData({ ...params })
+    setStatusParams(prev => {
+      const params = { ...prev }
+      if (regionId !== undefined) params.region = regionId || undefined
+      if (districtId !== undefined) params.district = districtId || undefined
+      fetchTodayStatus(params)
+      return params
+    })
   }
 
-
-  useEffect(() => {
-    const param = {}
-    if (selectedDate) {
-      if (selectedDate.from) {
-        param.start_date = dayjs(selectedDate.from).format("YYYY-MM-DD")
-        param.end_date = selectedDate.to ? dayjs(selectedDate.to).format("YYYY-MM-DD") : dayjs(selectedDate.from).format("YYYY-MM-DD")
-      } else {
-        param.start_date = dayjs(selectedDate).format("YYYY-MM-DD")
-      }
-    }
-
-    getDashboardData(param)
-  }, [selectedDate])
-
-  // Skeleton faqat birinchi yuklanishda ko'rsatiladi (filter qilganda emas)
   if (loadingData && isInitialLoad.current) {
     return (
       <div className="p-4 flex flex-col gap-4 w-full min-h-[calc(100vh-3.5rem)] bg-white dark:bg-[#0A0A0A]">
@@ -145,14 +208,26 @@ const HomePage = () => {
     );
   }
 
+  const getTrendTextKey = (range) => {
+    switch (range) {
+      case "daily": return "trend_vs_yesterday";
+      case "weekly": return "trend_vs_last_week";
+      case "monthly": return "trend_vs_last_month";
+      case "quarterly": return "trend_vs_last_quarter";
+      case "yearly": return "trend_vs_last_year";
+      case "sana": return "trend_vs_period";
+      default: return "trend_vs_yesterday";
+    }
+  }
+
   const statsData = [
     {
       key: "total",
       labelKey: "total_employees",
-      value: allStats?.summary?.total_employees || 0,
-      trendVal: `${allStats?.summary?.total_employees_trend || 0}`,
-      trendTextKey: "branch_fallback",
-      trendUp: (allStats?.summary?.total_employees_trend || 0) >= 0,
+      value: summary?.total_employees || 0,
+      trendVal: `${summary?.total_employees_trend || 0}`,
+      trendTextKey: getTrendTextKey(timeRange),
+      trendUp: (summary?.total_employees_trend || 0) >= 0,
       icon: IdIcon,
       bg: "bg-[#F5F5F5] dark:bg-[#262626]",
       iconBg: "bg-white",
@@ -160,9 +235,10 @@ const HomePage = () => {
     {
       key: "present",
       labelKey: "come",
-      value: allStats?.summary?.period_arrived || 0,
-      trendVal: `${allStats?.summary?.attendance_percent || 0}%`,
-      trendUp: (allStats?.summary?.attendance_percent || 0) >= 0,
+      value: summary?.period_arrived || 0,
+      trendVal: `${summary?.attendance_percent || 0}%`,
+      trendTextKey: getTrendTextKey(timeRange),
+      trendUp: (summary?.attendance_percent || 0) >= 0,
       icon: BubbleChatDoneIcon,
       bg: "bg-[#ADDDC0]",
       iconBg: "bg-white",
@@ -170,9 +246,10 @@ const HomePage = () => {
     {
       key: "late",
       labelKey: "latecomers",
-      value: allStats?.summary?.lates || 0,
-      trendVal: `${allStats?.summary?.lates_trend || 0}%`,
-      trendUp: (allStats?.summary?.lates_trend || 0) >= 0,
+      value: summary?.lates || 0,
+      trendVal: `${summary?.lates_trend || 0}%`,
+      trendTextKey: getTrendTextKey(timeRange),
+      trendUp: (summary?.lates_trend || 0) >= 0,
       icon: TimeQuarter02Icon,
       bg: "bg-[#FFC182]",
       iconBg: "bg-white",
@@ -180,9 +257,10 @@ const HomePage = () => {
     {
       key: "early",
       labelKey: "early_leavers",
-      value: allStats?.summary?.early_leaves || 0,
-      trendVal: `${allStats?.summary?.early_leaves_trend || 0}%`,
-      trendUp: (allStats?.summary?.early_leaves_trend || 0) >= 0,
+      value: summary?.early_leaves || 0,
+      trendVal: `${summary?.early_leaves_trend || 0}%`,
+      trendTextKey: getTrendTextKey(timeRange),
+      trendUp: (summary?.early_leaves_trend || 0) >= 0,
       icon: Login02Icon,
       bg: "bg-[#ACD8FC]",
       iconBg: "bg-white",
@@ -190,10 +268,10 @@ const HomePage = () => {
     {
       key: "absent",
       labelKey: "absent",
-      value: allStats?.summary?.absent || 0,
-      trendVal: `${allStats?.summary?.absent_trend || 0}%`,
-      trendTextKey: null,
-      trendUp: (allStats?.summary?.absent_trend || 0) >= 0,
+      value: summary?.absent || 0,
+      trendVal: `${summary?.absent_trend || 0}%`,
+      trendTextKey: getTrendTextKey(timeRange),
+      trendUp: (summary?.absent_trend || 0) >= 0,
       icon: PassportExpiredIcon,
       bg: "bg-[#FDBDBE]",
       iconBg: "bg-white",
@@ -208,24 +286,32 @@ const HomePage = () => {
     { value: "yearly", labelKey: "period_yearly" },
   ]
 
-  const weeklyData = allStats?.weekly_dynamics?.map(d => ({
+  const weeklyData = weeklyDynamicsData?.weekly_dynamics?.map(d => ({
+    name: d.day_name,
+    onTime: d.on_time,
+    late: d.late
+  })) || weeklyDynamicsData?.map?.(d => ({
     name: d.day_name,
     onTime: d.on_time,
     late: d.late
   })) || [];
 
-  const isTodayDataEmpty = !allStats?.today_status || (allStats.today_status.on_time === 0 && allStats.today_status.late === 0 && allStats.today_status.early_left === 0 && allStats.today_status.absent === 0);
+  const todayStatus = todayStatusData?.today_status || todayStatusData;
 
-  const todayData = allStats?.today_status ? [
-    { name: t("on_time"), value: allStats.today_status.on_time, color: "#5BB98B" },
-    { name: t("late"), value: allStats.today_status.late, color: "#F3D768" },
-    { name: t("early_left"), value: allStats.today_status.early_left, color: "#5EB1EF" },
-    { name: t("absent"), value: allStats.today_status.absent, color: "#EB8E90" },
+  const isTodayDataEmpty = !todayStatus || (todayStatus.on_time === 0 && todayStatus.late === 0 && todayStatus.early_left === 0 && todayStatus.absent === 0);
+
+  const todayData = todayStatus ? [
+    { name: t("on_time"), value: todayStatus.on_time, color: "#5BB98B" },
+    { name: t("late"), value: todayStatus.late, color: "#F3D768" },
+    { name: t("early_left"), value: todayStatus.early_left, color: "#5EB1EF" },
+    { name: t("absent"), value: todayStatus.absent, color: "#EB8E90" },
   ] : [];
 
-  const todayTotalPercent = allStats?.today_status?.total_percent || 0;
+  const todayTotalPercent = todayStatus?.total_percent || 0;
 
-  const branchRatings = allStats?.branch_ratings?.map((b, i) => {
+  const branchRatingsList = branchRatingsData?.branch_ratings || branchRatingsData || [];
+
+  const branchRatings = branchRatingsList?.map((b, i) => {
     let color = "bg-[#2B9A66]";
     let bg = "bg-[#2B9A66]/20";
     if (b.rating < 90 && b.rating >= 80) { color = "bg-[#007AFF]"; bg = "bg-[#007AFF]/20"; }
@@ -300,8 +386,7 @@ const HomePage = () => {
                       className="size-3.5 text-gray-400 cursor-pointer mb-0.5"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedDate(null);
-                        setTimeRange("");
+                        handleClearDate();
                       }}
                     />
                   ) : (
