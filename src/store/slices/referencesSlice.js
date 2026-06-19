@@ -11,7 +11,8 @@ const getUserFromStorage = () => {
 
 const initialState = {
   currentUser: getUserFromStorage(),
-  regions: []
+  regions: [],
+  userPermission: []
 };
 
 export const referencesSlice = createSlice({
@@ -30,10 +31,13 @@ export const referencesSlice = createSlice({
     },
     setRegions: (state, { payload }) => {
       state.regions = payload
+    },
+    setUserPermission: (state, { payload }) => {
+      state.userPermission = payload
     }
   },
 });
 
-export const { setCurrentUser, setRegions } = referencesSlice.actions;
+export const { setCurrentUser, setRegions, setUserPermission } = referencesSlice.actions;
 
 export default referencesSlice.reducer;

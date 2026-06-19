@@ -5,12 +5,8 @@ import {
      LayoutDashboard,
      Users,
      FileBarChart2,
-     MapPin,
      Settings,
      HelpCircle,
-     Sun,
-     Moon,
-     MoreVertical,
      FileText,
      ChevronDown,
 } from "lucide-react"
@@ -32,14 +28,18 @@ const REF_CHILDREN = [
 
 const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const currentUser = useSelector((state) => state.references.currentUser)
+     const userPermission = useSelector((state) => state.references.userPermission)
 
      const { t } = useLanguage()
-     const { theme, setTheme } = useTheme()
      const navigate = useNavigate()
      const location = useLocation()
 
      const [refOpen, setRefOpen] = useState(() => location.pathname.startsWith("/references"))
      const refActive = location.pathname.startsWith("/references")
+
+     const viewEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_view_all")
+     const viewgeo = userPermission?.geozones && userPermission?.geozones.some(e => e.code === "geozone_view")
+     const viewRep = userPermission?.reports && userPermission?.reports.some(e => (e.code === "report_type_employee" || e.code === "report_type_branch"))
 
      const sidebarItems = [
           {
@@ -48,24 +48,24 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                label: t("mainPage"),
                path: "",
           },
-          {
+          ...(viewEmp ? [{
                id: "employeeRestr",
                icon: Users,
                label: t("employeeRestr"),
                path: "/employee-register",
-          },
-          {
+          }] : []),
+          ...(viewRep ? [{
                id: "reports",
                icon: FileBarChart2,
                label: t("reports"),
                path: "/reports",
-          },
-          {
+          }] : []),
+          ...(viewgeo ? [{
                id: "geozone",
                img: "/bar-chart.svg",
                label: t("geozone"),
                path: "/geozones",
-          },
+          }] : []),
      ]
 
      const bottomItems = [

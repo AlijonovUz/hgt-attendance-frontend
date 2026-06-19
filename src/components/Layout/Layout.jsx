@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "./Navbar";
 import { axiosAPI } from "@/services/axiosAPI";
-import { useDispatch } from "react-redux";
-import { setCurrentUser, setRegions } from "@/store/slices/referencesSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setCurrentUser, setRegions, setUserPermission } from "@/store/slices/referencesSlice";
 
 const Layout = () => {
      const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-     const dispatch = useDispatch()
-
+     const dispatch = useDispatch();
      const accessToken = localStorage.getItem("access");
      const navigate = useNavigate();
+
+     const [roles, setRoles] = useState([]);
+     const currentUser = useSelector((state) => state.references.currentUser);
 
      useEffect(() => {
           if (!accessToken) {
@@ -21,61 +23,72 @@ const Layout = () => {
 
      const getRegions = async () => {
           try {
-               const res = await axiosAPI.get("users/regions/")
-
+               const res = await axiosAPI.get("users/regions/");
                if (res.status === 200) {
-                    dispatch(setRegions(res.data?.data?.results))
+                    dispatch(setRegions(res.data?.data?.results));
                }
           } catch (err) {
                console.error(err);
           }
-     }
+     };
+
+     const getRoles = async () => {
+          try {
+               const res = await axiosAPI.get("users/roles/");
+               if (res.status === 200) {
+                    setRoles(res.data?.data?.results);
+               }
+          } catch (err) {
+               console.error(err);
+          }
+     };
+
+     const getCurrentUser = async () => {
+          try {
+               const res = await axiosAPI.get("users/auth/profile/");
+               if (res.status === 200) {
+                    dispatch(setCurrentUser(res.data?.data));
+               }
+          } catch (err) {
+               console.error(err);
+               localStorage.removeItem("access");
+               localStorage.removeItem("refresh");
+               dispatch(setCurrentUser(null));
+               navigate("/login", { replace: true });
+          }
+     };
 
      useEffect(() => {
-          const getCurrentUser = async () => {
-               try {
-                    const res = await axiosAPI.get("users/auth/profile/")
-
-                    if (res.status === 200) {
-                         dispatch(setCurrentUser(res.data?.data))
-                    }
-               } catch (err) {
-                    console.error(err);
-                    localStorage.removeItem("access");
-                    localStorage.removeItem("refresh");
-                    dispatch(setCurrentUser(null));
-                    navigate("/login", { replace: true });
-               }
-          }
-
           if (accessToken) {
                getCurrentUser();
-               getRegions()
+               getRoles();
+               getRegions();
           }
-     }, [accessToken, dispatch, navigate])
+     }, [accessToken]);
 
+     const findRole = useMemo(() => {
+          if (!roles.length || !currentUser?.role_info?.id) return null;
+          return roles.find(r => r.id === currentUser.role_info.id);
+     }, [roles, currentUser]);
+
+     useEffect(() => {
+          if (findRole) {
+               const permissions = findRole?.permissions_info;
+               dispatch(setUserPermission(permissions));
+          }
+     }, [findRole, dispatch, navigate]);
 
      return (
           <div className="flex h-screen overflow-hidden">
-
-               <Sidebar
-                    setSidebarCollapsed={setSidebarCollapsed}
-                    sidebarCollapsed={sidebarCollapsed}
-               />
-
+               <Sidebar setSidebarCollapsed={setSidebarCollapsed} sidebarCollapsed={sidebarCollapsed} />
                <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-                    <Navbar
-                         sidebarCollapsed={sidebarCollapsed}
-                         setSidebarCollapsed={setSidebarCollapsed}
-                    />
-
+                    <Navbar sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
                     <main className="flex-1 overflow-y-auto">
                          <Outlet />
                     </main>
                </div>
-
           </div>
-     )
-}
+     );
+};
 
-export default Layout
+export default Layout;

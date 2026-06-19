@@ -3,6 +3,8 @@ import { useLanguage } from "../../Context/LanguageContext"
 import { useTheme } from "../../Context/ThemeContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { useNavigate } from "react-router-dom"
+import { useDispatch } from "react-redux"
+import { setCurrentUser, setRegions, setUserPermission } from "@/store/slices/referencesSlice"
 import { Eye, EyeOff, ShieldAlert, SunMedium, Moon } from "lucide-react"
 import { CgSpinnerTwo } from "react-icons/cg"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
@@ -13,6 +15,7 @@ const LoginPage = () => {
   const { t } = useLanguage()
   const { theme, setTheme } = useTheme()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const [form, setform] = useState({
     full_name: "",
@@ -20,14 +23,12 @@ const LoginPage = () => {
   })
 
   const [loading, setLoading] = useState(false)
-
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(false)
   const [emptyError, setEmptyError] = useState(false)
   const [attempts, setAttempts] = useState(() => parseInt(localStorage.getItem('loginAttempts') || '0', 10))
   const [isBlocked, setIsBlocked] = useState(false)
   const [remainingTime, setRemainingTime] = useState(0)
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false)
 
   useEffect(() => {
     const accessToken = localStorage.getItem("access")
@@ -83,7 +84,6 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-
     if (!form.full_name.trim() || !form.password.trim()) {
       setEmptyError(true)
       return
@@ -91,7 +91,6 @@ const LoginPage = () => {
 
     setLoading(true)
 
-    // DEMO logic for UI states based on requirements
     if (form.password === "error" || form.full_name === "error") {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
@@ -110,12 +109,43 @@ const LoginPage = () => {
 
     try {
       const res = await axiosAPI.post("users/auth/login/", form)
+
       if (res.status === 200) {
-        localStorage.setItem("access", res.data?.data?.access || "")
-        localStorage.setItem("refresh", res.data?.data?.refresh || "")
+        const access = res.data?.data?.access || ""
+        const refresh = res.data?.data?.refresh || ""
+
+        localStorage.setItem("access", access)
+        localStorage.setItem("refresh", refresh)
         localStorage.setItem('loginAttempts', '0')
+
+        const [userRes, rolesRes, regionsRes] = await Promise.all([
+          axiosAPI.get("users/auth/profile/"),
+          axiosAPI.get("users/roles/"),
+          axiosAPI.get("users/regions/").catch(() => null)
+        ])
+
+        let userPermissions = null
+
+        if (userRes.status === 200) {
+          dispatch(setCurrentUser(userRes.data?.data))
+
+          const userRoleId = userRes.data?.data?.role_info?.id
+          const allRoles = rolesRes.status === 200 ? rolesRes.data?.data?.results : []
+
+          const foundRole = allRoles?.find(r => r.id === userRoleId)
+          if (foundRole) {
+            userPermissions = foundRole?.permissions_info
+            dispatch(setUserPermission(userPermissions))
+          }
+        }
+
+        if (regionsRes && regionsRes.status === 200) {
+          dispatch(setRegions(regionsRes.data?.data?.results))
+        }
+
         setLoading(false)
-        navigate("/")
+
+        navigate("/", { replace: true })
       }
     } catch (err) {
       console.error(err)
@@ -129,8 +159,7 @@ const LoginPage = () => {
       } else {
         setError(true)
       }
-    }
-    finally {
+    } finally {
       setLoading(false)
     }
   }
@@ -142,21 +171,15 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex w-full font-sans text-login-text-primary">
-      {/* Left Column */}
+      {/* Chap ustun */}
       <div className="w-full md:w-1/2 flex flex-col relative bg-login-left-bg min-h-screen transition-colors duration-200">
-
-        {/* Top Header */}
         <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-10">
           <div className="flex items-center gap-2 font-semibold text-[20px]">
             <img src="/logo.svg" alt="logo" className="w-10 h-10 object-cover" />
             Davomat
           </div>
-
           <div className="flex items-center gap-3">
-            {/* Language switcher */}
             <LanguageSwitcher />
-
-            {/* Theme Toggle */}
             <div className="flex p-1 transition-colors bg-login-pill-bg rounded-lg">
               <button
                 onClick={() => setTheme('light')}
@@ -176,7 +199,6 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* Form Container */}
         <div className="flex-1 flex flex-col justify-center items-center px-8">
           <div className="w-full max-w-[360px]">
             <div className="text-center flex justify-center items-center flex-col mb-8">
@@ -194,8 +216,7 @@ const LoginPage = () => {
                   value={form.full_name}
                   onChange={handleInputChange}
                   disabled={isBlocked}
-                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-colors text-[15px] ${hasFullNameError ? 'border-[#EF4444] text-[#EF4444]' : 'border-login-border focus:border-blue-500'
-                    } ${isBlocked ? 'bg-login-input-disabled text-login-text-secondary' : 'bg-login-input-bg text-login-text-primary'}`}
+                  className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-colors text-[15px] ${hasFullNameError ? 'border-[#EF4444] text-[#EF4444]' : 'border-login-border focus:border-blue-500'} ${isBlocked ? 'bg-login-input-disabled text-login-text-secondary' : 'bg-login-input-bg text-login-text-primary'}`}
                 />
               </div>
 
@@ -209,8 +230,7 @@ const LoginPage = () => {
                     value={form.password}
                     onChange={handleInputChange}
                     disabled={isBlocked}
-                    className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-colors text-[15px] pr-12 ${hasPasswordError ? 'border-[#EF4444] text-[#EF4444]' : 'border-login-border focus:border-blue-500'
-                      } ${isBlocked ? 'bg-login-input-disabled text-login-text-secondary' : 'bg-login-input-bg text-login-text-primary'}`}
+                    className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-colors text-[15px] pr-12 ${hasPasswordError ? 'border-[#EF4444] text-[#EF4444]' : 'border-login-border focus:border-blue-500'} ${isBlocked ? 'bg-login-input-disabled text-login-text-secondary' : 'bg-login-input-bg text-login-text-primary'}`}
                   />
                   {form.password.trim() &&
                     <button
@@ -224,9 +244,7 @@ const LoginPage = () => {
                   }
                 </div>
                 {emptyError && !isBlocked && (
-                  <p className="text-[#EF4444] text-[13px] mt-2">
-                    {t('login_empty_error')}
-                  </p>
+                  <p className="text-[#EF4444] text-[13px] mt-2">{t('login_empty_error')}</p>
                 )}
                 {error && !emptyError && !isBlocked && (
                   <p className="text-[#EF4444] text-[13px] mt-2">
@@ -242,9 +260,7 @@ const LoginPage = () => {
                   </div>
                   <div>
                     <h3 className="text-[14px] font-semibold text-login-text-primary mb-1">{t('account_blocked_title')}</h3>
-                    <p className="text-[13px] text-login-text-secondary mb-1 max-w-[250px]! leading-[1.4]">
-                      {t('account_blocked_desc')}
-                    </p>
+                    <p className="text-[13px] text-login-text-secondary mb-1 max-w-[250px]! leading-[1.4]">{t('account_blocked_desc')}</p>
                     <p className="text-[13px] text-login-text-secondary">
                       {t('retry_in')}<span className="font-bold text-red-500">{formatTime(remainingTime)}</span>
                     </p>
@@ -265,25 +281,17 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Right Column */}
-      <div
-        className={`hidden relative md:flex w-1/2 p-8 flex-col justify-start`}
-      >
+      {/* O'ng ustun */}
+      <div className="hidden relative md:flex w-1/2 p-8 flex-col justify-start">
         <img src={theme === "dark" ? "/bg_dark.png" : "/bg_light.png"} alt="" className="absolute top-0 right-0 z-[-1] h-full w-full" />
-
         <div className="flex flex-col">
           <h2 className="text-[18px] font-bold text-[#113264] dark:text-[#fafafa]">{t('brand_title')}</h2>
           <p className="text-[14px] text-[#113264] dark:text-[#a3a3a3]">{t('brand_subtitle')}</p>
         </div>
-
         <div className="flex items-center h-full">
-          <div className="">
-            <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-[#113264] dark:text-[#fafafa] mb-3">
-              {t('system_title')}
-            </h1>
-            <p className="text-[16px] leading-[1.5] max-w-[400px] text-[#113264] dark:text-[#a3a3a3]">
-              {t('system_desc')}
-            </p>
+          <div>
+            <h1 className="text-[32px] leading-[1.2] max-w-[470px] font-bold text-[#113264] dark:text-[#fafafa] mb-3">{t('system_title')}</h1>
+            <p className="text-[16px] leading-[1.5] max-w-[400px] text-[#113264] dark:text-[#a3a3a3]">{t('system_desc')}</p>
           </div>
         </div>
       </div>
