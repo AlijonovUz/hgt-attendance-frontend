@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useId } from "react"
 import dayjs from "dayjs"
 import customParseFormat from "dayjs/plugin/customParseFormat"
 
@@ -34,9 +34,16 @@ import { cn } from "@/lib/utils"
 
 const calendarLocales = {
      uz: uz,
-     "uz-cyrl": uzCyrl,
+     cy: uzCyrl,
      ru: ru,
      en: enUS,
+}
+
+// Date | string | null -> JS Date | null
+const toDateObj = (v) => {
+     if (!v) return null
+     const d = v instanceof Date ? v : new Date(v)
+     return isNaN(d.getTime()) ? null : d
 }
 
 export const DatePicker = ({
@@ -48,13 +55,23 @@ export const DatePicker = ({
      className = "",
      inputClassName = "",
      widthClass = "w-52",
+     labelClassName = "",
+     calendarIcon,
+     // ─── Controlled qo'llab-quvvatlash (forma bilan ishlash uchun) ───
+     value, // Date | string | null — beriladigan tashqi qiymat (ixtiyoriy)
+     onChange, // (date: Date | null) => void — sana o'zgarganda chaqiriladi (ixtiyoriy)
+     error = false, // true bo'lsa, qizil border chiqadi
+     errorText, // xato matni (masalan "Bu maydon majburiy")
+     id, // bir nechta DatePicker bir sahifada bo'lsa, har biriga noyob id bering
      ...props
 }) => {
      const { t } = useLanguage()
+     const autoId = useId()
+     const fieldId = id || `date-${autoId}`
 
      const [open, setOpen] = useState(false)
-     const [date, setDate] = useState(null)
-     const [month, setMonth] = useState(new Date())
+     const [date, setDate] = useState(() => toDateObj(value))
+     const [month, setMonth] = useState(toDateObj(value) || new Date())
 
      const currentFormat = showTime ? "DD.MM.YYYY HH:mm" : "DD.MM.YYYY"
      const maxChars = showTime ? 16 : 10
@@ -64,15 +81,25 @@ export const DatePicker = ({
           return dayjs(selectedDate).locale(currentLang).format(currentFormat)
      }
 
-     const [inputValue, setInputValue] = useState("")
+     const [inputValue, setInputValue] = useState(() => formatDate(toDateObj(value)))
+
+     // Tashqi `value` o'zgarsa (masalan forma tozalanganda), ichki state'ni sinxronlaymiz
+     useEffect(() => {
+          if (value === undefined) return // controlled emas — e'tiborsiz qoldiramiz
+          const next = toDateObj(value)
+          setDate(next)
+          if (next) setMonth(next)
+     }, [value])
 
      useEffect(() => {
-          if (date) {
-               setInputValue(formatDate(date))
-          } else {
-               setInputValue("")
-          }
+          setInputValue(formatDate(date))
      }, [currentLang, date])
+
+     // Sanani yangilab, tashqariga ham xabar beradi
+     const updateDate = (newDate) => {
+          setDate(newDate)
+          onChange?.(newDate)
+     }
 
      const displayLabel = label || t("date")
      const displayPlaceholder = placeholder || (showTime ? "DD.MM.YYYY HH:mm" : t("selectDate"))
@@ -109,14 +136,14 @@ export const DatePicker = ({
           setInputValue(val)
 
           if (val === "") {
-               setDate(null)
+               updateDate(null)
                return
           }
 
           if (val.length === maxChars) {
                const parsedDate = dayjs(val, currentFormat, true).toDate()
                if (!isNaN(parsedDate.getTime())) {
-                    setDate(parsedDate)
+                    updateDate(parsedDate)
                     setMonth(parsedDate)
                }
           }
@@ -124,11 +151,11 @@ export const DatePicker = ({
 
      return (
           <Field className={cn("mx-auto", widthClass, className)}>
-               <FieldLabel htmlFor="date-required">{displayLabel}</FieldLabel>
+               <FieldLabel className={labelClassName} htmlFor={fieldId}>{displayLabel}</FieldLabel>
 
-               <InputGroup className={inputClassName}>
+               <InputGroup className={cn(inputClassName, error && "border-red-500 focus-within:border-red-500")}>
                     <InputGroupInput
-                         id="date-required"
+                         id={fieldId}
                          value={inputValue}
                          placeholder={displayPlaceholder}
                          maxLength={maxChars}
@@ -151,8 +178,8 @@ export const DatePicker = ({
                          <Popover open={open} onOpenChange={setOpen}>
                               <PopoverTrigger
                                    render={
-                                        <InputGroupButton id="date-picker" className="cursor-pointer" variant="ghost" size="icon-xs" aria-label="Select date">
-                                             <LuCalendar />
+                                        <InputGroupButton id={`${fieldId}-trigger`} className="cursor-pointer" variant="ghost" size="icon-xs" aria-label="Select date">
+                                             {calendarIcon || <LuCalendar />}
                                              <span className="sr-only">{displaySrText}</span>
                                         </InputGroupButton>
                                    }
@@ -185,9 +212,9 @@ export const DatePicker = ({
                                                   } else {
                                                        baseDate = baseDate.hour(dayjs().hour()).minute(dayjs().minute())
                                                   }
-                                                  setDate(baseDate.toDate())
+                                                  updateDate(baseDate.toDate())
                                              } else {
-                                                  setDate(selectedDate)
+                                                  updateDate(selectedDate)
                                              }
                                              setOpen(false)
                                         }}
@@ -196,6 +223,7 @@ export const DatePicker = ({
                          </Popover>
                     </InputGroupAddon>
                </InputGroup>
+               {errorText && <span className="text-xs text-red-500">{errorText}</span>}
           </Field>
      )
 }

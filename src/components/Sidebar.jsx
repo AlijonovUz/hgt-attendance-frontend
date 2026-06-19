@@ -171,7 +171,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                              key={child.key}
                                              to={`/references/${child.key}`}
                                              className={({ isActive }) =>
-                                                  `px-3 py-2 rounded-lg text-[13px] transition-colors truncate
+                                                  `px-3 py-2 rounded-lg text-[13px] truncate
                                                   ${isActive
                                                        ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
                                                        : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"

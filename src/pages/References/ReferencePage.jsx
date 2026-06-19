@@ -5,15 +5,36 @@ import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
 import { Plus, X, FileText } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { CheckmarkSquare01Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, CheckmarkSquare01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
 import { Toast } from "@/components/ui/Toast"
+import { DatePicker } from "@/components/ui/DatePicker"
+import { AddButton } from "@/components/ui/customAddButton"
+
+// "yyyy-mm-dd" (API'dan kelgan) -> "dd.mm.yyyy" (jadvalda ko'rsatish uchun)
+const formatDate = (value) => {
+  if (!value) return "—"
+  const [y, m, d] = String(value).split("-")
+  if (!y || !m || !d) return value
+  return `${d}.${m}.${y}`
+}
+
+// Date obyekti -> "yyyy-mm-dd" (backendga yuborish uchun, mahalliy vaqt bo'yicha)
+const toISODate = (d) => {
+  const date = d instanceof Date ? d : new Date(d)
+  if (isNaN(date.getTime())) return ""
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
 
 // ─── Har bir ma'lumotnoma sahifasi uchun konfiguratsiya ───
-// text: oddiy input | select: ro'yxatdan tanlash (optionsEndpoint dan yuklanadi)
+// text: oddiy input | select: ro'yxatdan tanlash (optionsEndpoint dan yuklanadi) | date: sana inputi
 // dependsOn + param: ota maydon o'zgarganda qayta yuklanadigan bog'liq select
+// pairWith: shu maydonni boshqa maydon bilan modalda yonma-yon joylashtirish (masalan boshlanish/tugash sanasi)
 const REF_CONFIGS = {
   regions: {
     endpoint: "users/regions/",
@@ -81,12 +102,38 @@ const REF_CONFIGS = {
       { type: "select", name: "department", labelKey: "ref_col_dept", phKey: "ref_dept_ph", optionsEndpoint: "users/departments/", required: true },
     ],
   },
+  holidays: {
+    endpoint: "users/holidays/",
+    titleKey: "ref_t_holiday",
+    addKey: "ref_add_holiday",
+    subKey: "ref_sub_holiday",
+    columns: [
+      // DIQQAT: maydon nomi "title" (pastdagi fields'ga mos), shuning uchun r.title
+      { headerKey: "ref_col_holiday_name", accessor: (r) => r.title || "—" },
+      { headerKey: "ref_col_holiday_start", accessor: (r) => formatDate(r.start_date) },
+      { headerKey: "ref_col_holiday_end", accessor: (r) => formatDate(r.end_date) },
+    ],
+    fields: [
+      { type: "text", name: "title", labelKey: "ref_name_holiday", phKey: "ref_ph_holiday", required: true },
+      { type: "date", name: "start_date", labelKey: "ref_name_holiday_start", phKey: "gz_date_ph", required: true },
+      { type: "date", name: "end_date", labelKey: "ref_name_holiday_end", phKey: "gz_date_ph", required: true, pairWith: "start_date" },
+    ],
+  },
 }
 
-const emptyForm = (cfg) => Object.fromEntries(cfg.fields.map((f) => [f.name, f.type === "select" ? null : ""]))
+const emptyForm = (cfg) =>
+  Object.fromEntries(cfg.fields.map((f) => [f.name, f.type === "select" || f.type === "date" ? null : ""]))
+
+// Qizil border (input ham, select ham) — Select komponenti className'ni o'z
+// root elementiga uzatishi kerak; agar uzatmasa, Select komponenti ichida
+// "error" propini qo'llab-quvvatlashni tekshirib qo'ying.
+const errorInputClass = "border-red-500 focus:border-red-500 dark:border-red-500"
 
 const ReferencePage = () => {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  // ⚠️ Tekshiring: LanguageContext'da joriy til kodi qaysi nomda saqlanadi
+  // (lang / language / locale) — DatePicker shu kodga mos kalendar tilini tanlaydi.
+  const currentLang = language || "uz"
   const { type } = useParams()
   const config = REF_CONFIGS[type]
 
@@ -100,6 +147,9 @@ const ReferencePage = () => {
 
   // Select maydonlari uchun variantlar: { fieldName: [{value,label}] }
   const [options, setOptions] = useState({})
+
+  // Majburiy/yaroqsiz maydonlar: { fieldName: true }
+  const [errors, setErrors] = useState({})
 
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
   const showToast = (message) => setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
@@ -150,6 +200,7 @@ const ReferencePage = () => {
     if (!config) return
     setForm(emptyForm(config))
     setOptions({})
+    setErrors({})
     setRows([])
     fetchList(config)
     // Bog'liq bo'lmagan select'lar variantlarini darhol yuklaymiz
@@ -160,7 +211,7 @@ const ReferencePage = () => {
   }, [type])
 
   if (!config) {
-    // Dizayni hali yo'q bo'limlar (Rollar, Bayramlar, Ish jadvali)
+    // Dizayni hali yo'q bo'limlar (Rollar, Ish jadvali)
     return (
       <div className="p-4 flex flex-col items-center justify-center gap-3 w-full min-h-[calc(100vh-3.5rem)] bg-white dark:bg-[#0A0A0A] text-[#737373]">
         <FileText size={32} strokeWidth={1.5} />
@@ -182,26 +233,41 @@ const ReferencePage = () => {
         })
       return next
     })
+    // Maydon to'ldirilgani hamon uning xato holatini tozalaymiz
+    if (errors[field.name]) {
+      setErrors((prev) => {
+        const next = { ...prev }
+        delete next[field.name]
+        return next
+      })
+    }
   }
 
   const handleCreate = async () => {
     // Majburiy maydonlarni tekshirish
-    for (const f of config.fields) {
+    const newErrors = {}
+    config.fields.forEach((f) => {
       if (f.required) {
         const v = form[f.name]
         if (v === null || v === undefined || (typeof v === "string" && !v.trim())) {
-          showToast(t("gz_validation"))
-          return
+          newErrors[f.name] = true
         }
       }
+    })
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      showToast(t("gz_validation"))
+      return
     }
+    setErrors({})
 
-    // Payload — bo'sh select'larni yubormaymiz
     const payload = {}
     config.fields.forEach((f) => {
       const v = form[f.name]
       if (f.type === "text") payload[f.name] = String(v).trim()
-      else if (v) payload[f.name] = v
+      else if (f.type === "date") {
+        if (v) payload[f.name] = toISODate(v)
+      } else if (v) payload[f.name] = v
     })
 
     setCreating(true)
@@ -210,6 +276,7 @@ const ReferencePage = () => {
       if (res.status === 201 || res.status === 200) {
         setAddModal(false)
         setForm(emptyForm(config))
+        setErrors({})
         await fetchList(config)
         showToast(t("ref_created"))
       }
@@ -220,6 +287,26 @@ const ReferencePage = () => {
       setCreating(false)
     }
   }
+
+  const renderDateInput = (f) => (
+    <DatePicker
+      key={f.name}
+      currentLang={currentLang}
+      label={t(f.labelKey)}
+      placeholder={t(f.phKey)}
+      id={`ref-date-${f.name}`}
+      widthClass="w-full"
+      className="w-full"
+      inputClassName="h-11! dark:bg-transparent!"
+      value={form[f.name]}
+      onChange={(d) => handleFieldChange(f, d)}
+      error={!!errors[f.name]}
+      errorText={errors[f.name] ? t("field_required") : null}
+      labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
+      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[
+#737373] pointer-events-none" />}
+    />
+  )
 
   const colCount = config.columns.length + 1
 
@@ -234,7 +321,7 @@ const ReferencePage = () => {
         </div>
 
         {/* Birlashgan "qo'shish" tugmasi */}
-        <div className="flex items-center">
+        {/* <div className="flex items-center">
           <button
             type="button"
             onClick={() => setAddModal(true)}
@@ -250,7 +337,13 @@ const ReferencePage = () => {
           >
             <Plus size={16} />
           </button>
-        </div>
+        </div> */}
+
+        <AddButton
+          onOpen={() => setAddModal(true)}
+          title={t(config.addKey)}
+        />
+
       </div>
 
       {/* ── Jadval ── */}
@@ -303,7 +396,7 @@ const ReferencePage = () => {
       <Modal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
-        height="auto"
+        height={600}
         header={
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t(config.addKey)}</h2>
@@ -317,60 +410,94 @@ const ReferencePage = () => {
           </div>
         }
       >
-        <div className="flex flex-col gap-4 pb-2">
-          {config.fields.map((f, i) => {
-            // Maxsus joylashuv: region + district yonma-yon (faqat branches'da)
-            if (f.type === "select" && f.dependsOn) return null // pastda juftlikda chiqadi
-            const pairDep = config.fields.find((x) => x.dependsOn === f.name)
-            if (f.type === "select" && pairDep) {
+        <div className="flex flex-col justify-between h-full gap-4 pb-2">
+          <div className="flex flex-col gap-4">
+            {config.fields.map((f, i) => {
+              // pairWith bilan belgilangan ikkinchi maydon: birinchisi bilan birga chiqadi
+              if (f.pairWith) return null
+
+              // Sana juftligi (masalan boshlanish/tugash sanasi) — yonma-yon
+              const datePair = f.type === "date" ? config.fields.find((x) => x.pairWith === f.name) : null
+              if (f.type === "date" && datePair) {
+                return (
+                  <div key={i} className="grid grid-cols-2 gap-3">
+                    {renderDateInput(f)}
+                    {renderDateInput(datePair)}
+                  </div>
+                )
+              }
+              if (f.type === "date") {
+                return renderDateInput(f)
+              }
+
+              // Maxsus joylashuv: region + district yonma-yon (faqat branches'da)
+              if (f.type === "select" && f.dependsOn) return null // pastda juftlikda chiqadi
+              const pairDep = config.fields.find((x) => x.dependsOn === f.name)
+              if (f.type === "select" && pairDep) {
+                return (
+                  <div key={i} className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Select
+                        label={t(f.labelKey)}
+                        placeholder={t(f.phKey)}
+                        options={options[f.name] || []}
+                        value={form[f.name] ?? null}
+                        onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
+                        className={cn(errors[f.name] && errorInputClass)}
+                      />
+                      {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Select
+                        label={t(pairDep.labelKey)}
+                        placeholder={!form[f.name] ? t("gz_select_region_first") : t(pairDep.phKey)}
+                        options={options[pairDep.name] || []}
+                        value={form[pairDep.name] ?? null}
+                        onChange={(opt) => handleFieldChange(pairDep, opt?.value ?? null)}
+                        disabled={!form[f.name]}
+                        className={cn(errors[pairDep.name] && errorInputClass)}
+                      />
+                      {errors[pairDep.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                    </div>
+                  </div>
+                )
+              }
+
+              if (f.type === "select") {
+                return (
+                  <div key={i} className="flex flex-col gap-1.5">
+                    <Select
+                      label={t(f.labelKey)}
+                      placeholder={t(f.phKey)}
+                      options={options[f.name] || []}
+                      value={form[f.name] ?? null}
+                      onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
+                      className={cn(errors[f.name] && errorInputClass)}
+                    />
+                    {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
+                  </div>
+                )
+              }
+
+              // text
               return (
-                <div key={i} className="grid grid-cols-2 gap-3">
-                  <Select
-                    label={t(f.labelKey)}
+                <div key={i} className="flex flex-col gap-1.5">
+                  <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t(f.labelKey)}</label>
+                  <Input
+                    type="text"
                     placeholder={t(f.phKey)}
-                    options={options[f.name] || []}
-                    value={form[f.name] ?? null}
-                    onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
+                    value={form[f.name] ?? ""}
+                    onChange={(e) => handleFieldChange(f, e.target.value)}
+                    className={cn(
+                      "w-full h-11 rounded-lg dark:bg-[#171717]",
+                      errors[f.name] && errorInputClass
+                    )}
                   />
-                  <Select
-                    label={t(pairDep.labelKey)}
-                    placeholder={!form[f.name] ? t("gz_select_region_first") : t(pairDep.phKey)}
-                    options={options[pairDep.name] || []}
-                    value={form[pairDep.name] ?? null}
-                    onChange={(opt) => handleFieldChange(pairDep, opt?.value ?? null)}
-                    disabled={!form[f.name]}
-                  />
+                  {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                 </div>
               )
-            }
-
-            if (f.type === "select") {
-              return (
-                <Select
-                  key={i}
-                  label={t(f.labelKey)}
-                  placeholder={t(f.phKey)}
-                  options={options[f.name] || []}
-                  value={form[f.name] ?? null}
-                  onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
-                />
-              )
-            }
-
-            // text
-            return (
-              <div key={i} className="flex flex-col gap-1.5">
-                <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t(f.labelKey)}</label>
-                <Input
-                  type="text"
-                  placeholder={t(f.phKey)}
-                  value={form[f.name] ?? ""}
-                  onChange={(e) => handleFieldChange(f, e.target.value)}
-                  className="w-full h-11 rounded-lg dark:bg-[#171717]"
-                />
-              </div>
-            )
-          })}
+            })}
+          </div>
 
           {/* Footer */}
           <div className="flex items-center justify-end pt-2">

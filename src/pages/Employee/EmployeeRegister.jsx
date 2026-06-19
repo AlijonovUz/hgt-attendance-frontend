@@ -1011,6 +1011,8 @@ const EmployeeRegister = () => {
                   {[
                     { label: "#", cls: "w-12" },
                     { label: t("full_name") || "Ism familya" },
+                    { label: t("region") || "Bo'lim" },
+                    { label: t("district") || "Bo'lim" },
                     { label: t("department") || "Bo'lim" },
                     { label: t("col_branch") || "Filial" },
                     { label: t("position") || "Lavozim" },
@@ -1067,6 +1069,14 @@ const EmployeeRegister = () => {
                             {emp.full_name || ""}
                           </span>
                         </div>
+                      </td>
+
+                      <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
+                        {emp.branch_info?.region_info?.name || ""}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
+                        {emp.branch_info?.district_info?.name || ""}
                       </td>
 
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">

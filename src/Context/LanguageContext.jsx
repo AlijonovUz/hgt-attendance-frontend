@@ -1455,7 +1455,75 @@ export const translations = {
           cy: "Excel файлни юклашда хатолик юз берди",
           en: "Error exporting Excel file",
           ru: "Ошибка при экспорте Excel файла"
-     }
+     },
+
+     // bayramlar
+     ref_t_holiday: {
+          uz: "Bayramlar",
+          cy: "Байрамлар",
+          en: "Holidays",
+          ru: "Праздники"
+     },
+     ref_sub_holiday: {
+          uz: "{n} ta bayram mavjud",
+          cy: "{n} та байрам мавжуд",
+          en: "{n} holidays found",
+          ru: "{n} праздников"
+     },
+     ref_add_holiday: {
+          uz: "Bayram qo'shish",
+          cy: "Байрам қўшиш",
+          en: "Add holiday",
+          ru: "Добавить праздник"
+     },
+     ref_col_holiday_name: {
+          uz: "Bayram",
+          cy: "Байрам",
+          en: "Holiday",
+          ru: "Праздник"
+     },
+     ref_col_holiday_start: {
+          uz: "Boshlanish sanasi",
+          cy: "Бошланиш санаси",
+          en: "Start date",
+          ru: "Дата начала"
+     },
+     ref_col_holiday_end: {
+          uz: "Tugash sanasi",
+          cy: "Тугаш санаси",
+          en: "End date",
+          ru: "Дата окончания"
+     },
+     ref_name_holiday: {
+          uz: "Bayram nomi",
+          cy: "Байрам номи",
+          en: "Holiday name",
+          ru: "Название праздника"
+     },
+     ref_ph_holiday: {
+          uz: "Bayram nomini kiriting",
+          cy: "Байрам номини киритинг",
+          en: "Enter holiday name",
+          ru: "Введите название праздника"
+     },
+     ref_name_holiday_start: {
+          uz: "Boshlanish sanasi",
+          cy: "Бошланиш санаси",
+          en: "Start date",
+          ru: "Дата начала"
+     },
+     ref_name_holiday_end: {
+          uz: "Tugash sanasi",
+          cy: "Тугаш санаси",
+          en: "End date",
+          ru: "Дата окончания"
+     },
+     gz_date_ph: {
+          uz: "kk.oo.yyyy",
+          cy: "кк.оо.йийй",
+          en: "dd.mm.yyyy",
+          ru: "дд.мм.гггг"
+     },
 }
 
 export function LanguageProvider({ children }) {

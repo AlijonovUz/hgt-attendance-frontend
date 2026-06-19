@@ -9,9 +9,6 @@ export const AddButton = ({title, onOpen}) => {
                >
                     {title}
                </button>
-               <span className="p-[10px] shadow-xs rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#404040] flex items-center justify-center">
-                    <Plus size={16} className="dark:text-[#f5f5f5] text-[#0A0A0A]" />
-               </span>
           </div>
      )
 }
