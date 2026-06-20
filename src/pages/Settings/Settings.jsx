@@ -1,11 +1,17 @@
-import { useState } from "react"
-import { Languages, Palette, Bell, Volume2, Settings as SettingsIcon, Sun, Moon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useRef, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { Languages, Palette, Settings as SettingsIcon, Sun, Moon, Upload, KeyRound, Lock, Loader2 } from "lucide-react"
+import { cn, apiErrorMessage } from "@/lib/utils"
 import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
-import { Switch } from "@/components/ui/switch"
+import { axiosAPI } from "@/services/axiosAPI"
+import { setCurrentUser } from "@/store/slices/referencesSlice"
+import { ChangePasswordModal } from "@/components/ui/ChangePasswordModal"
+import { Toast } from "@/components/ui/Toast"
 
 const APP_VERSION = "v1.0.0"
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // 5 MB
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"]
 
 // Til segment tugmasi (Lotin / Кирил / Русский -> uz / cy / ru)
 const LANG_OPTIONS = [
@@ -14,37 +20,89 @@ const LANG_OPTIONS = [
   { value: "ru", labelKey: "set_lang_russian" },
 ]
 
-const Settings = () => {
-  const { t, language, setLanguage } = useLanguage()
-  const { theme, setTheme } = useTheme()
-
-  const [notifications, setNotifications] = useState(() => localStorage.getItem("notifications") !== "off")
-  const [sound, setSound] = useState(() => localStorage.getItem("sound") !== "off")
-
-  const handleNotifications = (val) => {
-    setNotifications(val)
-    localStorage.setItem("notifications", val ? "on" : "off")
-  }
-  const handleSound = (val) => {
-    setSound(val)
-    localStorage.setItem("sound", val ? "on" : "off")
-  }
-
-  // Bitta sozlama qatori
-  const Row = ({ icon: Icon, title, subtitle, control, last }) => (
-    <div className={cn("flex items-center justify-between gap-4 py-5", !last && "border-b border-[#EDEDED] dark:border-[#262626]")}>
-      <div className="flex items-center gap-4 min-w-0">
+// Bitta sozlama qatori. `leading` berilsa — ikonka qutisi o'rniga shu element ko'rsatiladi.
+const Row = ({ icon: Icon, leading, title, subtitle, control, last }) => (
+  <div className={cn("flex items-center justify-between gap-4 py-5", !last && "border-b border-[#EDEDED] dark:border-[#262626]")}>
+    <div className="flex items-center gap-4 min-w-0">
+      {leading ?? (
         <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white dark:bg-[#262626] border border-[#EDEDED] dark:border-[#333] flex items-center justify-center">
           <Icon size={18} strokeWidth={1.8} className="text-[#0A0A0A] dark:text-white" />
         </div>
-        <div className="flex flex-col min-w-0">
-          <span className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">{title}</span>
-          {subtitle && <span className="text-[13px] text-[#737373] dark:text-[#A3A3A3] truncate">{subtitle}</span>}
-        </div>
+      )}
+      <div className="flex flex-col min-w-0">
+        <span className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">{title}</span>
+        {subtitle && <span className="text-[13px] text-[#737373] dark:text-[#A3A3A3] truncate">{subtitle}</span>}
       </div>
-      <div className="flex-shrink-0">{control}</div>
     </div>
-  )
+    <div className="flex-shrink-0">{control}</div>
+  </div>
+)
+
+// Kulrang "O'zgartirish" tugmasi (foto va parol uchun bir xil). `loading` berilsa spinner ko'rsatadi.
+const ChangeButton = ({ icon: Icon, label, onClick, disabled, loading }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled || loading}
+    className={cn(
+      "flex items-center gap-2 h-10 px-4 rounded-xl text-[15px] font-medium transition-colors",
+      "bg-white dark:bg-[#262626] border border-[#EDEDED] dark:border-[#333] text-[#0A0A0A] dark:text-white",
+      "hover:bg-[#F4F4F5] dark:hover:bg-[#333] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+    )}
+  >
+    {loading ? <Loader2 size={17} strokeWidth={1.8} className="animate-spin" /> : <Icon size={17} strokeWidth={1.8} />}
+    {label}
+  </button>
+)
+
+const Settings = () => {
+  const { t, language, setLanguage } = useLanguage()
+  const { theme, setTheme } = useTheme()
+  const dispatch = useDispatch()
+  const currentUser = useSelector((state) => state.references.currentUser)
+
+  const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [pwdOpen, setPwdOpen] = useState(false)
+  const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
+
+  const showToast = (message) => setToast({ open: true, message, seq: Date.now() })
+
+  const avatar = currentUser?.face_image
+  const name = currentUser?.full_name || ""
+  const initials = name
+    ? name.split(" ").slice(0, 2).map((n) => n.charAt(0)).join("").toUpperCase()
+    : "?"
+
+  const handlePhotoPick = () => fileInputRef.current?.click()
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = "" // bir xil faylni qayta tanlash mumkin bo'lishi uchun
+    if (!file) return
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) return showToast(t("photo_invalid"))
+    if (file.size > MAX_PHOTO_BYTES) return showToast(t("photo_too_large"))
+
+    const fd = new FormData()
+    fd.append("face_image", file)
+
+    setUploading(true)
+    try {
+      const res = await axiosAPI.patch("users/auth/profile/", fd)
+      const updated = res.data?.data
+      if (updated) {
+        dispatch(setCurrentUser(updated))
+        localStorage.setItem("currentUser", JSON.stringify(updated))
+      }
+      showToast(t("photo_updated"))
+    } catch (err) {
+      console.error(err)
+      showToast(apiErrorMessage(err, t("photo_error")))
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6 flex flex-col gap-5 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
@@ -55,7 +113,45 @@ const Settings = () => {
         <span className="text-[#737373] dark:text-[#A3A3A3] text-sm">{t("settings_subtitle")}</span>
       </div>
 
-      {/* Settings card */}
+      {/* ─── Karta 1: Hisob (foto + parol) ─── */}
+      <div className="w-full rounded-2xl bg-[#FAFAFA] dark:bg-[#171717] border border-[#EDEDED] dark:border-[#262626] px-5">
+
+        {/* Profil fotosurati */}
+        <Row
+          leading={
+            avatar ? (
+              <img src={avatar} alt={name} className="flex-shrink-0 w-10 h-10 rounded-full object-cover" />
+            ) : (
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#85a6db] to-[#bfadea] flex items-center justify-center text-white text-sm font-semibold select-none">
+                {initials}
+              </div>
+            )
+          }
+          title={t("set_photo_title")}
+          subtitle={t("set_photo_sub")}
+          control={
+            <ChangeButton
+              icon={Upload}
+              label={uploading ? t("photo_uploading") : t("set_change")}
+              onClick={handlePhotoPick}
+              loading={uploading}
+            />
+          }
+        />
+
+        {/* Parolni o'zgartirish */}
+        <Row
+          icon={Lock}
+          title={t("set_password_title")}
+          subtitle={t("set_password_sub")}
+          control={
+            <ChangeButton icon={KeyRound} label={t("set_change")} onClick={() => setPwdOpen(true)} />
+          }
+          last
+        />
+      </div>
+
+      {/* ─── Karta 2: Interfeys sozlamalari ─── */}
       <div className="w-full rounded-2xl bg-[#FAFAFA] dark:bg-[#171717] border border-[#EDEDED] dark:border-[#262626] px-5">
 
         {/* Interfeys tili */}
@@ -121,22 +217,6 @@ const Settings = () => {
           }
         />
 
-        {/* Bildirishnomalar */}
-        <Row
-          icon={Bell}
-          title={t("set_notif_title")}
-          subtitle={t("set_notif_sub")}
-          control={<Switch checked={notifications} onChange={handleNotifications} />}
-        />
-
-        {/* Ovozli signal */}
-        <Row
-          icon={Volume2}
-          title={t("set_sound_title")}
-          subtitle={t("set_sound_sub")}
-          control={<Switch checked={sound} onChange={handleSound} />}
-        />
-
         {/* Tizim versiyasi */}
         <Row
           icon={SettingsIcon}
@@ -145,6 +225,26 @@ const Settings = () => {
           last
         />
       </div>
+
+      {/* Yashirin fayl input — foto yuklash uchun */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handlePhotoChange}
+      />
+
+      {/* Parolni o'zgartirish modali */}
+      <ChangePasswordModal isOpen={pwdOpen} onClose={() => setPwdOpen(false)} />
+
+      {/* Toast */}
+      <Toast
+        key={toast.seq}
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast((p) => ({ ...p, open: false }))}
+      />
     </div>
   )
 }
