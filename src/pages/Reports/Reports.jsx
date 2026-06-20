@@ -1,33 +1,26 @@
 import { useEffect, useState } from "react"
 import dayjs from "dayjs"
-import * as XLSX from "xlsx"
+import * as XLSX from "xlsx-js-style"
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import {
   CheckCircle2,
-  Clock,
   XCircle,
-  LogOut,
-  ChevronDownIcon,
-  FileSpreadsheet,
-  FileText,
-  Download,
   ArrowLeft,
   X,
 } from "lucide-react"
-import { PiMicrosoftExcelLogo } from "react-icons/pi";
 import { TbXboxXFilled } from "react-icons/tb"
 import { uz, ru, enUS, uzCyrl } from "date-fns/locale"
 
 import { useLanguage } from "../../Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
-import { cn, exportAoaToCsv } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { ExportMenu } from "@/components/ui/ExportMenu"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Toast } from "@/components/ui/Toast"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Logout01Icon, Pdf02Icon, Search01Icon, TimeQuarter02Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, FilterVerticalIcon, Logout01Icon, Search01Icon, TimeQuarter02Icon } from "@hugeicons/core-free-icons"
 import { Modal } from "@/components/ui/modal"
 import { Select } from "@/components/ui/select"
 
@@ -78,7 +71,6 @@ const Reports = () => {
   const [regions, setRegions] = useState([])
   const [districts, setDistricts] = useState([])
   const [regionsLoading, setRegionsLoading] = useState(false)
-  const [districtsLoading, setDistrictsLoading] = useState(false)
 
   const [filterRegion, setFilterRegion] = useState(null)      // { value, label }
   const [filterDistrict, setFilterDistrict] = useState(null)
@@ -263,23 +255,42 @@ const Reports = () => {
       : dayjs(selectedDate).format("DD.MM.YYYY")
     : t("byDate")
 
-  // ─── Eksport ───
+  // ─── Export ───
+  const BORDER_CLR = "D4D4D4"
+  const FONT_COLOR = "1A1A1A"
+  const HEADER_BG = "F0F0F0"
+  const ODD_BG = "FFFFFF"
+  const EVEN_BG = "FAFAFA"
+  const TOTAL_BG = "EFF4FF"
+  const TOTAL_FONT = "1E3A8A"
+
+  const borderStyle = {
+    top: { style: "thin", color: { rgb: BORDER_CLR } },
+    bottom: { style: "thin", color: { rgb: BORDER_CLR } },
+    left: { style: "thin", color: { rgb: BORDER_CLR } },
+    right: { style: "thin", color: { rgb: BORDER_CLR } },
+  }
+
   const nameOf = (r) => (isBranch ? r.branch : r.full_name) || "—"
 
   const buildExport = () => {
     const headers = [
       "#",
       t(isBranch ? "col_branch" : "col_employee"),
+      t("region"),
+      t("district"),
       t("col_total"),
-      t("col_arrived"),
-      t("col_late"),
-      t("col_absent"),
-      t("col_early"),
+      t("come"),
+      t("latecomers"),
+      t("absent"),
+      t("early_leavers"),
       t("col_discipline_kpi"),
     ]
     const body = results.map((r, i) => [
       i + 1,
       nameOf(r),
+      r.region || "—",
+      r.district || "—",
       r.total_expected ?? 0,
       r.present ?? 0,
       r.late ?? 0,
@@ -288,58 +299,222 @@ const Reports = () => {
       r.discipline_kpi ?? "—",
     ])
     const totalRow = summary
-      ? [
-        "",
-        t("total_row"),
+      ? ["", t("total_row"), "", "",
         summary.total_expected ?? 0,
         summary.present ?? 0,
         summary.late ?? 0,
         summary.absent ?? 0,
         summary.left_early ?? 0,
-        summary.discipline_kpi ?? "—",
-      ]
+        summary.discipline_kpi ?? "—"]
       : null
     return { headers, body, totalRow }
   }
 
   const exportExcel = () => {
     if (!results.length) return showToast(t("export_empty_warning"))
-    const { headers, body, totalRow } = buildExport()
-    const aoa = [headers, ...body]
-    if (totalRow) aoa.push(totalRow)
-    const ws = XLSX.utils.aoa_to_sheet(aoa)
-    ws["!cols"] = headers.map((_, i) => ({ wch: i === 1 ? 26 : 14 }))
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Hisobot")
-    XLSX.writeFile(wb, `davomat-hisoboti-${period}.xlsx`)
-    showToast(t("export_excel_success"))
-  }
+    try {
+      const { headers, body, totalRow } = buildExport()
+      const aoa = [headers, ...body]
+      if (totalRow) aoa.push(totalRow)
 
+      const ws = XLSX.utils.aoa_to_sheet(aoa)
+
+      ws["!cols"] = [
+        { wch: 6 },
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 16 },
+      ]
+
+      ws["!rows"] = [
+        { hpt: 28 },
+        ...body.map(() => ({ hpt: 22 })),
+        ...(totalRow ? [{ hpt: 24 }] : []),
+      ]
+
+      const border = {
+        top: { style: "thin", color: { rgb: "D4D4D4" } },
+        bottom: { style: "thin", color: { rgb: "D4D4D4" } },
+        left: { style: "thin", color: { rgb: "D4D4D4" } },
+        right: { style: "thin", color: { rgb: "D4D4D4" } },
+      }
+
+      // ── Header ──
+      headers.forEach((_, c) => {
+        const ref = XLSX.utils.encode_cell({ r: 0, c })
+        if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
+        ws[ref].s = {
+          fill: { patternType: "solid", fgColor: { rgb: "F0F0F0" } },
+          font: { bold: true, sz: 10, color: { rgb: "0A0A0A" }, name: "Calibri" },
+          alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left", wrapText: false },
+          border,
+        }
+      })
+
+      // ── Data qatorlari ──
+      body.forEach((row, rowIdx) => {
+        const isEven = rowIdx % 2 === 1
+        headers.forEach((__, c) => {
+          const ref = XLSX.utils.encode_cell({ r: rowIdx + 1, c })
+          if (!ws[ref]) ws[ref] = { t: "s", v: "" }
+          ws[ref].s = {
+            fill: { patternType: "solid", fgColor: { rgb: isEven ? "FAFAFA" : "FFFFFF" } },
+            font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" },
+            alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left", wrapText: false },
+            border,
+          }
+        })
+      })
+
+      // ── Jami qatori (footer) ──
+      if (totalRow) {
+        const r = body.length + 1
+        headers.forEach((__, c) => {
+          const ref = XLSX.utils.encode_cell({ r, c })
+          if (!ws[ref]) ws[ref] = { t: "s", v: "" }
+          ws[ref].s = {
+            fill: { patternType: "solid", fgColor: { rgb: "EFF4FF" } },
+            font: { bold: true, sz: 10, color: { rgb: "1E3A8A" }, name: "Calibri" },
+            alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left", wrapText: false },
+            border: {
+              top: { style: "medium", color: { rgb: "93C5FD" } },
+              bottom: { style: "medium", color: { rgb: "93C5FD" } },
+              left: { style: "thin", color: { rgb: "93C5FD" } },
+              right: { style: "thin", color: { rgb: "93C5FD" } },
+            },
+          }
+        })
+      }
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, "Hisobot")
+      XLSX.writeFile(wb, `davomat-hisoboti-${period}.xlsx`, { bookType: "xlsx", cellStyles: true })
+      showToast(t("export_excel_success"))
+    } catch (err) {
+      console.error(err)
+      showToast(t("export_error"))
+    }
+  }
   const exportPDF = () => {
     if (!results.length) return showToast(t("export_empty_warning"))
-    const { headers, body, totalRow } = buildExport()
-    const doc = new jsPDF()
-    doc.setFontSize(14)
-    doc.text(t("reports"), 14, 16)
-    autoTable(doc, {
-      head: [headers],
-      body: totalRow ? [...body, totalRow] : body,
-      startY: 22,
-      styles: { fontSize: 9, cellPadding: 2.5 },
-      headStyles: { fillColor: [37, 99, 235], textColor: 255 },
-      footStyles: { fillColor: [239, 244, 255] },
-    })
-    doc.save(`davomat-hisoboti-${period}.pdf`)
-    showToast(t("export_pdf_success"))
+    try {
+      const { headers, body, totalRow } = buildExport()
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
+
+      // Sarlavha
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(14)
+      doc.setTextColor(10, 10, 10)
+      doc.text(t("reports"), 14, 14)
+
+      // Davr + sana
+      const periodLabel = PERIODS.find((p) => p.value === period)
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(8.5)
+      doc.setTextColor(115, 115, 115)
+      doc.text(
+        `${t(periodLabel?.labelKey || "period_daily")}  ·  ${dayjs().format("DD.MM.YYYY HH:mm")}`,
+        14, 21
+      )
+
+      autoTable(doc, {
+        head: [headers],
+        body: totalRow ? [...body, totalRow] : body,
+        startY: 27,
+        margin: { left: 14, right: 14 },
+        styles: {
+          fontSize: 8.5,
+          cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+          lineColor: [212, 212, 212],
+          lineWidth: 0.2,
+          font: "helvetica",
+          textColor: [26, 26, 26],
+          overflow: "ellipsize",
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [10, 10, 10],
+          fontStyle: "bold",
+          fontSize: 8.5,
+          lineColor: [212, 212, 212],
+          lineWidth: 0.2,
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250],
+        },
+        bodyStyles: {
+          fillColor: [255, 255, 255],
+        },
+        didParseCell(data) {
+          if (totalRow && data.section === "body" && data.row.index === body.length) {
+            data.cell.styles.fillColor = [239, 244, 255]
+            data.cell.styles.textColor = [30, 58, 138]
+            data.cell.styles.fontStyle = "bold"
+            data.cell.styles.lineColor = [147, 197, 253]
+            data.cell.styles.lineWidth = 0.3
+          }
+        },
+        columnStyles: {
+          0: { halign: "center", cellWidth: 10 },
+          1: { cellWidth: 44 },
+        },
+      })
+
+      // Footer — sahifa raqami
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(7.5)
+        doc.setTextColor(160, 160, 160)
+        doc.text(
+          `${i} / ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 6,
+          { align: "center" }
+        )
+      }
+
+      doc.save(`davomat-hisoboti-${period}.pdf`)
+      showToast(t("export_pdf_success"))
+    } catch (err) {
+      console.error(err)
+      showToast(t("export_error"))
+    }
   }
 
   const exportCSV = () => {
     if (!results.length) return showToast(t("export_empty_warning"))
-    const { headers, body, totalRow } = buildExport()
-    const aoa = [headers, ...body]
-    if (totalRow) aoa.push(totalRow)
-    exportAoaToCsv(`davomat-hisoboti-${period}.csv`, aoa)
-    showToast(t("export_csv_success"))
+    try {
+      const { headers, body, totalRow } = buildExport()
+      const aoa = [headers, ...body]
+      if (totalRow) aoa.push(totalRow)
+
+      const escape = (v) => {
+        const s = String(v ?? "")
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"`
+          : s
+      }
+
+      const csv = "\uFEFF" + aoa.map((row) => row.map(escape).join(",")).join("\r\n")
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `davomat-hisoboti-${period}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      showToast(t("export_csv_success"))
+    } catch (err) {
+      console.error(err)
+      showToast(t("export_error"))
+    }
   }
 
   const Pill = ({ icon: Icon, iconClass, children, iconType }) => (

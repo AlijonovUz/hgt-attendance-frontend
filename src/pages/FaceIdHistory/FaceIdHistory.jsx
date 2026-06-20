@@ -11,6 +11,11 @@ import { Modal } from "@/components/ui/modal"
 import { HugeIcon } from "@/components/ui/HugeIcon"
 import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { DatePicker } from "@/components/ui/DatePicker"
+import * as XLSX from "xlsx-js-style"
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
+import { ExportMenu } from "@/components/ui/ExportMenu"
+
 
 // NOTE: bu endpoint nomlarini loyihadagi haqiqiy region/district/branch
 // ro'yxat endpointlariga moslab o'zgartiring (hozircha taxminiy nomlar)
@@ -55,7 +60,7 @@ const FaceIdHistory = () => {
 
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
-  
+
   const [filterStartDate, setFilterStartDate] = useState("")
   const [filterEndDate, setFilterEndDate] = useState("")
 
@@ -231,34 +236,6 @@ const FaceIdHistory = () => {
     fetchBranches(opt?.value)
   }
 
-  // ─── Eksport (jadval ko'rinishidagi loglarni) ───
-  const exportExcel = async () => {
-    const XLSX = await import("xlsx")
-    const headers = [
-      "#",
-      t("col_employee") || "Xodim",
-      t("region") || "Viloyat",
-      t("district") || "Tuman",
-      t("branch") || "Filial",
-      t("status") || "Holat",
-      t("col_time") || "Yaratilgan vaqti",
-    ]
-    const rows = logs.map((r, i) => [
-      i + 1,
-      r.user_info?.full_name || "—",
-      r.region_info?.name || r?.region || "",
-      r.district_info?.name || r?.district || "",
-      r.branch_info?.name || r?.branch || "",
-      r.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali"),
-      r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : "",
-    ])
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-    ws["!cols"] = headers.map((_, i) => ({ wch: i === 1 ? 26 : 16 }))
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "FaceID")
-    XLSX.writeFile(wb, "faceid-tarixi.xlsx")
-  }
-
   const [exportOpen, setExportOpen] = useState(false)
   const exportRef = useRef(null)
   useEffect(() => {
@@ -268,6 +245,90 @@ const FaceIdHistory = () => {
     document.addEventListener("mousedown", fn)
     return () => document.removeEventListener("mousedown", fn)
   }, [])
+
+  // ── konstantalar (komponent tashqarisida) ──
+  const BORDER = { top: { style: "thin", color: { rgb: "D4D4D4" } }, bottom: { style: "thin", color: { rgb: "D4D4D4" } }, left: { style: "thin", color: { rgb: "D4D4D4" } }, right: { style: "thin", color: { rgb: "D4D4D4" } } }
+
+  // ── komponent ichida ──
+  const buildExport = () => {
+    const headers = [
+      "#",
+      t("col_employee") || "Xodim",
+      t("region") || "Viloyat",
+      t("district") || "Tuman",
+      t("branch") || "Filial",
+      t("status") || "Holat",
+      t("col_time") || "Yaratilgan vaqti",
+    ]
+    const body = logs.map((r, i) => [
+      i + 1,
+      r.user_info?.full_name || "—",
+      r.region?.name || r?.region || "",
+      r.district?.name || r?.district || "",
+      r.branch?.name || r?.branch || "",
+      r.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali"),
+      r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : "",
+    ])
+    return { headers, body }
+  }
+
+  const exportExcel = () => {
+    if (!logs.length) return
+    const { headers, body } = buildExport()
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...body])
+    ws["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }]
+    ws["!rows"] = [{ hpt: 28 }, ...body.map(() => ({ hpt: 22 }))]
+    headers.forEach((_, c) => {
+      const ref = XLSX.utils.encode_cell({ r: 0, c })
+      if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
+      ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "F0F0F0" } }, font: { bold: true, sz: 10, color: { rgb: "0A0A0A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+    })
+    body.forEach((_, rowIdx) => {
+      headers.forEach((__, c) => {
+        const ref = XLSX.utils.encode_cell({ r: rowIdx + 1, c })
+        if (!ws[ref]) ws[ref] = { t: "s", v: "" }
+        ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: rowIdx % 2 === 1 ? "FAFAFA" : "FFFFFF" } }, font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+      })
+    })
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "FaceID")
+    XLSX.writeFile(wb, "faceid-tarixi.xlsx", { bookType: "xlsx", cellStyles: true })
+  }
+
+  const exportPDF = () => {
+    if (!logs.length) return
+    const { headers, body } = buildExport()
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
+    doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(10, 10, 10)
+    doc.text(t("history_m_faceid") || "FaceID Tarixi", 14, 14)
+    doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(115, 115, 115)
+    doc.text(dayjs().format("DD.MM.YYYY HH:mm"), 14, 21)
+    autoTable(doc, {
+      head: [headers], body,
+      startY: 27, margin: { left: 14, right: 14 },
+      styles: { fontSize: 8.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, lineColor: [212, 212, 212], lineWidth: 0.2, font: "helvetica", textColor: [26, 26, 26] },
+      headStyles: { fillColor: [240, 240, 240], textColor: [10, 10, 10], fontStyle: "bold", fontSize: 8.5 },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      bodyStyles: { fillColor: [255, 255, 255] },
+      columnStyles: { 0: { halign: "center", cellWidth: 10 }, 1: { cellWidth: 40 } },
+    })
+    const pc = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pc; i++) {
+      doc.setPage(i)
+      doc.setFontSize(7.5).setTextColor(160, 160, 160)
+      doc.text(`${i} / ${pc}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" })
+    }
+    doc.save("faceid-tarixi.pdf")
+  }
+
+  const exportCSV = () => {
+    if (!logs.length) return
+    const { headers, body } = buildExport()
+    const escape = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s }
+    const csv = "\uFEFF" + [headers, ...body].map(r => r.map(escape).join(",")).join("\r\n")
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "faceid-tarixi.csv" })
+    a.click(); URL.revokeObjectURL(a.href)
+  }
 
   const COLS = 7
 
@@ -296,36 +357,14 @@ const FaceIdHistory = () => {
         </div>
 
         {/* Yuklash (eksport) */}
-        <div ref={exportRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setExportOpen((p) => !p)}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0a0a0a] px-3 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
-          >
-            <HugeIcon icon={Download01Icon} size={15} />
-            {t("upload") || "Yuklash"}
-            <ChevronDownIcon size={15} className={cn("transition-transform", exportOpen && "rotate-180")} />
-          </button>
-
-          {exportOpen && (
-            <div className="absolute right-0 top-[calc(100%+4px)] z-50 bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-xl shadow-lg overflow-hidden min-w-[150px] py-1">
-              <button
-                type="button"
-                onClick={() => { exportExcel(); setExportOpen(false) }}
-                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[#0a0a0a] dark:text-[#f5f5f5] hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer"
-              >
-                Excel
-              </button>
-            </div>
-          )}
-        </div>
+        <ExportMenu onExcel={exportExcel} onPDF={exportPDF} onCSV={exportCSV} label={t("upload") || "Yuklash"} />
       </div>
 
       {/* ─── Jadval ─── */}
       <div className="w-full overflow-hidden">
         <div ref={tableContainerRef} className="h-[calc(100vh-145px)] overflow-auto">
           <table className="w-full border-collapse text-left">
-            <thead className="sticky top-0 z-20">
+            <thead className="sticky top-0 z-[1]">
               <tr className="bg-[#FAFAFA] dark:bg-[#262626] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
                 {[
                   { label: "#", cls: "w-12" },
@@ -460,7 +499,7 @@ const FaceIdHistory = () => {
                 value={startDate}
                 onChange={(d) => setStartDate(d)}
                 labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-                calendarIcon={startDate ? <span className=" cursor-pointer" onClick={(e) => {e.stopPropagation(); setStartDate("")}}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                calendarIcon={startDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
                 showTime
               />
 
@@ -474,7 +513,7 @@ const FaceIdHistory = () => {
                 value={endDate}
                 onChange={(d) => setEndDate(d)}
                 labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-                calendarIcon={endDate ? <span className=" cursor-pointer" onClick={(e) => {e.stopPropagation(); setEndDate("")}}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                calendarIcon={endDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
                 showTime
               />
 
