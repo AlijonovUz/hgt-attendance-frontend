@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { ArrowDown01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeIcon } from "@/components/ui/HugeIcon";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,9 @@ const CompactSelect = ({
 }) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const wrapperRef = useRef(null);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     const handleOutside = (e) => {
@@ -27,6 +29,19 @@ const CompactSelect = ({
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
+
+  // Ochilganda qidiruvni tozalab, inputga fokus beramiz
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      const id = setTimeout(() => searchRef.current?.focus(), 0);
+      return () => clearTimeout(id);
+    }
+  }, [open]);
+
+  const filteredOptions = options.filter((opt) =>
+    String(opt.label).toLowerCase().includes(query.trim().toLowerCase())
+  );
 
   const handleSelect = (opt) => {
     onChange?.(opt);
@@ -81,7 +96,7 @@ const CompactSelect = ({
       {/* ── Dropdown — keng ── */}
       {open && (
         <div
-          className="absolute top-[calc(100%+5px)] right-0 z-50 bg-white dark:bg-[#1A1A1A] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-xl p-1 shadow-xl overflow-y-auto max-h-[260px]"
+          className="absolute top-[calc(100%+5px)] right-0 z-50 bg-white dark:bg-[#1A1A1A] border border-[#E5E7EB] dark:border-[#2E2E2E] rounded-xl shadow-xl overflow-hidden flex flex-col"
           style={{
             minWidth: dropdownWidth,
             animation: "fadeSlideDown 0.12s ease",
@@ -94,32 +109,49 @@ const CompactSelect = ({
             }
           `}</style>
 
-          {options.length === 0 ? (
-            <div className="px-3 py-2.5 text-sm text-[#737373]">
-              {t("no_data_found") || "Ma'lumot yo'q"}
+          {/* ── Qidiruv ── */}
+          <div className="p-1.5 border-b border-[#EFEFEF] dark:border-[#2E2E2E]">
+            <div className="flex items-center gap-2 rounded-lg bg-[#F5F5F5] dark:bg-[#0A0A0A] px-2.5 py-2">
+              <Search size={14} className="text-[#737373] dark:text-[#A3A3A3] flex-shrink-0" />
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("searchBtn") || "Qidirish"}
+                className="w-full bg-transparent text-sm text-[#0A0A0A] dark:text-white placeholder:text-[#A3A3A3] outline-none"
+              />
             </div>
-          ) : (
-            options.map((opt) => {
-              const isSelected = value?.value === opt.value;
-              return (
-                <div
-                  key={opt.value}
-                  onClick={() => handleSelect(opt)}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
-                    isSelected
-                      ? "bg-[#F5F5F5] dark:bg-[#262626] text-[#0A0A0A] dark:text-white font-medium"
-                      : "text-[#3a3a3a] dark:text-[#D4D4D4] hover:bg-[#F9F9F9] dark:hover:bg-[#222]"
-                  )}
-                >
-                  {opt.label}
-                  {isSelected && (
-                    <Check size={14} className="text-[#0A0A0A] dark:text-white flex-shrink-0" />
-                  )}
-                </div>
-              );
-            })
-          )}
+          </div>
+
+          {/* ── Variantlar ── */}
+          <div className="p-1 overflow-y-auto max-h-[220px]">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2.5 text-sm text-[#737373]">
+                {t("no_data_found") || "Ma'lumot yo'q"}
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = value?.value === opt.value;
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={() => handleSelect(opt)}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer transition-colors",
+                      isSelected
+                        ? "bg-[#F5F5F5] dark:bg-[#262626] text-[#0A0A0A] dark:text-white font-medium"
+                        : "text-[#3a3a3a] dark:text-[#D4D4D4] hover:bg-[#F9F9F9] dark:hover:bg-[#222]"
+                    )}
+                  >
+                    {opt.label}
+                    {isSelected && (
+                      <Check size={14} className="text-[#0A0A0A] dark:text-white flex-shrink-0" />
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
