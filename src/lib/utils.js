@@ -18,3 +18,20 @@ export function apiErrorMessage(err, fallback = "Xatolik yuz berdi") {
   }
   return error?.errorMsg || err?.message || fallback;
 }
+
+// Jadval (array-of-arrays) ni CSV faylga aylantirib yuklab beradi.
+// BOM (﻿) — Excel UTF-8 (kirill/o'zbek) ni to'g'ri ochishi uchun.
+export function exportAoaToCsv(filename, aoa) {
+  const esc = (v) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = "﻿" + aoa.map((row) => row.map(esc).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
