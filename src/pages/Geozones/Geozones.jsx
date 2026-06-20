@@ -16,6 +16,10 @@ import { useSelector } from "react-redux"
 const RADIUS_MIN = 50
 const RADIUS_MAX = 500
 
+// Yangi geozona uchun default markaz — O'zbekiston (Toshkent)
+const DEFAULT_LAT = "41.311081"
+const DEFAULT_LNG = "69.279716"
+
 // zone_type enum -> tarjima kaliti
 const ZONE_TYPES = [
   { value: "main_office", key: "zt_main_office" },
@@ -97,8 +101,8 @@ const Geozones = () => {
   const [form, setForm] = useState({
     name: "",
     zone_type: null,
-    latitude: "",
-    longitude: "",
+    latitude: DEFAULT_LAT,
+    longitude: DEFAULT_LNG,
     radius: RADIUS_MIN,
     branch: null,
   })
@@ -317,7 +321,7 @@ const Geozones = () => {
 
   // ─── Yangi geozona qo'shish ───
   const resetForm = () =>
-    setForm({ name: "", zone_type: null, latitude: "", longitude: "", radius: RADIUS_MIN, branch: null })
+    setForm({ name: "", zone_type: null, latitude: DEFAULT_LAT, longitude: DEFAULT_LNG, radius: RADIUS_MIN, branch: null })
 
   const handleCreate = async () => {
     // vergulni nuqtaga almashtirib, bo'sh joylarni olib tashlaymiz
