@@ -477,7 +477,6 @@ const Reports = () => {
       </div>
 
       {/* ─── Jadval ─── */}
-      {/* ─── Jadval ─── */}
       <div className="w-full h-[calc(100vh-200px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
 
         {/* Scrollable area: faqat thead + tbody */}

@@ -13,6 +13,10 @@ import {
   Settings,
   ReferencePage,
   PrivacyPolicy,
+  ActionHistory,
+  FaceIdHistory,
+  LocationHistory,
+  SignatureHistory,
 } from "./pages";
 import Layout from "./components/Layout/Layout";
 import { EmptySection } from "./components/EmptySection";
@@ -61,17 +65,33 @@ const App = () => {
     (state) => state.references.userPermission
   );
 
-  const viewEmp = userPermission?.employees && 
+  const viewEmp = userPermission?.employees &&
     userPermission?.employees?.some(
       (e) => e.code === "employee_view_all" || e.code === "employee_view_district" || e.code === "employee_view_region" || e.code === "employee_view_branch" || e.code === "employee_view_dept"
     );
 
-  const viewgeo = userPermission?.geozones && 
+  const viewgeo = userPermission?.geozones &&
     userPermission?.geozones?.some(
       (e) => e.code === "geozone_view"
     );
+  const viewAULog = userPermission?.logs &&
+    userPermission?.logs?.some(
+      (e) => e.code === "log_view_audit"
+    );
+  const viewSGLog = userPermission?.logs &&
+    userPermission?.logs?.some(
+      (e) => e.code === "log_view_signature"
+    );
+  const viewGPLog = userPermission?.logs &&
+    userPermission?.logs?.some(
+      (e) => e.code === "log_view_gps"
+    );
+  const viewFCLog = userPermission?.logs &&
+    userPermission?.logs?.some(
+      (e) => e.code === "log_view_face"
+    );
 
-  const viewRep = userPermission?.reports && 
+  const viewRep = userPermission?.reports &&
     userPermission?.reports?.some(
       (e) =>
         e.code === "report_type_employee" ||
@@ -118,6 +138,38 @@ const App = () => {
             <ProtectedReference>
               <ReferencePage />
             </ProtectedReference>
+          ),
+        },
+        {
+          path: "history/actions",
+          element: (
+            <ProtectedRoute check={viewAULog}>
+              <ActionHistory />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "history/faceid",
+          element: (
+            <ProtectedRoute check={viewFCLog}>
+              <FaceIdHistory />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "history/location",
+          element: (
+            <ProtectedRoute check={viewGPLog}>
+              <LocationHistory />
+            </ProtectedRoute>
+          )
+        },
+        {
+          path: "history/signature",
+          element: (
+            <ProtectedRoute check={viewSGLog}>
+              <SignatureHistory />
+            </ProtectedRoute>
           ),
         },
         {

@@ -10,7 +10,6 @@ const routeMap = {
      "reports": "reports",
      "geozones": "geozone",
      "settings": "settings",
-     // Ma'lumotnomalar
      "references": "ref_menu_title",
      "regions": "ref_m_region",
      "districts": "ref_m_district",
@@ -20,6 +19,11 @@ const routeMap = {
      "roles": "ref_m_role",
      "holidays": "ref_m_holiday",
      "schedule": "ref_m_schedule",
+     "history": "history_menu_title",
+     "actions": "history_m_actions",
+     "faceid": "history_m_faceid",
+     "location": "history_m_location",
+     "signature": "history_m_signature",
 }
 
 const Navbar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
@@ -68,8 +72,8 @@ const Navbar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                         )}
                                         <span
                                              className={`text-sm truncate ${isLast
-                                                       ? "text-[#1A1A1A] dark:text-white"
-                                                       : "text-[#6B7280] dark:text-[#9CA3AF]"
+                                                  ? "text-[#1A1A1A] dark:text-white"
+                                                  : "text-[#6B7280] dark:text-[#9CA3AF]"
                                                   }`}
                                         >
                                              {crumb.label}

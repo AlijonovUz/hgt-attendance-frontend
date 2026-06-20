@@ -13,6 +13,8 @@ import {
 import { useSelector } from "react-redux"
 import { NavLink, useNavigate, useLocation } from "react-router-dom"
 import { UserDropdown } from "./ui/UserDropdown"
+import { HugeIcon } from "./ui/HugeIcon"
+import { TransactionHistoryIcon } from "@hugeicons/core-free-icons"
 
 
 const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
@@ -26,7 +28,35 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const [refOpen, setRefOpen] = useState(() => location.pathname.startsWith("/references"))
      const refActive = location.pathname.startsWith("/references")
 
-     const viewEmp =userPermission?.employees && 
+     const [historyOpen, setHistoryOpen] = useState(() => location.pathname.startsWith("/history"))
+     const historyActive = location.pathname.startsWith("/history")
+
+     const viewAULog = userPermission?.logs &&
+          userPermission?.logs?.some(
+               (e) => e.code === "log_view_audit"
+          );
+     const viewSGLog = userPermission?.logs &&
+          userPermission?.logs?.some(
+               (e) => e.code === "log_view_signature"
+          );
+     const viewGPLog = userPermission?.logs &&
+          userPermission?.logs?.some(
+               (e) => e.code === "log_view_gps"
+          );
+     const viewFCLog = userPermission?.logs &&
+          userPermission?.logs?.some(
+               (e) => e.code === "log_view_face"
+          );
+
+
+     const HISTORY_CHILDREN = [
+          ...(viewAULog ? [{ key: "actions", labelKey: "history_m_actions", path: "/history/actions" }] : []),
+          ...(viewFCLog ? [{ key: "faceid", labelKey: "history_m_faceid", path: "/history/faceid" }] : []),
+          ...(viewGPLog ? [{ key: "location", labelKey: "history_m_location", path: "/history/location" }] : []),
+          ...(viewSGLog ? [{ key: "signature", labelKey: "history_m_signature", path: "/history/signature" }] : []),
+     ]
+
+     const viewEmp = userPermission?.employees &&
           userPermission?.employees?.some(
                (e) => e.code === "employee_view_all" || e.code === "employee_view_district" || e.code === "employee_view_region" || e.code === "employee_view_branch" || e.code === "employee_view_dept"
           );
@@ -158,43 +188,89 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                          })}
 
                          {/* ─── Ma'lumotnomalar (ochiluvchi) ─── */}
-                         <button
-                              type="button"
-                              onClick={() => setRefOpen((p) => !p)}
-                              title={sidebarCollapsed ? t("ref_menu_title") : undefined}
-                              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
+                         {(viewgeo || viewRep || viewhol || viewsch ||viewreg || viewdis || viewbrs || viewdep || viewpos || viewrol) &&
+                         <>
+                              <button
+                                   type="button"
+                                   onClick={() => setRefOpen((p) => !p)}
+                                   title={sidebarCollapsed ? t("ref_menu_title") : undefined}
+                                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
                                    ${refActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
-                         >
-                              <FileText size={18} className="flex-shrink-0" strokeWidth={1.7} />
-                              <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
+                              >
+                                   <FileText size={18} className="flex-shrink-0" strokeWidth={1.7} />
+                                   <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
                                    ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
-                                   {t("ref_menu_title")}
-                              </span>
-                              {!sidebarCollapsed && (
-                                   <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
-                              )}
-                         </button>
+                                        {t("ref_menu_title")}
+                                   </span>
+                                   {!sidebarCollapsed && (
+                                        <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
+                                   )}
+                              </button>
 
-                         {/* Ichki bo'limlar */}
-                         {refOpen && !sidebarCollapsed && (
-                              <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
-                                   {REF_CHILDREN.map((child) => (
-                                        <NavLink
-                                             key={child.key}
-                                             to={`/references/${child.key}`}
-                                             className={({ isActive }) =>
-                                                  `px-3 py-2 rounded-lg text-[13px] truncate
+                              {/* Ichki bo'limlar */}
+                              {refOpen && !sidebarCollapsed && (
+                                   <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
+                                        {REF_CHILDREN.map((child) => (
+                                             <NavLink
+                                                  key={child.key}
+                                                  to={`/references/${child.key}`}
+                                                  className={({ isActive }) =>
+                                                       `px-3 py-2 rounded-lg text-[13px] truncate
                                                   ${isActive
-                                                       ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
-                                                       : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
-                                                  }`
-                                             }
-                                        >
-                                             {t(child.labelKey)}
-                                        </NavLink>
-                                   ))}
-                              </div>
-                         )}
+                                                            ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                            : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                       }`
+                                                  }
+                                             >
+                                                  {t(child.labelKey)}
+                                             </NavLink>
+                                        ))}
+                                   </div>
+                              )}
+                         </>
+                    }
+
+                         {/* ─── Umumiy tarix (ochiluvchi) ─── */}
+                         {(viewAULog || viewFCLog || viewGPLog || viewSGLog) &&
+                              <>
+                                   <button
+                                        type="button"
+                                        onClick={() => setHistoryOpen((p) => !p)}
+                                        title={sidebarCollapsed ? t("history_menu_title") : undefined}
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
+          ${historyActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
+                                   >
+                                        <HugeIcon icon={TransactionHistoryIcon} size={18} className="flex-shrink-0" />
+                                        <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
+          ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
+                                             {t("history_menu_title")}
+                                        </span>
+                                        {!sidebarCollapsed && (
+                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${historyOpen ? "rotate-180" : ""}`} />
+                                        )}
+                                   </button>
+
+                                   {/* Ichki bo'limlar */}
+                                   {historyOpen && !sidebarCollapsed && (
+                                        <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
+                                             {HISTORY_CHILDREN.map((child) => (
+                                                  <NavLink
+                                                       key={child.key}
+                                                       to={child.path}
+                                                       className={({ isActive }) =>
+                                                            `px-3 py-2 rounded-lg text-[13px] truncate ${isActive
+                                                                 ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                                 : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                            }`
+                                                       }
+                                                  >
+                                                       {t(child.labelKey)}
+                                                  </NavLink>
+                                             ))}
+                                        </div>
+                                   )}
+                              </>
+                         }
                     </nav>
                </div>
 
