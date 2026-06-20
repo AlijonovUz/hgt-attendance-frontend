@@ -48,7 +48,7 @@ const REF_CONFIGS = {
   regions: {
     endpoint: "users/regions/",
     titleKey: "ref_t_region",
-    permKey: "regions",      // userPermission dagi kalit
+    permKey: "regions",
     permPrefix: "region",
     addKey: "ref_add_region",
     subKey: "ref_sub_region",
@@ -61,8 +61,6 @@ const REF_CONFIGS = {
     addKey: "ref_add_district",
     permKey: "districts",
     permPrefix: "district",
-    permKey: "branchs",      // JSON da "branchs" (s bilan)
-    permPrefix: "branch",
     subKey: "ref_sub_district",
     columns: [
       { headerKey: "gz_district", accessor: (r) => r.name },
@@ -76,11 +74,11 @@ const REF_CONFIGS = {
       { name: "region", labelKey: "gz_region", phKey: "gz_region_ph", optionsEndpoint: "users/regions/" },
     ],
   },
-  branches: {
+  branchs: {
     endpoint: "users/branches/",
     titleKey: "ref_t_branch",
     addKey: "ref_add_branch",
-    permKey: "branchs",      // JSON da "branchs" (s bilan)
+    permKey: "branchs",
     permPrefix: "branch",
     subKey: "ref_sub_branch",
     columns: [
@@ -147,7 +145,6 @@ const REF_CONFIGS = {
     permPrefix: "holiday",
     subKey: "ref_sub_holiday",
     columns: [
-      // DIQQAT: maydon nomi "title" (pastdagi fields'ga mos), shuning uchun r.title
       { headerKey: "ref_col_holiday_name", accessor: (r) => r.title || "—" },
       { headerKey: "ref_col_holiday_start", accessor: (r) => formatDate(r.start_date) },
       { headerKey: "ref_col_holiday_end", accessor: (r) => formatDate(r.end_date) },
@@ -158,7 +155,6 @@ const REF_CONFIGS = {
       { type: "date", name: "end_date", labelKey: "ref_name_holiday_end", phKey: "gz_date_ph", required: true, pairWith: "start_date" },
     ],
   },
-  // Rollar — oddiy fields o'rniga maxsus modal (ruxsatlar akkordeoni) ishlatadi
   roles: {
     endpoint: "users/roles/",
     titleKey: "ref_t_role",
@@ -169,12 +165,11 @@ const REF_CONFIGS = {
     custom: "roles",
     columns: [{ headerKey: "ref_col_role", accessor: (r) => r.name }],
   },
-  // Ish jadvali — maxsus modal (vaqt maydonlari + ish kunlari)
   schedule: {
     endpoint: "users/schedules/",
     titleKey: "ref_t_schedule",
     addKey: "ref_add_schedule",
-    permKey: "schedules",    // JSON da "schedules"
+    permKey: "schedules",
     permPrefix: "schedule",
     subKey: "ref_sub_schedule",
     custom: "schedule",
@@ -191,15 +186,10 @@ const REF_CONFIGS = {
 const emptyForm = (cfg) =>
   Object.fromEntries((cfg.fields || []).map((f) => [f.name, f.type === "select" || f.type === "date" ? null : ""]))
 
-// Qizil border (input ham, select ham) — Select komponenti className'ni o'z
-// root elementiga uzatishi kerak; agar uzatmasa, Select komponenti ichida
-// "error" propini qo'llab-quvvatlashni tekshirib qo'ying.
 const errorInputClass = "border-red-500 focus:border-red-500 dark:border-red-500"
 
 const ReferencePage = () => {
   const { t, language } = useLanguage()
-  // ⚠️ Tekshiring: LanguageContext'da joriy til kodi qaysi nomda saqlanadi
-  // (lang / language / locale) — DatePicker shu kodga mos kalendar tilini tanlaydi.
   const currentLang = language || "uz"
   const { type } = useParams()
   const config = REF_CONFIGS[type]
@@ -212,7 +202,6 @@ const ReferencePage = () => {
   const canCreate = userPermission?.[permKey]?.some(e => e.code === `${permPrefix}_create`) ?? false
   const canEdit = userPermission?.[permKey]?.some(e => e.code === `${permPrefix}_edit`) ?? false
   const canDelete = userPermission?.[permKey]?.some(e => e.code === `${permPrefix}_delete`) ?? false
-
 
   const [rows, setRows] = useState([])
   const [count, setCount] = useState(0)
@@ -228,10 +217,10 @@ const ReferencePage = () => {
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({})
 
-  // Select maydonlari uchun variantlar: { fieldName: [{value,label}] }
+  // Select maydonlari uchun variantlar
   const [options, setOptions] = useState({})
 
-  // Majburiy/yaroqsiz maydonlar: { fieldName: true }
+  // Majburiy/yaroqsiz maydonlar
   const [errors, setErrors] = useState({})
 
   // ─── Qidiruv va filtrlar ───
@@ -240,18 +229,20 @@ const ReferencePage = () => {
   const searchTimer = useRef(null)
 
   const [openFilterModal, setOpenFilterModal] = useState(false)
-  const [filterValues, setFilterValues] = useState({}) // qo'llangan: { filterName: {value,label} }
-  const [tmpFilters, setTmpFilters] = useState({})      // modaldagi vaqtinchalik tanlov
-  const [filterOpts, setFilterOpts] = useState({})      // { filterName: [{value,label}] }
+  const [filterValues, setFilterValues] = useState({})
+  const [tmpFilters, setTmpFilters] = useState({})
+  // Filter pagination state: { filterName: { page, hasMore, loading, options } }
+  const [filterPagination, setFilterPagination] = useState({})
 
   const [editModal, setEditModal] = useState(false)
   const [editRow, setEditRow] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [editErrors, setEditErrors] = useState({})
   const [editSaving, setEditSaving] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
+  const [filterSearch, setFilterSearch] = useState({})
 
-  // Joriy so'rov parametrlari (infinite scroll bir xil filtr bilan davom etishi uchun)
   const activeParamsRef = useRef({})
 
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
@@ -268,7 +259,80 @@ const ReferencePage = () => {
     return e?.errorMsg || fallback
   }
 
-  // Qidiruv + qo'llangan filtrlardan so'rov parametrlarini yig'ish
+  // ─── Filter options pagination bilan yuklash ───
+  const loadFilterOptions = async (
+    filter,
+    parentValue,
+    pageNum = 1,
+    search = ""
+  ) => {
+    const pagKey = filter.name
+    if (pageNum === 1) {
+      setFilterPagination((prev) => ({
+        ...prev,
+        [pagKey]: { page: 1, hasMore: true, loading: true, options: [] },
+      }))
+    } else {
+      setFilterPagination((prev) => ({
+        ...prev,
+        [pagKey]: { ...prev[pagKey], loading: true },
+      }))
+    }
+
+    try {
+      const params = { page: pageNum }
+
+      if (search?.trim()) {
+        params.search = search
+      }
+
+      if (filter.dependsOn && parentValue) {
+        params[filter.param] = parentValue
+      }
+
+      const res = await axiosAPI.get(filter.optionsEndpoint, { params })
+      if (res.status === 200) {
+        const data = res.data?.data || res.data || {}
+        const newOpts = (data.results || []).map((o) => ({ value: o.id, label: o.name }))
+        const hasMorePage = !!data.next
+
+        setFilterPagination((prev) => {
+          const existing = pageNum === 1 ? [] : (prev[pagKey]?.options || [])
+          const merged = [...existing, ...newOpts]
+          return {
+            ...prev,
+            [pagKey]: {
+              page: pageNum,
+              hasMore: hasMorePage,
+              loading: false,
+              options: merged,
+            },
+          }
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      setFilterPagination((prev) => ({
+        ...prev,
+        [pagKey]: { ...prev[pagKey], loading: false },
+      }))
+    }
+  }
+
+  // Filter dropdown oxiriga yetganda keyingi sahifani yuklash
+  const handleFilterScrollEnd = useCallback((filter) => {
+    const pag = filterPagination[filter.name]
+    if (!pag || pag.loading || !pag.hasMore) return
+    const parentValue = filter.dependsOn ? tmpFilters[filter.dependsOn]?.value : null
+    loadFilterOptions(
+      filter,
+      parentValue,
+      pag.page + 1,
+      filterSearch[filter.name] || ""
+    )
+  }, [filterPagination, tmpFilters])
+
+  // ─── Qolgan funksiyalar ───
   const buildFilterParams = (searchVal, filtersVal) => {
     const p = {}
     if (searchVal?.trim()) p.search = searchVal.trim()
@@ -278,19 +342,6 @@ const ReferencePage = () => {
     return p
   }
 
-  // Yangi qidiruv/filtr qo'llab, 1-sahifadan qayta yuklash
-  const applyQuery = (searchVal, filtersVal) => {
-    const params = buildFilterParams(searchVal, filtersVal)
-    activeParamsRef.current = params
-    setPage(1)
-    setHasMore(true)
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-    fetchList(config, 1, params)
-  }
-
-  // ─── Ro'yxatni yuklash (sahifalab) ───
-  // pageNum === 1 bo'lsa ro'yxat almashtiriladi, aks holda mavjudiga qo'shiladi
-  // extraParams berilmasa, joriy faol filtr parametrlari ishlatiladi (scroll uchun)
   const fetchList = async (cfg, pageNum = 1, extraParams = activeParamsRef.current) => {
     if (pageNum === 1) setLoading(true)
     else setLoadingMore(true)
@@ -301,7 +352,6 @@ const ReferencePage = () => {
         const newRows = data.results || []
         setRows((prev) => (pageNum === 1 ? newRows : [...prev, ...newRows]))
         setCount(data.count ?? newRows.length)
-        // Keyingi sahifa bor-yo'qligini backend `next` maydoniga qarab aniqlaymiz
         setHasMore(!!data.next)
         setPage(pageNum)
       }
@@ -313,18 +363,32 @@ const ReferencePage = () => {
     }
   }
 
-  // ─── Scroll oxiriga yetganda keyingi sahifani yuklash ───
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el || loading || loadingMore || !hasMore) return
-    const { scrollTop, scrollHeight, clientHeight } = el
-    if (scrollTop + clientHeight >= scrollHeight - 80) {
-      fetchList(config, page + 1)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, loadingMore, hasMore, page, config])
+  // 2. Qidiruv va filtrni qo'llash
+  const applyQuery = (searchVal, filtersVal) => {
+    const params = buildFilterParams(searchVal, filtersVal)
+    activeParamsRef.current = params
+    setPage(1)
+    setHasMore(true)
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    fetchList(config, 1, params)
+  }
 
-  // ─── Select variantlarini yuklash ───
+  // 3. Cheksiz scroll (Infinite scroll)
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || loading || loadingMore || !hasMore) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+
+    if (scrollTop + clientHeight >= scrollHeight - 80) {
+      setPage((prevPage) => {
+        const nextPage = prevPage + 1;
+        fetchList(config, nextPage, activeParamsRef.current);
+        return nextPage;
+      });
+    }
+  }, [loading, loadingMore, hasMore, config]); // page va search bu yerga yozilmaydi!
+
+
   const loadOptions = async (field, parentValue) => {
     try {
       const params = field.dependsOn && parentValue ? { [field.param]: parentValue } : {}
@@ -338,21 +402,6 @@ const ReferencePage = () => {
     }
   }
 
-  // ─── Filter select variantlarini yuklash ───
-  const loadFilterOptions = async (filter, parentValue) => {
-    try {
-      const params = filter.dependsOn && parentValue ? { [filter.param]: parentValue } : {}
-      const res = await axiosAPI.get(filter.optionsEndpoint, { params })
-      if (res.status === 200) {
-        const opts = (res.data?.data?.results || res.data?.results || []).map((o) => ({ value: o.id, label: o.name }))
-        setFilterOpts((prev) => ({ ...prev, [filter.name]: opts }))
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  // Qidiruv inputi (debounce bilan)
   const handleSearchChange = (e) => {
     const val = e.target.value
     setSearchInput(val)
@@ -363,17 +412,20 @@ const ReferencePage = () => {
     }, 400)
   }
 
-  // Filter modalini joriy qo'llangan filtrlar bilan ochish
+  // Filter modalini pagination bilan ochish
   const openFilters = () => {
     setTmpFilters(filterValues)
+    setFilterPagination({})
       ; (config.filters || []).forEach((f) => {
-        if (!f.dependsOn) loadFilterOptions(f)
-        else if (filterValues[f.dependsOn]?.value) loadFilterOptions(f, filterValues[f.dependsOn].value)
+        if (!f.dependsOn) {
+          loadFilterOptions(f, null, 1)
+        } else if (filterValues[f.dependsOn]?.value) {
+          loadFilterOptions(f, filterValues[f.dependsOn].value, 1)
+        }
       })
     setOpenFilterModal(true)
   }
 
-  // Modaldagi filtr o'zgarishi — bog'liq filtrlarni tozalab, qayta yuklash
   const handleFilterChange = (filter, opt) => {
     setTmpFilters((prev) => {
       const next = { ...prev, [filter.name]: opt }
@@ -381,14 +433,14 @@ const ReferencePage = () => {
           .filter((f) => f.dependsOn === filter.name)
           .forEach((dep) => {
             next[dep.name] = null
-            setFilterOpts((o) => ({ ...o, [dep.name]: [] }))
-            if (opt?.value) loadFilterOptions(dep, opt.value)
+            setFilterPagination((p) => ({ ...p, [dep.name]: { page: 1, hasMore: true, loading: false, options: [] } }))
+            if (opt?.value) loadFilterOptions(dep, opt.value, 1)
           })
       return next
     })
   }
 
-  // Qo'llash / Tozalash
+
   const applyFilters = () => {
     setFilterValues(tmpFilters)
     setOpenFilterModal(false)
@@ -396,39 +448,41 @@ const ReferencePage = () => {
   }
   const clearFilters = () => {
     setTmpFilters({})
-    setFilterOpts({})
+    setFilterPagination({})
     setFilterValues({})
     applyQuery(search, {})
   }
   const hasFilter = Object.values(filterValues).some((v) => v?.value)
 
-  // Sahifa (type) o'zgarganda hammasini qayta sozlash
   useEffect(() => {
-    if (!config) return
-    setForm(emptyForm(config))
-    setOptions({})
-    setErrors({})
-    setRows([])
-    setPage(1)
-    setHasMore(true)
-    // Qidiruv va filtrlarni tozalash
-    setSearchInput("")
-    setSearch("")
-    setFilterValues({})
-    setTmpFilters({})
-    setFilterOpts({})
-    activeParamsRef.current = {}
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-    fetchList(config, 1, {})
-      // Bog'liq bo'lmagan select'lar variantlarini darhol yuklaymiz
-      ; (config.fields || [])
-        .filter((f) => f.type === "select" && !f.dependsOn)
-        .forEach((f) => loadOptions(f))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type])
+    if (!config) return;
+
+    // Statelarni tozalash
+    setForm(emptyForm(config));
+    setOptions({});
+    setErrors({});
+    setRows([]);
+    setPage(1);
+    setHasMore(true);
+    setSearchInput("");
+    setSearch("");
+    setFilterValues({});
+    setTmpFilters({});
+    setFilterPagination({});
+    activeParamsRef.current = {};
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+
+    // 1-sahifani yuklash
+    fetchList(config, 1, {});
+
+    // Select variantlarini yuklash
+    (config.fields || [])
+      .filter((f) => f.type === "select" && !f.dependsOn)
+      .forEach((f) => loadOptions(f));
+  }, [type]);
+
 
   if (!config) {
-    // Dizayni hali yo'q bo'limlar (Rollar, Ish jadvali)
     return (
       <div className="p-4 flex flex-col items-center justify-center gap-3 w-full min-h-[calc(100vh-3.5rem)] bg-white dark:bg-[#0A0A0A] text-[#737373]">
         <FileText size={32} strokeWidth={1.5} />
@@ -440,7 +494,6 @@ const ReferencePage = () => {
   const handleFieldChange = (field, value) => {
     setForm((prev) => {
       const next = { ...prev, [field.name]: value }
-      // Bog'liq select'larni tozalab, qayta yuklaymiz
       config.fields
         .filter((f) => f.dependsOn === field.name)
         .forEach((dep) => {
@@ -450,7 +503,6 @@ const ReferencePage = () => {
         })
       return next
     })
-    // Maydon to'ldirilgani hamon uning xato holatini tozalaymiz
     if (errors[field.name]) {
       setErrors((prev) => {
         const next = { ...prev }
@@ -459,8 +511,6 @@ const ReferencePage = () => {
       })
     }
   }
-
-  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const handleDelete = async (row) => {
     if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
@@ -479,8 +529,43 @@ const ReferencePage = () => {
     }
   }
 
+  const handleDeleteRol = async (row) => {
+    if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
+    setDeleteLoading(true)
+    try {
+      await axiosAPI.delete(`users/roles/${row.id}/`)
+      showToast(t("ref_deleted") || "O'chirildi")
+      setEditModal(false)
+      setPage(1)
+      setHasMore(true)
+      if (scrollRef.current) scrollRef.current.scrollTop = 0
+      fetchList(config, 1, activeParamsRef.current)
+    } catch (err) {
+      showToast(getErrMsg(err, t("gz_error")))
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  const handleDeleteSche = async (row) => {
+    if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
+    setDeleteLoading(true)
+    try {
+      await axiosAPI.delete(`users/schedules/${row.id}/`)
+      showToast(t("ref_deleted") || "O'chirildi")
+      setEditModal(false)
+      setPage(1)
+      setHasMore(true)
+      if (scrollRef.current) scrollRef.current.scrollTop = 0
+      fetchList(config, 1, activeParamsRef.current)
+    } catch (err) {
+      showToast(getErrMsg(err, t("gz_error")))
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   const handleCreate = async () => {
-    // Majburiy maydonlarni tekshirish
     const newErrors = {}
     config.fields.forEach((f) => {
       if (f.required) {
@@ -529,7 +614,6 @@ const ReferencePage = () => {
 
   const handleEdit = (row) => {
     setEditRow(row)
-    // Formani mavjud qiymatlar bilan to'ldirish
     const initial = {}
     config.fields?.forEach((f) => {
       if (f.type === "select") {
@@ -574,7 +658,7 @@ const ReferencePage = () => {
       const res = await axiosAPI.patch(`${config.endpoint}${editRow.id}/`, payload)
       if (res.status === 200) {
         setEditModal(false)
-        showToast(t("ref_updated") || "Yangilandi")
+        showToast(t("update") || "Yangilandi")
         setPage(1)
         setHasMore(true)
         if (scrollRef.current) scrollRef.current.scrollTop = 0
@@ -587,7 +671,6 @@ const ReferencePage = () => {
     }
   }
 
-  // Maxsus modal (roles/schedule) muvaffaqiyatli yaratgandan keyin ro'yxatni yangilash
   const handleAfterCreate = () => {
     setAddModal(false)
     setPage(1)
@@ -612,8 +695,7 @@ const ReferencePage = () => {
       error={!!errors[f.name]}
       errorText={errors[f.name] ? t("field_required") : null}
       labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[
-#737373] pointer-events-none" />}
+      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
     />
   )
 
@@ -629,34 +711,15 @@ const ReferencePage = () => {
           <span className="text-[#737373] text-sm">{t(config.subKey).replace("{n}", count)}</span>
         </div>
 
-        {/* Birlashgan "qo'shish" tugmasi */}
-        {/* <div className="flex items-center">
-          <button
-            type="button"
-            onClick={() => setAddModal(true)}
-            className="inline-flex items-center h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
-          >
-            {t(config.addKey)}
-          </button>
-          <button
-            type="button"
-            onClick={() => setAddModal(true)}
-            title={t(config.addKey)}
-            className="inline-flex items-center justify-center h-[38px] w-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors text-[#0A0A0A] dark:text-white"
-          >
-            <Plus size={16} />
-          </button>
-        </div> */}
-
-        {canCreate &&
+        {canCreate && (
           <AddButton
             onOpen={() => setAddModal(true)}
             title={t(config.addKey)}
           />
-        }
+        )}
       </div>
 
-      {/* ── Qidiruv + Filter qatori ── */}
+      {/* ── Qidiruv + Filter ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <Input
           type="text"
@@ -690,11 +753,6 @@ const ReferencePage = () => {
                   {t(c.headerKey)}
                 </th>
               ))}
-              {(canEdit || canDelete) && (
-                <th className="px-4 py-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white bg-[#FAFAFA] dark:bg-[#1A1A1A]">
-                  {t("actions") || "Amallar"}
-                </th>
-              )}
             </tr>
           </thead>
           <tbody>
@@ -716,38 +774,20 @@ const ReferencePage = () => {
               </tr>
             ) : (
               rows.map((row, i) => (
-                <tr key={row.id ?? i} className="border-b border-[#F0F0F0] dark:border-[#1F1F1F] hover:bg-[#FAFAFA] dark:hover:bg-[#111] transition-colors">
+                <tr
+                  key={row.id ?? i}
+                  className={cn(
+                    "border-b border-[#F0F0F0] dark:border-[#1F1F1F] transition-colors",
+                    (canEdit || canDelete) && "hover:bg-[#FAFAFA] dark:hover:bg-[#111] cursor-pointer"
+                  )}
+                  onClick={() => (canEdit || canDelete) && handleEdit(row)}
+                >
                   <td className="px-4 py-3.5 text-sm text-[#737373]">{i + 1}</td>
                   {config.columns.map((c, j) => (
                     <td key={j} className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white">
                       {c.accessor(row)}
                     </td>
                   ))}
-
-                  {(canEdit || canDelete) && (
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => handleEdit(row)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer text-[#737373] hover:text-[#0A0A0A] dark:hover:text-white"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(row)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#FFF0F0] dark:hover:bg-[#2A1A1A] transition-colors cursor-pointer text-[#737373] hover:text-red-500"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  )}
                 </tr>
               ))
             )}
@@ -764,7 +804,7 @@ const ReferencePage = () => {
 
       {/* ── Qo'shish modali ── */}
       {config.custom === "roles" ? (
-        <RoleModal isOpen={addModal} onClose={() => setAddModal(false)} onCreated={handleAfterCreate} />
+        <RoleModal isOpen={addModal} onClose={() => setAddModal(false)} onCreated={handleAfterCreate} canEdit={true} />
       ) : config.custom === "schedule" ? (
         <ScheduleModal isOpen={addModal} onClose={() => setAddModal(false)} onCreated={handleAfterCreate} />
       ) : (
@@ -788,10 +828,7 @@ const ReferencePage = () => {
           <div className="flex flex-col justify-between h-full gap-4 pb-2">
             <div className="flex flex-col gap-4">
               {config.fields.map((f, i) => {
-                // pairWith bilan belgilangan ikkinchi maydon: birinchisi bilan birga chiqadi
                 if (f.pairWith) return null
-
-                // Sana juftligi (masalan boshlanish/tugash sanasi) — yonma-yon
                 const datePair = f.type === "date" ? config.fields.find((x) => x.pairWith === f.name) : null
                 if (f.type === "date" && datePair) {
                   return (
@@ -804,9 +841,7 @@ const ReferencePage = () => {
                 if (f.type === "date") {
                   return renderDateInput(f)
                 }
-
-                // Maxsus joylashuv: region + district yonma-yon (faqat branches'da)
-                if (f.type === "select" && f.dependsOn) return null // pastda juftlikda chiqadi
+                if (f.type === "select" && f.dependsOn) return null
                 const pairDep = config.fields.find((x) => x.dependsOn === f.name)
                 if (f.type === "select" && pairDep) {
                   return (
@@ -837,7 +872,6 @@ const ReferencePage = () => {
                     </div>
                   )
                 }
-
                 if (f.type === "select") {
                   return (
                     <div key={i} className="flex flex-col gap-1.5">
@@ -853,8 +887,6 @@ const ReferencePage = () => {
                     </div>
                   )
                 }
-
-                // text
                 return (
                   <div key={i} className="flex flex-col gap-1.5">
                     <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t(f.labelKey)}</label>
@@ -863,18 +895,13 @@ const ReferencePage = () => {
                       placeholder={t(f.phKey)}
                       value={form[f.name] ?? ""}
                       onChange={(e) => handleFieldChange(f, e.target.value)}
-                      className={cn(
-                        "w-full h-11 rounded-lg dark:bg-[#171717]",
-                        errors[f.name] && errorInputClass
-                      )}
+                      className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors[f.name] && errorInputClass)}
                     />
                     {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                   </div>
                 )
               })}
             </div>
-
-            {/* Footer */}
             <div className="flex items-center justify-end pt-2">
               <button
                 type="button"
@@ -893,7 +920,7 @@ const ReferencePage = () => {
         </Modal>
       )}
 
-      {/* ── Filter modali (Reports uslubida) ── */}
+      {/* ── Filter modali (pagination bilan) ── */}
       <Modal
         isOpen={openFilterModal}
         onClose={() => setOpenFilterModal(false)}
@@ -917,20 +944,40 @@ const ReferencePage = () => {
               </span>
             </div>
 
-            {/* filter select'lari */}
+            {/* filter select'lari — scroll pagination bilan */}
             <div className="grid grid-cols-2 gap-3">
               {(config.filters || []).map((f) => {
                 const parentVal = f.dependsOn ? tmpFilters[f.dependsOn]?.value : null
                 const isDisabled = !!f.dependsOn && !parentVal
+                const pag = filterPagination[f.name]
+                const opts = pag?.options || []
+                const loading = pag?.loading || false
+
                 return (
                   <Select
                     key={f.name}
                     label={t(f.labelKey)}
                     placeholder={isDisabled ? t("gz_select_region_first") : t(f.phKey)}
-                    options={filterOpts[f.name] || []}
+                    options={opts}
                     value={tmpFilters[f.name]?.value ?? null}
                     onChange={(opt) => handleFilterChange(f, opt)}
                     disabled={isDisabled}
+                    loadingMore={loading}
+                    searchable={true}
+                    onScrollEnd={() => handleFilterScrollEnd(f)}
+                    onSearch={(searchText) => {
+                      setFilterSearch(prev => ({
+                        ...prev,
+                        [f.name]: searchText,
+                      }));
+
+                      loadFilterOptions(
+                        f,
+                        parentVal,
+                        1,
+                        searchText
+                      );
+                    }}
                   />
                 )
               })}
@@ -957,7 +1004,31 @@ const ReferencePage = () => {
       </Modal>
 
       {/* ── Tahrirlash modali ── */}
-      <Modal
+      {config.custom === "roles" ? (
+        <RoleModal
+          isOpen={editModal}
+          onClose={() => setEditModal(false)}
+          roleData={editRow}
+          canDelete={canDelete}
+          canEdit={canEdit}
+          fetchList={fetchList}
+          setDeleteLoading={setDeleteLoading}
+          getErrMsg={getErrMsg}
+          deleteLoading={deleteLoading}
+          setEditModal={setEditModal}
+          onDelete={handleDeleteRol}
+        />
+      ) : config.custom === "schedule" ? (
+        <ScheduleModal
+          isOpen={editModal}
+          onClose={() => setEditModal(false)}
+          scheduleData={editRow}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          onDelete={handleDeleteSche}
+          deleteLoading={deleteLoading}
+        />
+      ) : (<Modal
         isOpen={editModal}
         onClose={() => setEditModal(false)}
         height={600}
@@ -976,7 +1047,7 @@ const ReferencePage = () => {
           </div>
         }
       >
-        <div className="flex flex-col justify-between h-full gap-4 pb-2">
+        <div className="flex flex-col justify-between h-full gap-4 pb-3">
           <div className="flex flex-col gap-4">
             {(config.fields || []).map((f, i) => {
               if (f.pairWith) return null
@@ -985,8 +1056,8 @@ const ReferencePage = () => {
               if (f.type === "date" && datePair) {
                 return (
                   <div key={i} className="grid grid-cols-2 gap-3">
-                    <DatePicker className="w-full" currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
-                    <DatePicker className="w-full" currentLang={currentLang} label={t(datePair.labelKey)} placeholder={t(datePair.phKey)} value={editForm[datePair.name]} onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))} error={!!editErrors[datePair.name]} />
+                    <DatePicker className="w-full" inputClassName="h-11" currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
+                    <DatePicker className="w-full" inputClassName="h-11" currentLang={currentLang} label={t(datePair.labelKey)} placeholder={t(datePair.phKey)} value={editForm[datePair.name]} onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))} error={!!editErrors[datePair.name]} />
                   </div>
                 )
               }
@@ -1023,22 +1094,52 @@ const ReferencePage = () => {
               )
             })}
           </div>
-          <div className="flex items-center justify-end pt-2">
-            <button
-              type="button"
-              onClick={handleUpdate}
-              disabled={editSaving}
-              className={cn(
-                "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
-                editSaving ? "bg-[#7EC0FF] cursor-default" : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
+          {(canDelete || canEdit) &&
+            <div className="flex items-center justify-end gap-3 sticky bottom-0 z-10">
+              {/* Delete tugmasi — faqat canDelete bo'lsa */}
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditModal(false)
+                    handleDelete(editRow)
+                  }}
+                  disabled={deleteLoading}
+                  className={cn(
+                    "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                    deleteLoading
+                      ? "bg-red-300 cursor-default"
+                      : "bg-red-500 hover:bg-red-600 cursor-pointer"
+                  )}
+                >
+                  <Trash2 size={18} />
+                  {t("delete") || "O'chirish"}
+                </button>
               )}
-            >
-              <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
-              {t("save") || "Saqlash"}
-            </button>
-          </div>
+
+              {/* Save tugmasi — canEdit bo'lsa aktiv, bo'lmasa disabled */}
+              <button
+                type="button"
+                onClick={handleUpdate}
+                disabled={!canEdit || editSaving}
+                className={cn(
+                  "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                  !canEdit
+                    ? "bg-[#7EC0FF] cursor-not-allowed opacity-60"
+                    : editSaving
+                      ? "bg-[#7EC0FF] cursor-default"
+                      : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
+                )}
+              >
+                <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
+                {t("save") || "Saqlash"}
+              </button>
+            </div>
+          }
         </div>
       </Modal>
+      )
+      }
 
       <Toast
         key={toast.seq}
@@ -1046,7 +1147,7 @@ const ReferencePage = () => {
         message={toast.message}
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
       />
-    </div>
+    </div >
   )
 }
 

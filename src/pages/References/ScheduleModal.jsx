@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Check, X } from "lucide-react"
+import { Check, Trash2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { axiosAPI } from "@/services/axiosAPI"
 import { useLanguage } from "@/Context/LanguageContext"
@@ -8,7 +8,6 @@ import { Toast } from "@/components/ui/Toast"
 import { HugeIcon } from "@/components/ui/HugeIcon"
 import { CheckmarkSquare01Icon } from "@hugeicons/core-free-icons"
 
-// Hafta kunlari — day_number: 0=Dushanba ... 6=Yakshanba
 const WEEK_DAYS = [
   { label: "Du", day_number: 0 },
   { label: "Se", day_number: 1 },
@@ -19,14 +18,29 @@ const WEEK_DAYS = [
   { label: "Ya", day_number: 6 },
 ]
 
-// "HH:MM" -> "HH:MM:SS" (backend TimeField uchun)
 const toApiTime = (v) => {
   if (!v) return null
   return v.length === 5 ? `${v}:00` : v
 }
 
-export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
+// "09:00:00" → "09:00"
+const toInputTime = (v) => {
+  if (!v) return ""
+  return String(v).slice(0, 5)
+}
+
+export const ScheduleModal = ({
+  isOpen,
+  onClose,
+  onCreated,
+  scheduleData = null,
+  canEdit,
+  canDelete,
+  onDelete,
+  deleteLoading,
+}) => {
   const { t } = useLanguage()
+  const isEdit = !!scheduleData
 
   const [name, setName] = useState("")
   const [workStart, setWorkStart] = useState("09:00")
@@ -34,23 +48,40 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
   const [noLunch, setNoLunch] = useState(false)
   const [lunchStart, setLunchStart] = useState("13:00")
   const [lunchEnd, setLunchEnd] = useState("14:00")
-  const [days, setDays] = useState(() => new Set()) // tanlangan day_number'lar
-  const [weekdayMap, setWeekdayMap] = useState(null) // { day_number: id } — agar backend id talab qilsa
+  const [days, setDays] = useState(() => new Set())
+  const [weekdayMap, setWeekdayMap] = useState(null)
   const [nameError, setNameError] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
   const showToast = (message) => setToast((p) => ({ open: true, message, seq: p.seq + 1 }))
 
-  // Modal ochilganda formani tiklab, weekday id'larini yuklaymiz
   useEffect(() => {
     if (!isOpen) return
-    setName("")
-    setWorkStart("09:00")
-    setWorkEnd("18:00")
-    setNoLunch(false)
-    setLunchStart("13:00")
-    setLunchEnd("14:00")
-    setDays(new Set())
+
+    if (isEdit && scheduleData) {
+      setName(scheduleData.name || "")
+      setWorkStart(toInputTime(scheduleData.work_start_time) || "09:00")
+      setWorkEnd(toInputTime(scheduleData.work_end_time) || "18:00")
+
+      const hasLunch = !!scheduleData.lunch_start_time
+      setNoLunch(!hasLunch)
+      setLunchStart(toInputTime(scheduleData.lunch_start_time) || "13:00")
+      setLunchEnd(toInputTime(scheduleData.lunch_end_time) || "14:00")
+
+      // mandatory_days_info dan day_number larni olamiz
+      const mandatoryDayNumbers = new Set(
+        (scheduleData.mandatory_days_info || []).map((d) => d.day_number)
+      )
+      setDays(mandatoryDayNumbers)
+    } else {
+      setName("")
+      setWorkStart("09:00")
+      setWorkEnd("18:00")
+      setNoLunch(false)
+      setLunchStart("13:00")
+      setLunchEnd("14:00")
+      setDays(new Set())
+    }
     setNameError(false)
 
     const loadWeekdays = async () => {
@@ -71,13 +102,12 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
           }
         }
       } catch (err) {
-        // weekday endpoint bo'lmasa — day_number'larni to'g'ridan-to'g'ri yuboramiz
         console.error(err)
         setWeekdayMap(null)
       }
     }
     loadWeekdays()
-  }, [isOpen])
+  }, [isOpen, isEdit, scheduleData])
 
   const toggleDay = (dn) =>
     setDays((prev) => {
@@ -87,17 +117,18 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
       return next
     })
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       setNameError(true)
       showToast(t("gz_validation"))
       return
     }
-    setCreating(true)
+    setSaving(true)
     try {
       const selectedDays = [...days].sort((a, b) => a - b)
-      // weekday id'lari mavjud bo'lsa ularni, aks holda day_number'larni yuboramiz
-      const mandatoryDays = weekdayMap ? selectedDays.map((dn) => weekdayMap[dn]).filter((v) => v != null) : selectedDays
+      const mandatoryDays = weekdayMap
+        ? selectedDays.map((dn) => weekdayMap[dn]).filter((v) => v != null)
+        : selectedDays
 
       const payload = {
         name: name.trim(),
@@ -107,16 +138,24 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
         lunch_end_time: noLunch ? null : toApiTime(lunchEnd),
         mandatory_days: mandatoryDays,
       }
-      const res = await axiosAPI.post("users/schedules/", payload)
+
+      let res
+      if (isEdit) {
+        res = await axiosAPI.put(`users/schedules/${scheduleData.id}/`, payload)
+      } else {
+        res = await axiosAPI.post("users/schedules/", payload)
+      }
+
       if (res.status === 201 || res.status === 200) {
         onCreated?.()
+        onClose()
       }
     } catch (err) {
       console.error(err?.response?.data || err)
       const msg = err?.response?.data?.error?.errorMsg || t("gz_error")
       showToast(msg)
     } finally {
-      setCreating(false)
+      setSaving(false)
     }
   }
 
@@ -130,7 +169,9 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
       height={600}
       header={
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t("ref_add_schedule")}</h2>
+          <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
+            {isEdit ? t("edit") : t("ref_add_schedule")}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -150,6 +191,7 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
               type="text"
               placeholder={t("ref_ph_schedule")}
               value={name}
+              disabled={isEdit && !canEdit}
               onChange={(e) => {
                 setName(e.target.value)
                 if (nameError) setNameError(false)
@@ -158,7 +200,8 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
                 "w-full h-12 rounded-xl border-2 bg-white dark:bg-[#171717] px-3.5 text-sm text-[#0A0A0A] dark:text-white outline-none placeholder:text-[#737373] dark:placeholder:text-[#A3A3A3]",
                 nameError
                   ? "border-red-500 focus:border-red-500"
-                  : "border-[#E5E5E5] dark:border-[#404040] focus:border-gray-300 dark:focus:border-[#707070]"
+                  : "border-[#E5E5E5] dark:border-[#404040] focus:border-gray-300 dark:focus:border-[#707070]",
+                isEdit && !canEdit && "opacity-60 cursor-not-allowed"
               )}
             />
             {nameError && <span className="text-xs text-red-500">{t("field_required")}</span>}
@@ -171,24 +214,41 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_start_time")}</label>
-                <input type="time" value={workStart} onChange={(e) => setWorkStart(e.target.value)} className={timeInputClass} />
+                <input
+                  type="time"
+                  value={workStart}
+                  disabled={isEdit && !canEdit}
+                  onChange={(e) => setWorkStart(e.target.value)}
+                  className={cn(timeInputClass, isEdit && !canEdit && "opacity-60 cursor-not-allowed")}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_end_time")}</label>
-                <input type="time" value={workEnd} onChange={(e) => setWorkEnd(e.target.value)} className={timeInputClass} />
+                <input
+                  type="time"
+                  value={workEnd}
+                  disabled={isEdit && !canEdit}
+                  onChange={(e) => setWorkEnd(e.target.value)}
+                  className={cn(timeInputClass, isEdit && !canEdit && "opacity-60 cursor-not-allowed")}
+                />
               </div>
             </div>
 
-            {/* Tushliksiz */}
             <button
               type="button"
+              disabled={isEdit && !canEdit}
               onClick={() => setNoLunch((p) => !p)}
-              className="flex items-center justify-end gap-2 cursor-pointer self-end"
+              className={cn(
+                "flex items-center justify-end gap-2 cursor-pointer self-end",
+                isEdit && !canEdit && "opacity-60 cursor-not-allowed"
+              )}
             >
               <span
                 className={cn(
                   "w-5 h-5 rounded-md flex items-center justify-center border transition-colors",
-                  noLunch ? "bg-[#171717] dark:bg-white border-[#171717] dark:border-white" : "border-[#D4D4D4] dark:border-[#525252]"
+                  noLunch
+                    ? "bg-[#171717] dark:bg-white border-[#171717] dark:border-white"
+                    : "border-[#D4D4D4] dark:border-[#525252]"
                 )}
               >
                 {noLunch && <Check size={14} className="text-white dark:text-[#171717]" strokeWidth={3} />}
@@ -202,9 +262,9 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
                 <input
                   type="time"
                   value={noLunch ? "" : lunchStart}
-                  disabled={noLunch}
+                  disabled={noLunch || (isEdit && !canEdit)}
                   onChange={(e) => setLunchStart(e.target.value)}
-                  className={cn(timeInputClass, noLunch && "opacity-50 cursor-not-allowed")}
+                  className={cn(timeInputClass, (noLunch || (isEdit && !canEdit)) && "opacity-50 cursor-not-allowed")}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -212,9 +272,9 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
                 <input
                   type="time"
                   value={noLunch ? "" : lunchEnd}
-                  disabled={noLunch}
+                  disabled={noLunch || (isEdit && !canEdit)}
                   onChange={(e) => setLunchEnd(e.target.value)}
-                  className={cn(timeInputClass, noLunch && "opacity-50 cursor-not-allowed")}
+                  className={cn(timeInputClass, (noLunch || (isEdit && !canEdit)) && "opacity-50 cursor-not-allowed")}
                 />
               </div>
             </div>
@@ -225,16 +285,19 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
               <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-lg w-full gap-1">
                 {WEEK_DAYS.map((d) => {
                   const active = days.has(d.day_number)
+                  const disabled = isEdit && !canEdit
                   return (
                     <button
                       key={d.day_number}
                       type="button"
-                      onClick={() => toggleDay(d.day_number)}
+                      disabled={disabled}
+                      onClick={() => !disabled && toggleDay(d.day_number)}
                       className={cn(
-                        "flex-1 py-2.5 text-[13px] font-medium text-center rounded-md transition-all cursor-pointer",
+                        "flex-1 py-2.5 text-[13px] font-medium text-center rounded-md transition-all",
                         active
                           ? "bg-white dark:bg-[#171717] text-[#0A0A0A] dark:text-white shadow-sm"
-                          : "text-[#737373] dark:text-[#A3A3A3] hover:text-[#0A0A0A] dark:hover:text-white"
+                          : "text-[#737373] dark:text-[#A3A3A3]",
+                        disabled ? "cursor-not-allowed" : "cursor-pointer hover:text-[#0A0A0A] dark:hover:text-white"
                       )}
                     >
                       {d.label}
@@ -247,19 +310,36 @@ export const ScheduleModal = ({ isOpen, onClose, onCreated }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end pt-2 sticky bottom-0">
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={creating}
-            className={cn(
-              "px-6 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
-              creating ? "bg-[#7EC0FF] cursor-default" : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
-            )}
-          >
-            <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
-            {t("ref_add_schedule")}
-          </button>
+        <div className="flex items-center justify-end gap-3 pt-3 sticky bottom-0 bg-white dark:bg-[#171717] border-t border-[#F0F0F0] dark:border-[#1F1F1F]">
+          {canDelete && isEdit && (
+            <button
+              type="button"
+              onClick={() => onDelete(scheduleData)}
+              disabled={deleteLoading}
+              className={cn(
+                "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                deleteLoading ? "bg-red-300 cursor-default" : "bg-red-500 hover:bg-red-600 cursor-pointer"
+              )}
+            >
+              <Trash2 size={18} />
+              {t("delete") || "O'chirish"}
+            </button>
+          )}
+
+          {(!isEdit || canEdit) && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(
+                "px-6 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                saving ? "bg-[#7EC0FF] cursor-default" : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
+              )}
+            >
+              <HugeIcon icon={CheckmarkSquare01Icon} size={18} />
+              {isEdit ? t("save") : t("ref_add_schedule")}
+            </button>
+          )}
         </div>
       </div>
 

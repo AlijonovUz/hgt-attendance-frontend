@@ -26,14 +26,18 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const [refOpen, setRefOpen] = useState(() => location.pathname.startsWith("/references"))
      const refActive = location.pathname.startsWith("/references")
 
-     const viewEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_view_all")
+     const viewEmp =userPermission?.employees && 
+          userPermission?.employees?.some(
+               (e) => e.code === "employee_view_all" || e.code === "employee_view_district" || e.code === "employee_view_region" || e.code === "employee_view_branch" || e.code === "employee_view_dept"
+          );
+
      const viewgeo = userPermission?.geozones && userPermission?.geozones.some(e => e.code === "geozone_view")
      const viewRep = userPermission?.reports && userPermission?.reports.some(e => (e.code === "report_type_employee" || e.code === "report_type_branch"))
      const viewhol = userPermission?.holidays && userPermission?.holidays.some(e => e.code === "holiday_view")
      const viewsch = userPermission?.schedules && userPermission?.schedules.some(e => e.code === "schedule_view")
      const viewreg = userPermission?.regions
      const viewdis = userPermission?.districts
-     const viewbrs = userPermission?.branches
+     const viewbrs = userPermission?.branchs
      const viewdep = userPermission?.departments
      const viewpos = userPermission?.positions
      const viewrol = userPermission?.roles
@@ -41,7 +45,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const REF_CHILDREN = [
           ...(viewreg ? [{ key: "regions", labelKey: "ref_m_region" }] : []),
           ...(viewdis ? [{ key: "districts", labelKey: "ref_m_district" }] : []),
-          ...(viewbrs ? [{ key: "branches", labelKey: "ref_m_branch" }] : []),
+          ...(viewbrs ? [{ key: "branchs", labelKey: "ref_m_branch" }] : []),
           ...(viewdep ? [{ key: "departments", labelKey: "ref_m_dept" }] : []),
           ...(viewpos ? [{ key: "positions", labelKey: "ref_m_position" }] : []),
           ...(viewrol ? [{ key: "roles", labelKey: "ref_m_role" }] : []),

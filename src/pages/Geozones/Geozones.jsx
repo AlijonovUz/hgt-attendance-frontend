@@ -145,6 +145,12 @@ const Geozones = () => {
     [geozones, selectedId]
   )
 
+  const [branchPag, setBranchPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [districtPag, setDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
+
+  // Add modal filial uchun alohida (filter modal bilan aralashmasin)
+  const [addBranchPag, setAddBranchPag] = useState({ page: 1, hasMore: true, loading: false })
+
   // ─── Yuklashlar ───
   const fetchGeozones = async (selectId) => {
     setLoading(true)
@@ -174,19 +180,23 @@ const Geozones = () => {
     }
   }
 
-  const fetchBranches = async () => {
+  const fetchBranches = async (pageNum = 1, search = "", pag, setPag, setter) => {
+    setPag(p => ({ ...p, loading: true }))
     try {
-      const res = await axiosAPI.get("users/branches/")
+      const params = { page: pageNum }
+      if (search?.trim()) params.search = search
+      const res = await axiosAPI.get("users/branches/", { params })
       if (res.status === 200) {
-        setBranches(
-          (res.data?.data?.results || res.data?.results || []).map((b) => ({
-            value: b.id,
-            label: b.name,
-          }))
-        )
+        const results = (res.data?.data?.results || res.data?.results || []).map(b => ({
+          value: b.id,
+          label: b.name,
+        }))
+        setter(prev => pageNum === 1 ? results : [...prev, ...results])
+        setPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
       }
     } catch (err) {
       console.error(err)
+      setPag(p => ({ ...p, loading: false }))
     }
   }
 
@@ -203,22 +213,30 @@ const Geozones = () => {
     }
   }
 
-  const fetchDistricts = async (regionId) => {
+  const fetchDistricts = async (regionId, pageNum = 1, search = "") => {
+    setDistrictPag(p => ({ ...p, loading: true }))
     try {
-      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
+      const params = { page: pageNum, region: regionId }
+      if (search?.trim()) params.search = search
+      const res = await axiosAPI.get("users/districts/", { params })
       if (res.status === 200) {
-        setDistricts(
-          (res.data?.data?.results || res.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
-        )
+        const results = (res.data?.data?.results || res.data?.results || []).map(d => ({
+          value: d.id,
+          label: d.name,
+        }))
+        setDistricts(prev => pageNum === 1 ? results : [...prev, ...results])
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
       }
     } catch (err) {
       console.error(err)
+      setDistrictPag(p => ({ ...p, loading: false }))
     }
   }
 
   // Bir martalik yuklashlar
   useEffect(() => {
-    fetchBranches()
+    fetchBranches(1, "", branchPag, setBranchPag, setBranches)
+    fetchBranches(1, "", addBranchPag, setAddBranchPag, setBranches) // ikkalasi bir xil state ishlatadi, lekin pag alohida
     fetchRegions()
   }, [])
 
@@ -235,18 +253,21 @@ const Geozones = () => {
     searchTimer.current = setTimeout(() => setSearch(e.target.value.trim()), 400)
   }
 
+  const handleDraftRegion = (opt) => {
+    const v = opt?.value ?? null
+    setDraft(d => ({ ...d, region: v, district: null }))
+    setDistricts([])
+    setDistrictPag({ page: 1, hasMore: true, loading: false })
+    if (v) fetchDistricts(v, 1, "")
+  }
+
   // ── Filtr modal amallari ──
   const openFilters = () => {
     setDraft(filters)
-    if (filters.region) fetchDistricts(filters.region)
+    if (filters.region) fetchDistricts(filters.region, 1, "")
+    // Branchlarni qayta yuklash (filter modal ochilganda)
+    fetchBranches(1, "", branchPag, setBranchPag, setBranches)
     setOpenFilterModal(true)
-  }
-
-  const handleDraftRegion = (opt) => {
-    const v = opt?.value ?? null
-    setDraft((d) => ({ ...d, region: v, district: null }))
-    setDistricts([])
-    if (v) fetchDistricts(v)
   }
 
   const applyFilters = () => {
@@ -596,7 +617,7 @@ const Geozones = () => {
       <Modal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
-        height={760}
+        height={660}
         header={
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t("gz_new")}</h2>
@@ -712,12 +733,19 @@ const Geozones = () => {
               placeholder={t("select_branch")}
               options={branches}
               value={form.branch}
-              onChange={(opt) => setForm((p) => ({ ...p, branch: opt?.value ?? null }))}
+              onChange={(opt) => setForm(p => ({ ...p, branch: opt?.value ?? null }))}
+              loadingMore={addBranchPag.loading}
+              onScrollEnd={() => {
+                if (!addBranchPag.hasMore || addBranchPag.loading) return
+                fetchBranches(addBranchPag.page + 1, "", addBranchPag, setAddBranchPag, setBranches)
+              }}
+              onSearch={(s) => fetchBranches(1, s, addBranchPag, setAddBranchPag, setBranches)}
+              searchable={true}
             />
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end pt-4">
+          <div className="flex items-center justify-end sticky bottom-0 z-10 pt-4">
             <button
               type="button"
               onClick={handleCreate}
@@ -771,8 +799,17 @@ const Geozones = () => {
                 placeholder={!draft.region ? t("gz_select_region_first") : t("gz_district_ph")}
                 options={districts}
                 value={draft.district}
-                onChange={(opt) => setDraft((d) => ({ ...d, district: opt?.value ?? null }))}
+                onChange={(opt) => setDraft(d => ({ ...d, district: opt?.value ?? null }))}
                 disabled={!draft.region}
+                loadingMore={districtPag.loading}
+                onScrollEnd={() => {
+                  if (!districtPag.hasMore || districtPag.loading || !draft.region) return
+                  fetchDistricts(draft.region, districtPag.page + 1, "")
+                }}
+                onSearch={(s) => {
+                  if (draft.region) fetchDistricts(draft.region, 1, s)
+                }}
+                searchable={true}
               />
 
               {/* Filial */}
@@ -781,7 +818,14 @@ const Geozones = () => {
                 placeholder={t("gz_branch_ph")}
                 options={branches}
                 value={draft.branch}
-                onChange={(opt) => setDraft((d) => ({ ...d, branch: opt?.value ?? null }))}
+                onChange={(opt) => setDraft(d => ({ ...d, branch: opt?.value ?? null }))}
+                loadingMore={branchPag.loading}
+                onScrollEnd={() => {
+                  if (!branchPag.hasMore || branchPag.loading) return
+                  fetchBranches(branchPag.page + 1, "", branchPag, setBranchPag, setBranches)
+                }}
+                onSearch={(s) => fetchBranches(1, s, branchPag, setBranchPag, setBranches)}
+                searchable={true}
               />
 
               {/* Geozona turi */}

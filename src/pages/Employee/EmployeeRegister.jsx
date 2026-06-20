@@ -95,6 +95,20 @@ const EmployeeRegister = () => {
   const [tempFilterDistrict, setTempFilterDistrict] = useState(null)
   const [tempFilterBranch, setTempFilterBranch] = useState(null)
 
+  const [districtPag, setDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [branchPag, setBranchPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [departmentPag, setDepartmentPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [positionPag, setPositionPag] = useState({ page: 1, hasMore: true, loading: false })
+
+  // Filter modal uchun alohida
+  const [filterBranchPag, setFilterBranchPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [filterDistrictPag, setFilterDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
+
+  // List filter modal uchun
+  const [listBranchPag, setListBranchPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [listDistrictPag, setListDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [listDepartmentPag, setListDepartmentPag] = useState({ page: 1, hasMore: true, loading: false })
+
   const [form, setForm] = useState({
     full_name: "",
     password: "",
@@ -172,6 +186,8 @@ const EmployeeRegister = () => {
     geozones: t("geozones") || "Geozonalar",
     attendances: t("attendances") || "Davomat",
     employees: t("employees") || "Xodimlar",
+    logs: t("logs") || "Xodimlar",
+    dailys: t("dailys") || "Xodimlar",
   };
 
   const toggleGroup = (key) =>
@@ -356,11 +372,81 @@ const EmployeeRegister = () => {
     }
   }
 
+  // Districts (filter modal ichidagi)
+  const loadDistricts = async (regionId, pageNum = 1, search = "", append = false) => {
+    setFilterDistrictPag(p => ({ ...p, loading: true }))
+    try {
+      const { results, hasMore } = await fetchPaginated(
+        "users/districts/",
+        { region: regionId },
+        pageNum,
+        search
+      )
+      setDistricts(prev => pageNum === 1 || !append ? results.map(d => ({ value: d.id, label: d.name })) : [...prev, ...results.map(d => ({ value: d.id, label: d.name }))])
+      setFilterDistrictPag({ page: pageNum, hasMore, loading: false })
+    } catch { setFilterDistrictPag(p => ({ ...p, loading: false })) }
+  }
+
+  // Branches (filter modal ichidagi)
+  const loadFilterBranches = async (pageNum = 1, search = "") => {
+    setFilterBranchPag(p => ({ ...p, loading: true }))
+    try {
+      const { results, hasMore } = await fetchPaginated("users/branches/", {}, pageNum, search)
+      setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
+      setFilterBranchPag({ page: pageNum, hasMore, loading: false })
+    } catch { setFilterBranchPag(p => ({ ...p, loading: false })) }
+  }
+
+  // List filter modal districts
+  const loadListDistricts = async (regionId, pageNum = 1, search = "") => {
+    setListDistrictPag(p => ({ ...p, loading: true }))
+    try {
+      const { results, hasMore } = await fetchPaginated("users/districts/", { region: regionId }, pageNum, search)
+      setFilterDistricts(prev => pageNum === 1 ? results.map(d => ({ value: d.id, label: d.name })) : [...prev, ...results.map(d => ({ value: d.id, label: d.name }))])
+      setListDistrictPag({ page: pageNum, hasMore, loading: false })
+    } catch { setListDistrictPag(p => ({ ...p, loading: false })) }
+  }
+
+  // List filter modal branches
+  const loadListBranches = async (pageNum = 1, search = "") => {
+    setListBranchPag(p => ({ ...p, loading: true }))
+    try {
+      const { results, hasMore } = await fetchPaginated("users/branches/", {}, pageNum, search)
+      setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
+      setListBranchPag({ page: pageNum, hasMore, loading: false })
+    } catch { setListBranchPag(p => ({ ...p, loading: false })) }
+  }
+
+  // List filter modal departments
+  const loadListDepartments = async (pageNum = 1, search = "") => {
+    setListDepartmentPag(p => ({ ...p, loading: true }))
+    try {
+      const { results, hasMore } = await fetchPaginated("users/departments/", {}, pageNum, search)
+      setDepartments(prev => pageNum === 1 ? results : [...prev, ...results])
+      setListDepartmentPag({ page: pageNum, hasMore, loading: false })
+    } catch { setListDepartmentPag(p => ({ ...p, loading: false })) }
+  }
+
+  const fetchPaginated = async (endpoint, params = {}, pageNum = 1, search = "") => {
+    const p = { page: pageNum, ...params }
+    if (search?.trim()) p.search = search
+    const res = await axiosAPI.get(endpoint, { params: p })
+    if (res.status === 200) {
+      const data = res.data?.data || {}
+      return {
+        results: data.results || [],
+        hasMore: !!data.next,
+      }
+    }
+    return { results: [], hasMore: false }
+  }
+
   const handleRegionChange = (opt) => {
     setTempFilterRegion(opt)
     setDistricts([])
     setTempFilterDistrict(null)
-    if (opt?.value) fetchDistricts(opt.value)
+    setFilterDistrictPag({ page: 1, hasMore: true, loading: false })
+    if (opt?.value) loadDistricts(opt.value, 1, "")
   }
 
   const handleBlockEmployee = async () => {
@@ -488,12 +574,8 @@ const EmployeeRegister = () => {
     setTempFilterRegion(savedFilters.region)
     setTempFilterDistrict(savedFilters.district)
     setTempFilterBranch(savedFilters.branch)
-
-    // If region exists, fetch districts
-    if (savedFilters.region?.value) {
-      fetchDistricts(savedFilters.region.value)
-    }
-
+    if (savedFilters.region?.value) loadDistricts(savedFilters.region.value, 1, "")
+    loadFilterBranches(1, "")
     setOpenFilterModal(modalType)
     setTimeout(() => setOpenModal(null), 100)
   }
@@ -561,16 +643,18 @@ const EmployeeRegister = () => {
     setTmpDistrict(districtFilter)
     setTmpBranch(branchFilter)
     setTmpDepartment(departmentFilter)
-    if (regionFilter?.value) fetchFilterDistricts(regionFilter.value)
+    if (regionFilter?.value) loadListDistricts(regionFilter.value, 1, "")
+    loadListBranches(1, "")
+    loadListDepartments(1, "")
     setOpenListFilter(true)
   }
-
   // Region change inside the modal — reset district + reload its options
   const handleListRegionChange = (opt) => {
     setTmpRegion(opt)
     setFilterDistricts([])
     setTmpDistrict(null)
-    if (opt?.value) fetchFilterDistricts(opt.value)
+    setListDistrictPag({ page: 1, hasMore: true, loading: false })
+    if (opt?.value) loadListDistricts(opt.value, 1, "")
   }
 
   // Apply: commit temp selections (triggers the employee fetch via deps)
@@ -1422,7 +1506,10 @@ const EmployeeRegister = () => {
                 type="text"
                 placeholder={t("jshsh_number") || "JSHSHIR raqami"}
                 value={form.tabel}
-                onChange={(e) => setForm((p) => ({ ...p, tabel: e.target.value }))}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "")
+                  setForm((p) => ({ ...p, tabel: val }))
+                }}
                 className={cn("w-full h-11 rounded-lg dark:bg-[#171717]", errors.tabel && "border-red-500!")}
                 maxLength={14}
                 disabled={!editEmp}
@@ -1936,6 +2023,13 @@ const EmployeeRegister = () => {
                   value={tempFilterBranch?.value ?? null}
                   onChange={(opt) => setTempFilterBranch(opt)}
                   contanierClassName="col-span-2"
+                  searchable={true}
+                  loadingMore={filterBranchPag.loading}
+                  onScrollEnd={() => {
+                    if (!filterBranchPag.hasMore || filterBranchPag.loading) return
+                    loadFilterBranches(filterBranchPag.page + 1, "")
+                  }}
+                  onSearch={(s) => loadFilterBranches(1, s)}
                 />
               )}
 
@@ -1949,15 +2043,20 @@ const EmployeeRegister = () => {
 
               <Select
                 label={t("district_branch_title") || "Tuman"}
-                placeholder={
-                  !tempFilterRegion
-                    ? t("select_region_first") || "Avval viloyat tanlang"
-                    : t("district_branch_placeholder") || "Tuman tanlang"
-                }
+                placeholder={!tempFilterRegion ? t("select_region_first") || "Avval viloyat tanlang" : t("district_branch_placeholder") || "Tuman tanlang"}
                 options={districts}
                 value={tempFilterDistrict?.value ?? null}
                 onChange={(opt) => setTempFilterDistrict(opt)}
                 disabled={!tempFilterRegion}
+                loadingMore={filterDistrictPag.loading}
+                onScrollEnd={() => {
+                  if (!filterDistrictPag.hasMore || filterDistrictPag.loading || !tempFilterRegion?.value) return
+                  loadDistricts(tempFilterRegion.value, filterDistrictPag.page + 1, "")
+                }}
+                searchable={true}
+                onSearch={(s) => {
+                  if (tempFilterRegion?.value) loadDistricts(tempFilterRegion.value, 1, s)
+                }}
               />
             </div>
           </div>
@@ -2020,15 +2119,20 @@ const EmployeeRegister = () => {
               {/* District — region tanlanmasa disabled */}
               <Select
                 label={t("district_branch_title") || "Tuman"}
-                placeholder={
-                  !tmpRegion
-                    ? t("select_region_first")
-                    : t("district_branch_placeholder") || "Tumanni tanlang"
-                }
+                placeholder={!tmpRegion ? t("select_region_first") : t("district_branch_placeholder") || "Tumanni tanlang"}
                 options={filterDistricts}
                 value={tmpDistrict?.value ?? null}
                 onChange={(opt) => setTmpDistrict(opt)}
                 disabled={!tmpRegion}
+                loadingMore={listDistrictPag.loading}
+                onScrollEnd={() => {
+                  if (!listDistrictPag.hasMore || listDistrictPag.loading || !tmpRegion?.value) return
+                  loadListDistricts(tmpRegion.value, listDistrictPag.page + 1, "")
+                }}
+                searchable={true}
+                onSearch={(s) => {
+                  if (tmpRegion?.value) loadListDistricts(tmpRegion.value, 1, s)
+                }}
               />
 
               {/* Branch */}
@@ -2038,15 +2142,28 @@ const EmployeeRegister = () => {
                 options={branches.map((b) => ({ value: b.id, label: b.name }))}
                 value={tmpBranch?.value ?? null}
                 onChange={(opt) => setTmpBranch(opt)}
+                loadingMore={listBranchPag.loading}
+                onScrollEnd={() => {
+                  if (!listBranchPag.hasMore || listBranchPag.loading) return
+                  loadListBranches(listBranchPag.page + 1, "")
+                }}
+                searchable={true}
+                onSearch={(s) => loadListBranches(1, s)}
               />
 
-              {/* Department */}
               <Select
                 label={t("department") || "Bo'lim"}
                 placeholder={t("select_department") || "Bo'limni tanlang"}
                 options={departments.map((d) => ({ value: d.id, label: d.name }))}
                 value={tmpDepartment?.value ?? null}
                 onChange={(opt) => setTmpDepartment(opt)}
+                loadingMore={listDepartmentPag.loading}
+                onScrollEnd={() => {
+                  if (!listDepartmentPag.hasMore || listDepartmentPag.loading) return
+                  loadListDepartments(listDepartmentPag.page + 1, "")
+                }}
+                searchable={true}
+                onSearch={(s) => loadListDepartments(1, s)}
               />
             </div>
           </div>

@@ -670,7 +670,7 @@ export const translations = {
           ru: "Нет данных для экспорта"
      },
      region_branch_title: {
-          uz: "Viloyat filiali",
+          uz: "Viloyat",
           cy: "Вилоят филиали",
           en: "Regional branch",
           ru: "Областной филиал"
@@ -682,7 +682,7 @@ export const translations = {
           ru: "Выберите региональный филиал"
      },
      district_branch_title: {
-          uz: "Tuman filiali",
+          uz: "Tuman",
           cy: "Туман филиали",
           en: "District branch",
           ru: "Районный филиал"
@@ -1322,7 +1322,7 @@ export const translations = {
           ru: "Центральный аппарат"
      },
      zt_region_branch: {
-          uz: "Viloyat filiali",
+          uz: "Viloyat",
           cy: "Вилоят филиали",
           en: "Region branch",
           ru: "Областной филиал"
@@ -1431,6 +1431,12 @@ export const translations = {
           cy: "- муваффақиятли қўшилди",
           en: "- successfully added",
           ru: "- успешно добавлен"
+     },
+     update: {
+          uz: "Yangilandi!",
+          cy: "Янгиланди!",
+          en: "Updated successfully!",
+          ru: "Обновлено!"
      },
      employee_updated: {
           uz: "- muvaffaqiyatli tahrirlandi",
@@ -1549,6 +1555,19 @@ export const translations = {
           ru: "Подтвердить удаление?"
      },
 
+     logs: {
+          uz: "Loglar",
+          cy: "Логлар",
+          en: "Logs",
+          ru: "Логи"
+     },
+     dailys: {
+          uz: "Kunlik davomatlar",
+          cy: "Кунлик давоматлар",
+          en: "Daily attendance",
+          ru: "Ежедневные посещения"
+     },
+
      // ─── Rollar ───
      ref_t_role: { uz: "Rollar", cy: "Роллар", en: "Roles", ru: "Роли" },
      ref_sub_role: { uz: "{n} ta rol mavjud", cy: "{n} та рол мавжуд", en: "{n} roles available", ru: "Доступно ролей: {n}" },
@@ -1585,8 +1604,8 @@ export const translations = {
      set_sound_sub: { uz: "Yangi bildirishnomada ovoz", cy: "Янги билдиришномада овоз", en: "Sound on new notification", ru: "Звук при новом уведомлении" },
      set_version_title: { uz: "Tizim versiyasi", cy: "Тизим версияси", en: "System version", ru: "Версия системы" },
      set_lang_latin: { uz: "Lotin", cy: "Lotin", en: "Lotin", ru: "Lotin" },
-     set_lang_cyrillic: { uz: "Кирил", cy: "Кирил", en: "Cyrillic", ru: "Кирил" },
-     set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", ru: "Русский" },
+set_lang_cyrillic: { uz: "Кирил", cy: "Кирил", en: "Cyrillic", ru: "Кирил" },
+set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", ru: "Русский" },
 
      // ─── Profil (Mening profilim) ───
      profile_title: { uz: "Mening profilim", cy: "Менинг профилим", en: "My profile", ru: "Мой профиль" },
@@ -1596,6 +1615,38 @@ export const translations = {
      prof_district: { uz: "Tuman", cy: "Туман", en: "District", ru: "Район" },
      prof_phone: { uz: "Telefon", cy: "Телефон", en: "Phone", ru: "Телефон" },
      prof_empty: { uz: "Ma'lumot yo'q", cy: "Маълумот йўқ", en: "No data", ru: "Нет данных" },
+
+     // ─── Sozlamalar: hisob (foto + parol) ───
+     set_account_subtitle: { uz: "Hisob ma'lumotlari", cy: "Ҳисоб маълумотлари", en: "Account details", ru: "Данные аккаунта" },
+     set_photo_title: { uz: "Profil fotosurati", cy: "Профил фотосурати", en: "Profile photo", ru: "Фото профиля" },
+     set_photo_sub: { uz: "Yuzingiz aniq ko'rinadigan rasm yuklang (Face ID)", cy: "Юзингиз аниқ кўринадиган расм юкланг (Face ID)", en: "Upload a photo with your face clearly visible (Face ID)", ru: "Загрузите фото с чётко видимым лицом (Face ID)" },
+     photo_error: { uz: "Rasmni yuklab bo'lmadi", cy: "Расмни юклаб бўлмади", en: "Could not upload photo", ru: "Не удалось загрузить фото" },
+     photo_uploading: { uz: "Yuklanmoqda...", cy: "Юкланмоқда...", en: "Uploading...", ru: "Загрузка..." },
+     set_change: { uz: "O'zgartirish", cy: "Ўзгартириш", en: "Change", ru: "Изменить" },
+     set_password_title: { uz: "Parolni o'zgartirish", cy: "Паролни ўзгартириш", en: "Change password", ru: "Сменить пароль" },
+     set_password_sub: { uz: "Xavfsizlik uchun parolni vaqti-vaqti bilan yangilang", cy: "Хавфсизлик учун паролни вақти-вақти билан янгиланг", en: "Update your password periodically for security", ru: "Периодически обновляйте пароль для безопасности" },
+     photo_updated: { uz: "Profil fotosurati yangilandi", cy: "Профил фотосурати янгиланди", en: "Profile photo updated", ru: "Фото профиля обновлено" },
+     photo_too_large: { uz: "Rasm hajmi 5 MB dan oshmasligi kerak", cy: "Расм ҳажми 5 МБ дан ошмаслиги керак", en: "Image must be 5 MB or smaller", ru: "Размер изображения не должен превышать 5 МБ" },
+     photo_invalid: { uz: "Faqat rasm fayli yuklang", cy: "Фақат расм файли юкланг", en: "Please upload an image file", ru: "Загрузите файл изображения" },
+
+     // ─── Parolni o'zgartirish modali ───
+     pwd_modal_title: { uz: "Yangi parol yarating", cy: "Янги парол яратинг", en: "Create a new password", ru: "Создайте новый пароль" },
+     pwd_old: { uz: "Eski parol", cy: "Эски парол", en: "Old password", ru: "Старый пароль" },
+     pwd_new: { uz: "Yangi parol", cy: "Янги парол", en: "New password", ru: "Новый пароль" },
+     pwd_confirm: { uz: "Yangi parolni tasdiqlang", cy: "Янги паролни тасдиқланг", en: "Confirm new password", ru: "Подтвердите новый пароль" },
+     pwd_save: { uz: "Saqlash", cy: "Сақлаш", en: "Save", ru: "Сохранить" },
+     pwd_saving: { uz: "Saqlanmoqda...", cy: "Сақланмоқда...", en: "Saving...", ru: "Сохранение..." },
+     pwd_req_len: { uz: "Kamida 8 belgi", cy: "Камида 8 белги", en: "At least 8 characters", ru: "Минимум 8 символов" },
+     pwd_req_upper: { uz: "Katta harf (A–Z)", cy: "Катта ҳарф (A–Z)", en: "Uppercase letter (A–Z)", ru: "Заглавная буква (A–Z)" },
+     pwd_req_lower: { uz: "Kichik harf (a–z)", cy: "Кичик ҳарф (a–z)", en: "Lowercase letter (a–z)", ru: "Строчная буква (a–z)" },
+     pwd_req_digit: { uz: "Raqam (0–9)", cy: "Рақам (0–9)", en: "Number (0–9)", ru: "Цифра (0–9)" },
+     pwd_req_special: { uz: "Maxsus belgi (!@#$%...)", cy: "Махсус белги (!@#$%...)", en: "Special character (!@#$%...)", ru: "Спецсимвол (!@#$%...)" },
+     pwd_old_required: { uz: "Eski parolni kiriting", cy: "Эски паролни киритинг", en: "Enter your old password", ru: "Введите старый пароль" },
+     pwd_weak: { uz: "Yangi parol barcha talablarga javob bermayapti", cy: "Янги парол барча талабларга жавоб бермаяпти", en: "New password does not meet all requirements", ru: "Новый пароль не соответствует всем требованиям" },
+     pwd_mismatch: { uz: "Parollar mos kelmadi", cy: "Пароллар мос келмади", en: "Passwords do not match", ru: "Пароли не совпадают" },
+     pwd_success: { uz: "Parol muvaffaqiyatli o'zgartirildi", cy: "Парол муваффақиятли ўзгартирилди", en: "Password changed successfully", ru: "Пароль успешно изменён" },
+     pwd_error: { uz: "Parolni o'zgartirib bo'lmadi", cy: "Паролни ўзгартириб бўлмади", en: "Could not change password", ru: "Не удалось изменить пароль" },
+     pwd_old_wrong: { uz: "Eski parol noto'g'ri", cy: "Эски парол нотўғри", en: "Old password is incorrect", ru: "Старый пароль неверный" },
 }
 
 export function LanguageProvider({ children }) {
