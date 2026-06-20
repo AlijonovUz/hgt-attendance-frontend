@@ -30,10 +30,11 @@ export const UserDropdown = ({ currentUser }) => {
           setIsLoggingOut(true)
 
           setTimeout(() => {
-               localStorage.removeItem("currentUser")
-               localStorage.removeItem("access")
-               localStorage.removeItem("refresh")
-
+               localStorage.removeItem("access");
+               localStorage.removeItem("refresh");
+               localStorage.removeItem("currentUser");
+               localStorage.removeItem("userPermission");
+               
                navigate("/login", { replace: true })
           }, 1000)
      }

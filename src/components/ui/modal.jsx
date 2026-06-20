@@ -54,7 +54,7 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
                     )}
 
                     {/* ── Scrollable content ── */}
-                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                    <div  id="modal-scroll-body"  className="flex-1 overflow-y-auto px-6 py-4">
                          {children}
                     </div>
                </div>

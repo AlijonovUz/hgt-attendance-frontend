@@ -1,58 +1,142 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import { HomePage, LoginPage, EmployeeRegister, Geozones, Reports, Settings, ReferencePage, PrivacyPolicy } from "./pages"
-import Layout from "./components/Layout/Layout"
-import { EmptySection } from "./components/EmptySection"
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+  useParams,
+} from "react-router-dom";
+import {
+  HomePage,
+  LoginPage,
+  EmployeeRegister,
+  Geozones,
+  Reports,
+  Settings,
+  ReferencePage,
+  PrivacyPolicy,
+} from "./pages";
+import Layout from "./components/Layout/Layout";
+import { EmptySection } from "./components/EmptySection";
+import { useSelector } from "react-redux";
+
+const ProtectedRoute = ({ children, check }) => {
+  const userPermission = useSelector(
+    (state) => state.references.userPermission
+  );
+
+  if (
+    !userPermission ||
+    Object.keys(userPermission).length === 0
+  ) {
+    return null;
+  }
+
+  return check ? children : <Navigate to="/" replace />;
+};
+
+const ProtectedReference = ({ children }) => {
+  const { type } = useParams();
+
+  const userPermission = useSelector(
+    (state) => state.references.userPermission
+  );
+
+  if (
+    !userPermission ||
+    Object.keys(userPermission).length === 0
+  ) {
+    return null;
+  }
+
+  const permissionKey =
+    type === "schedule" ? "schedules" : type;
+
+  const hasAccess =
+    userPermission?.[permissionKey]?.length > 0;
+
+  return hasAccess ? children : <Navigate to="/" replace />;
+};
 
 const App = () => {
+  const userPermission = useSelector(
+    (state) => state.references.userPermission
+  );
+
+  const viewEmp =
+    userPermission?.employees?.some(
+      (e) => e.code === "employee_view_all"
+    );
+
+  const viewgeo =
+    userPermission?.geozones?.some(
+      (e) => e.code === "geozone_view"
+    );
+
+  const viewRep =
+    userPermission?.reports?.some(
+      (e) =>
+        e.code === "report_type_employee" ||
+        e.code === "report_type_branch"
+    );
 
   const router = createBrowserRouter([
     {
-      path: "",
+      path: "/",
       element: <Layout />,
       errorElement: <EmptySection />,
       children: [
         {
-          path: "",
+          index: true,
           element: <HomePage />,
         },
         {
-          path: "/employee-register",
-          element: <EmployeeRegister />,
+          path: "employee-register",
+          element: (
+            <ProtectedRoute check={viewEmp}>
+              <EmployeeRegister />
+            </ProtectedRoute>
+          ),
         },
         {
-          path: "/reports",
-          element: <Reports />,
+          path: "reports",
+          element: (
+            <ProtectedRoute check={viewRep}>
+              <Reports />
+            </ProtectedRoute>
+          ),
         },
         {
-          path: "/geozones",
-          element: <Geozones />,
+          path: "geozones",
+          element: (
+            <ProtectedRoute check={viewgeo}>
+              <Geozones />
+            </ProtectedRoute>
+          ),
         },
         {
-          path: "/references/:type",
-          element: <ReferencePage />,
+          path: "references/:type",
+          element: (
+            <ProtectedReference>
+              <ReferencePage />
+            </ProtectedReference>
+          ),
         },
         {
-          path: "/settings",
+          path: "settings",
           element: <Settings />,
         },
-      ]
+      ],
     },
     {
       path: "/login",
       element: <LoginPage />,
     },
     {
-      // Umumiy sahifa — login talab qilinmaydi (Layout'dan tashqarida)
       path: "/privacy-policy",
       element: <PrivacyPolicy />,
     },
-  ])
+  ]);
 
-  return (
-    <>
-      <RouterProvider router={router} />
-    </>
-  )
-}
+  return <RouterProvider router={router} />;
+};
 
-export default App
+export default App;
