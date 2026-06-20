@@ -21,7 +21,8 @@ import { uz, ru, enUS, uzCyrl } from "date-fns/locale"
 
 import { useLanguage } from "../../Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
-import { cn } from "@/lib/utils"
+import { cn, exportAoaToCsv } from "@/lib/utils"
+import { ExportMenu } from "@/components/ui/ExportMenu"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Toast } from "@/components/ui/Toast"
@@ -332,6 +333,15 @@ const Reports = () => {
     showToast(t("export_pdf_success"))
   }
 
+  const exportCSV = () => {
+    if (!results.length) return showToast(t("export_empty_warning"))
+    const { headers, body, totalRow } = buildExport()
+    const aoa = [headers, ...body]
+    if (totalRow) aoa.push(totalRow)
+    exportAoaToCsv(`davomat-hisoboti-${period}.csv`, aoa)
+    showToast(t("export_csv_success"))
+  }
+
   const Pill = ({ icon: Icon, iconClass, children, iconType }) => (
     <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1 text-sm text-[#1A1A1A] dark:text-white">
       {Icon && (iconType === "huge" ?
@@ -447,33 +457,19 @@ const Reports = () => {
             className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3"
             onClick={() => setOpenFilterModal(true)}
           >
-            {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+            {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#DC2626]"></span>}
             <HugeIcon icon={FilterVerticalIcon} size={16} />
             {t("filter")}
           </button>
         </div>
 
-        {/* Excel / PDF */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={exportExcel}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] px-4 py-1.5 text-[13px] font-semibold text-[#1A1A1A] dark:text-white shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
-          >
-            <PiMicrosoftExcelLogo size={18} className="text-[#22A565]" />
-            Excel
-            <HugeIcon icon={Download01Icon} size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={exportPDF}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#0A0A0A] px-4 py-1.5 text-[13px] font-semibold text-[#1A1A1A] dark:text-white shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]"
-          >
-            <HugeIcon icon={Pdf02Icon} size={16} className="text-[#0588F0]" />
-            PDF
-            <HugeIcon icon={Download01Icon} size={16} />
-          </button>
-        </div>
+        {/* Yuklash: Excel / PDF / CSV */}
+        <ExportMenu
+          onExcel={exportExcel}
+          onPDF={exportPDF}
+          onCSV={exportCSV}
+          label={t("download")}
+        />
       </div>
 
       {/* ─── Jadval ─── */}

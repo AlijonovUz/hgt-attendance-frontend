@@ -412,7 +412,7 @@ const Geozones = () => {
             onClick={openFilters}
             className="relative inline-flex items-center gap-2 h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors"
           >
-            {hasFilter && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0090FF] ring-2 ring-white dark:ring-[#0A0A0A]" />}
+            {hasFilter && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-2 ring-white dark:ring-[#0A0A0A]" />}
             <HugeIcon icon={FilterVerticalIcon} size={16} />
             {t("gz_filter")}
           </button>
@@ -473,7 +473,7 @@ const Geozones = () => {
                     <div
                       className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                        active ? "bg-white dark:bg-[#262626] shadow-sm" : "bg-[#F5F5F5] dark:bg-[#1F1F1F]"
+                        active ? "bg-white dark:bg-[#262626] " : "bg-white dark:bg-[#1F1F1F]"
                       )}
                     >
                       <MapPin size={18} className="text-[#0A0A0A] dark:text-white" />
@@ -489,15 +489,16 @@ const Geozones = () => {
                       </p>
                     </div>
 
-                    {/* Radio */}
+                    {/* Radio — yuqoriga tekislangan (Figma) */}
                     <span
                       className={cn(
-                        "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                        "w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 self-start mt-0.5",
                         active ? "border-[#0090FF]" : "border-[#D4D4D4] dark:border-[#525252]"
                       )}
                     >
-                      {active && <span className="w-2.5 h-2.5 rounded-full bg-[#0090FF]" />}
+                      {active && <span className="w-2 h-2 rounded-full bg-[#0090FF]" />}
                     </span>
+                    
                   </button>
                 )
               })
@@ -506,7 +507,7 @@ const Geozones = () => {
         </div>
 
         {/* ── O'ng: detail ── */}
-        <div className="lg:sticky lg:top-0 h-fit lg:mt-[60px]">
+        <div className="lg:sticky lg:top-0 h-fit">
           {!selected ? (
             <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#2E2E2E] p-10 flex flex-col items-center justify-center gap-2 text-[#737373] min-h-[400px]">
               <MapPin size={28} strokeWidth={1.5} />

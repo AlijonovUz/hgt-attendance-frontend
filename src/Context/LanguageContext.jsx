@@ -1505,6 +1505,36 @@ export const translations = {
           en: "Error exporting Excel file",
           ru: "Ошибка при экспорте Excel файла"
      },
+     download: {
+          uz: "Yuklash",
+          cy: "Юклаш",
+          en: "Download",
+          ru: "Скачать"
+     },
+     export_empty_warning: {
+          uz: "Eksport qilish uchun ma'lumot yo'q",
+          cy: "Экспорт қилиш учун маълумот йўқ",
+          en: "No data to export",
+          ru: "Нет данных для экспорта"
+     },
+     export_excel_success: {
+          uz: "Excel fayl muvaffaqiyatli yuklandi",
+          cy: "Excel файл муваффақиятли юкланди",
+          en: "Excel file successfully downloaded",
+          ru: "Excel файл успешно загружен"
+     },
+     export_pdf_success: {
+          uz: "PDF fayl muvaffaqiyatli yuklandi",
+          cy: "PDF файл муваффақиятли юкланди",
+          en: "PDF file successfully downloaded",
+          ru: "PDF файл успешно загружен"
+     },
+     export_csv_success: {
+          uz: "CSV fayl muvaffaqiyatli yuklandi",
+          cy: "CSV файл муваффақиятли юкланди",
+          en: "CSV file successfully downloaded",
+          ru: "CSV файл успешно загружен"
+     },
 
      // bayramlar
      ref_t_holiday: {

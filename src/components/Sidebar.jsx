@@ -121,7 +121,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                id: "help",
                icon: HelpCircle,
                label: t("help"),
-               path: "/help",
+               href: "https://t.me/+jxCs8DUv7hZjMWY6", // tashqi Telegram kanali
           },
      ]
 
@@ -281,6 +281,33 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                     <nav className="flex flex-col gap-0.5 px-2">
                          {bottomItems.map((item) => {
                               const Icon = item.icon
+                              const label = (
+                                   <span className={`
+                                        whitespace-nowrap truncate
+                                        transition-[opacity,transform] duration-300 ease-in-out
+                                        ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}
+                                   `}>
+                                        {item.label}
+                                   </span>
+                              )
+
+                              // Tashqi havola (masalan Telegram) — yangi tabda ochiladi
+                              if (item.href) {
+                                   return (
+                                        <a
+                                             key={item.id}
+                                             href={item.href}
+                                             target="_blank"
+                                             rel="noopener noreferrer"
+                                             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                             title={sidebarCollapsed ? item.label : undefined}
+                                        >
+                                             <Icon size={18} className="flex-shrink-0" strokeWidth={1.7} />
+                                             {label}
+                                        </a>
+                                   )
+                              }
+
                               return (
                                    <NavLink
                                         key={item.id}
@@ -295,13 +322,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                         title={sidebarCollapsed ? item.label : undefined}
                                    >
                                         <Icon size={18} className="flex-shrink-0" strokeWidth={1.7} />
-                                        <span className={`
-                                             whitespace-nowrap truncate
-                                             transition-[opacity,transform] duration-300 ease-in-out
-                                             ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}
-                                        `}>
-                                             {item.label}
-                                        </span>
+                                        {label}
                                    </NavLink>
                               )
                          })}

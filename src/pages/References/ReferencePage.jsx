@@ -729,7 +729,7 @@ const ReferencePage = () => {
               className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
               onClick={openFilters}
             >
-              {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+              {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#DC2626]"></span>}
               <HugeIcon icon={FilterVerticalIcon} size={16} />
               {t("filter")}
             </button>
