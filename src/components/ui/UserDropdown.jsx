@@ -1,13 +1,15 @@
 import { useRef, useState, useEffect } from "react"
-import { MoreVertical } from "lucide-react"
+import { MoreVertical, UserRound } from "lucide-react"
 import { useTheme } from "@/Context/ThemeContext"
 import { useNavigate } from "react-router-dom"
 import { HugeIcon } from "./HugeIcon"
 import { LogoutCircle02Icon, Moon02Icon, Spinner, Sun03Icon } from "@hugeicons/core-free-icons"
 import { useLanguage } from "@/Context/LanguageContext"
+import { ProfileModal } from "./ProfileModal"
 
 export const UserDropdown = ({ currentUser }) => {
      const [open, setOpen] = useState(false)
+     const [profileOpen, setProfileOpen] = useState(false)
      const [isLoggingOut, setIsLoggingOut] = useState(false)
      const { t } = useLanguage() // useLanguage funksiya sifatida chaqirildi ()
      const { theme, setTheme } = useTheme()
@@ -69,6 +71,17 @@ export const UserDropdown = ({ currentUser }) => {
 
                          <div className="h-px bg-[#E5E7EB] dark:bg-[#2E2E2E] mx-2 my-0.5" />
 
+                         {/* Shaxsiy kabinet (profil modalini ochadi) */}
+                         <button
+                              onClick={() => { setProfileOpen(true); setOpen(false) }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[#1A1A1A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525] cursor-pointer"
+                         >
+                              <UserRound size={17} strokeWidth={1.8} />
+                              {t("profile")}
+                         </button>
+
+                         <div className="h-px bg-[#E5E7EB] dark:bg-[#2E2E2E] mx-2 my-0.5" />
+
                          {/* Logout */}
                          <button
                               onClick={handleLogout}
@@ -85,6 +98,9 @@ export const UserDropdown = ({ currentUser }) => {
 
                     </div>
                )}
+
+               {/* Profil (Shaxsiy kabinet) modali */}
+               <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
           </div>
      )
 }

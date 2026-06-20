@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 
@@ -20,7 +21,10 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
 
      if (!shouldRender) return null
 
-     return (
+     // Portal orqali to'g'ridan-to'g'ri <body>'ga render qilamiz — shunda modal
+     // `transform`/`filter` qo'llangan ota elementlar ichida qolib ketmaydi
+     // (masalan, sidebar'dagi user-kartadan ochilganda burchakka tushib qolishi).
+     return createPortal(
           <>
                <div
                     className={cn(
@@ -65,6 +69,7 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
                >
                     <X size={16} />
                </span>
-          </>
+          </>,
+          document.body
      )
 }
