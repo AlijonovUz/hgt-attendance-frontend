@@ -310,7 +310,7 @@ export const ScheduleModal = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 pt-3 sticky bottom-0 bg-white dark:bg-[#171717] border-t border-[#F0F0F0] dark:border-[#1F1F1F]">
+        <div className="flex items-center justify-between gap-3 pt-3 sticky bottom-0 bg-white dark:bg-[#171717] border-t border-[#F0F0F0] dark:border-[#1F1F1F]">
           {canDelete && isEdit && (
             <button
               type="button"
@@ -322,7 +322,6 @@ export const ScheduleModal = ({
               )}
             >
               <Trash2 size={18} />
-              {t("delete") || "O'chirish"}
             </button>
           )}
 
