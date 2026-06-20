@@ -300,7 +300,6 @@ const EmployeeRegister = () => {
         params.search = searchTerm
       }
 
-      // Apply filters
       const filterData = filters[type]
       if (type === "branch") {
         if (filterData.region?.value) params.region = filterData.region.value
@@ -311,6 +310,8 @@ const EmployeeRegister = () => {
           const newData = res.data?.data?.results || []
           if (pageNum === 1) {
             setBranches(newData)
+            // Bitta natija bo'lsa avtomatik tanlash
+            if (newData.length === 1) setModalSelected(newData[0].id)
           } else {
             setBranches(prev => [...prev, ...newData])
           }
@@ -318,7 +319,6 @@ const EmployeeRegister = () => {
           setHasMore(newData.length === PAGE_SIZE)
         }
       } else if (type === "department") {
-        // Cascade: departments are limited to the branch chosen in the form
         if (form.branch) params.branch = form.branch
         else if (filterData.branch?.value) params.branch = filterData.branch.value
         if (filterData.region?.value) params.region = filterData.region.value
@@ -327,6 +327,7 @@ const EmployeeRegister = () => {
           const newData = res.data?.data?.results || []
           if (pageNum === 1) {
             setDepartments(newData)
+            if (newData.length === 1) setModalSelected(newData[0].id)
           } else {
             setDepartments(prev => [...prev, ...newData])
           }
@@ -334,7 +335,6 @@ const EmployeeRegister = () => {
           setHasMore(newData.length === PAGE_SIZE)
         }
       } else if (type === "position") {
-        // Cascade: positions are limited to the department chosen in the form
         if (form.department) params.department = form.department
         if (form.branch) params.branch = form.branch
         else if (filterData.branch?.value) params.branch = filterData.branch.value
@@ -344,6 +344,7 @@ const EmployeeRegister = () => {
           const newData = res.data?.data?.results || []
           if (pageNum === 1) {
             setPositions(newData)
+            if (newData.length === 1) setModalSelected(newData[0].id)
           } else {
             setPositions(prev => [...prev, ...newData])
           }
@@ -376,54 +377,68 @@ const EmployeeRegister = () => {
   const loadDistricts = async (regionId, pageNum = 1, search = "", append = false) => {
     setFilterDistrictPag(p => ({ ...p, loading: true }))
     try {
-      const { results, hasMore } = await fetchPaginated(
-        "users/districts/",
-        { region: regionId },
-        pageNum,
-        search
-      )
-      setDistricts(prev => pageNum === 1 || !append ? results.map(d => ({ value: d.id, label: d.name })) : [...prev, ...results.map(d => ({ value: d.id, label: d.name }))])
+      const { results, hasMore } = await fetchPaginated("users/districts/", { region: regionId }, pageNum, search)
+      const mapped = results.map(d => ({ value: d.id, label: d.name }))
+      setDistricts(prev => pageNum === 1 || !append ? mapped : [...prev, ...mapped])
       setFilterDistrictPag({ page: pageNum, hasMore, loading: false })
+      if (pageNum === 1 && mapped.length === 1) setTempFilterDistrict(mapped[0])
     } catch { setFilterDistrictPag(p => ({ ...p, loading: false })) }
   }
 
-  // Branches (filter modal ichidagi)
-  const loadFilterBranches = async (pageNum = 1, search = "") => {
+  const loadFilterBranches = async (pageNum = 1, search = "", regionId = null, districtId = null) => {
     setFilterBranchPag(p => ({ ...p, loading: true }))
     try {
-      const { results, hasMore } = await fetchPaginated("users/branches/", {}, pageNum, search)
+      const params = {}
+      if (regionId) params.region = regionId
+      if (districtId) params.district = districtId
+      const { results, hasMore } = await fetchPaginated("users/branches/", params, pageNum, search)
       setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
       setFilterBranchPag({ page: pageNum, hasMore, loading: false })
+      if (pageNum === 1 && results.length === 1) {
+        setTempFilterBranch({ value: results[0].id, label: results[0].name })
+      }
     } catch { setFilterBranchPag(p => ({ ...p, loading: false })) }
   }
-
   // List filter modal districts
   const loadListDistricts = async (regionId, pageNum = 1, search = "") => {
     setListDistrictPag(p => ({ ...p, loading: true }))
     try {
       const { results, hasMore } = await fetchPaginated("users/districts/", { region: regionId }, pageNum, search)
-      setFilterDistricts(prev => pageNum === 1 ? results.map(d => ({ value: d.id, label: d.name })) : [...prev, ...results.map(d => ({ value: d.id, label: d.name }))])
+      const mapped = results.map(d => ({ value: d.id, label: d.name }))
+      setFilterDistricts(prev => pageNum === 1 ? mapped : [...prev, ...mapped])
       setListDistrictPag({ page: pageNum, hasMore, loading: false })
+      if (pageNum === 1 && mapped.length === 1) setTmpDistrict(mapped[0])
     } catch { setListDistrictPag(p => ({ ...p, loading: false })) }
   }
 
-  // List filter modal branches
-  const loadListBranches = async (pageNum = 1, search = "") => {
+  // Branches — endi region/district bo'yicha filtrlanadi + auto-select
+  const loadListBranches = async (pageNum = 1, search = "", regionId = null, districtId = null) => {
     setListBranchPag(p => ({ ...p, loading: true }))
     try {
-      const { results, hasMore } = await fetchPaginated("users/branches/", {}, pageNum, search)
+      const params = {}
+      if (regionId) params.region = regionId
+      if (districtId) params.district = districtId
+      const { results, hasMore } = await fetchPaginated("users/branches/", params, pageNum, search)
       setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
       setListBranchPag({ page: pageNum, hasMore, loading: false })
+      if (pageNum === 1 && results.length === 1) {
+        setTmpBranch({ value: results[0].id, label: results[0].name })
+      }
     } catch { setListBranchPag(p => ({ ...p, loading: false })) }
   }
 
-  // List filter modal departments
-  const loadListDepartments = async (pageNum = 1, search = "") => {
+  // Departments — endi branch bo'yicha filtrlanadi + auto-select
+  const loadListDepartments = async (pageNum = 1, search = "", branchId = null) => {
     setListDepartmentPag(p => ({ ...p, loading: true }))
     try {
-      const { results, hasMore } = await fetchPaginated("users/departments/", {}, pageNum, search)
+      const params = {}
+      if (branchId) params.branch = branchId
+      const { results, hasMore } = await fetchPaginated("users/departments/", params, pageNum, search)
       setDepartments(prev => pageNum === 1 ? results : [...prev, ...results])
       setListDepartmentPag({ page: pageNum, hasMore, loading: false })
+      if (pageNum === 1 && results.length === 1) {
+        setTmpDepartment({ value: results[0].id, label: results[0].name })
+      }
     } catch { setListDepartmentPag(p => ({ ...p, loading: false })) }
   }
 
@@ -445,8 +460,11 @@ const EmployeeRegister = () => {
     setTempFilterRegion(opt)
     setDistricts([])
     setTempFilterDistrict(null)
+    setTempFilterBranch(null)
     setFilterDistrictPag({ page: 1, hasMore: true, loading: false })
+    setFilterBranchPag({ page: 1, hasMore: true, loading: false })
     if (opt?.value) loadDistricts(opt.value, 1, "")
+    loadFilterBranches(1, "", opt?.value, null)
   }
 
   const handleBlockEmployee = async () => {
@@ -568,6 +586,13 @@ const EmployeeRegister = () => {
   }
 
   // Open filter modal with saved filters
+  const handleFilterDistrictChange = (opt) => {
+    setTempFilterDistrict(opt)
+    setTempFilterBranch(null)
+    setFilterBranchPag({ page: 1, hasMore: true, loading: false })
+    loadFilterBranches(1, "", tempFilterRegion?.value, opt?.value)
+  }
+
   const openFilterModalWithFilters = (modalType) => {
     setCurrentFilterModal(modalType)
     const savedFilters = filters[modalType]
@@ -575,7 +600,7 @@ const EmployeeRegister = () => {
     setTempFilterDistrict(savedFilters.district)
     setTempFilterBranch(savedFilters.branch)
     if (savedFilters.region?.value) loadDistricts(savedFilters.region.value, 1, "")
-    loadFilterBranches(1, "")
+    loadFilterBranches(1, "", savedFilters.region?.value, savedFilters.district?.value)
     setOpenFilterModal(modalType)
     setTimeout(() => setOpenModal(null), 100)
   }
@@ -644,17 +669,43 @@ const EmployeeRegister = () => {
     setTmpBranch(branchFilter)
     setTmpDepartment(departmentFilter)
     if (regionFilter?.value) loadListDistricts(regionFilter.value, 1, "")
-    loadListBranches(1, "")
-    loadListDepartments(1, "")
+    loadListBranches(1, "", regionFilter?.value, districtFilter?.value)
+    loadListDepartments(1, "", branchFilter?.value)
     setOpenListFilter(true)
   }
-  // Region change inside the modal — reset district + reload its options
+
+  // Region o'zgarsa — district, branch, department reset bo'ladi va branch region bo'yicha qayta yuklanadi
   const handleListRegionChange = (opt) => {
     setTmpRegion(opt)
     setFilterDistricts([])
     setTmpDistrict(null)
+    setTmpBranch(null)
+    setTmpDepartment(null)
+    setDepartments([])
     setListDistrictPag({ page: 1, hasMore: true, loading: false })
+    setListBranchPag({ page: 1, hasMore: true, loading: false })
+    setListDepartmentPag({ page: 1, hasMore: true, loading: false })
     if (opt?.value) loadListDistricts(opt.value, 1, "")
+    loadListBranches(1, "", opt?.value, null)
+  }
+
+  // Tuman o'zgarsa — branch va department reset, branch tuman bo'yicha qayta yuklanadi
+  const handleListDistrictChange = (opt) => {
+    setTmpDistrict(opt)
+    setTmpBranch(null)
+    setTmpDepartment(null)
+    setDepartments([])
+    setListBranchPag({ page: 1, hasMore: true, loading: false })
+    setListDepartmentPag({ page: 1, hasMore: true, loading: false })
+    loadListBranches(1, "", tmpRegion?.value, opt?.value)
+  }
+
+  // Filial o'zgarsa — department branch bo'yicha qayta yuklanadi
+  const handleListBranchChange = (opt) => {
+    setTmpBranch(opt)
+    setTmpDepartment(null)
+    setListDepartmentPag({ page: 1, hasMore: true, loading: false })
+    loadListDepartments(1, "", opt?.value)
   }
 
   // Apply: commit temp selections (triggers the employee fetch via deps)
@@ -949,95 +1000,118 @@ const EmployeeRegister = () => {
       const headers = [
         "#",
         t("full_name") || "Ism familya",
+        t("region") || "Viloyat",
+        t("district") || "Tuman",
         t("col_branch") || "Filial",
         t("department") || "Bo'lim",
         t("position") || "Lavozim",
-        t("work_start") || "Kelgan vaqti",
-        "KPI",
+        t("role") || "Rol",
+        t("schedule") || "Kelgan vaqti",
       ];
+
       const rows = employees.map((e, i) => [
-        i + 1,
+        (page - 1) * PAGE_SIZE + i + 1,
         e.full_name || "",
+        e.branch_info?.region_info?.name || "",
+        e.branch_info?.district_info?.name || "",
         e.branch_info?.name || "",
         e.department_info?.name || "",
         e.position_info?.name || "",
-        e.schedule_info?.work_start_time?.slice(0, 5) || "",
-        "",
+        e.role_info?.name || "",
+        e.schedule_info?.work_start_time ? e.schedule_info.name : "",
       ]);
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 
+      // Ustun kenliklari
       ws["!cols"] = [
-        { wch: 5 },
-        { wch: 30 },
-        { wch: 22 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 16 },
-        { wch: 10 },
+        { wch: 6 },   // #
+        { wch: 32 },  // Ism familya
+        { wch: 20 },  // Viloyat
+        { wch: 20 },  // Tuman
+        { wch: 24 },  // Filial
+        { wch: 22 },  // Bo'lim
+        { wch: 22 },  // Lavozim
+        { wch: 18 },  // Rol
+        { wch: 18 },  // Kelgan vaqti
       ];
 
-      ws["!rows"] = [{ hpt: 28 }];
+      // Barcha qatorlar balandligi
+      ws["!rows"] = [
+        { hpt: 32 }, // header qatori
+        ...rows.map(() => ({ hpt: 26 })),
+      ];
 
+      const HEADER_BG = "F0F0F0";
+      const HEADER_FONT = "0A0A0A";
+      const ROW_ODD_BG = "FFFFFF";
+      const ROW_EVEN_BG = "FAFAFA";
+      const FONT_COLOR = "1A1A1A";
+      const BORDER_CLR = "D4D4D4";
+
+      const borderStyle = {
+        top: { style: "thin", color: { rgb: BORDER_CLR } },
+        bottom: { style: "thin", color: { rgb: BORDER_CLR } },
+        left: { style: "thin", color: { rgb: BORDER_CLR } },
+        right: { style: "thin", color: { rgb: BORDER_CLR } },
+      };
+
+      // Header uslubi
       headers.forEach((_, colIdx) => {
         const cellRef = XLSX.utils.encode_cell({ r: 0, c: colIdx });
         if (!ws[cellRef]) return;
         ws[cellRef].s = {
           fill: {
             patternType: "solid",
-            fgColor: { rgb: "FAFAFA" },
+            fgColor: { rgb: HEADER_BG },
           },
           font: {
             bold: true,
-            sz: 12,
-            color: { rgb: "000000" },
+            sz: 11,
+            color: { rgb: HEADER_FONT },
+            name: "Calibri",
           },
           alignment: {
             vertical: "center",
             horizontal: colIdx === 0 ? "center" : "left",
             wrapText: false,
           },
-          border: {
-            top: { style: "thin", color: { rgb: "E5E5E5" } },
-            bottom: { style: "thin", color: { rgb: "E5E5E5" } },
-            right: { style: "thin", color: { rgb: "E5E5E5" } },
-            left: { style: "thin", color: { rgb: "E5E5E5" } },
-          },
+          border: borderStyle,
         };
       });
 
+      // Data qatorlari uslubi
       rows.forEach((_, rowIdx) => {
+        const isEven = rowIdx % 2 === 1;
         headers.forEach((__, colIdx) => {
           const cellRef = XLSX.utils.encode_cell({ r: rowIdx + 1, c: colIdx });
           if (!ws[cellRef]) return;
           ws[cellRef].s = {
             fill: {
               patternType: "solid",
-              fgColor: { rgb: "FFFFFF" },
+              fgColor: { rgb: isEven ? ROW_EVEN_BG : ROW_ODD_BG },
             },
             font: {
-              sz: 11,
-              color: { rgb: "1A1A1A" },
+              sz: 10,
+              color: { rgb: FONT_COLOR },
+              name: "Calibri",
             },
             alignment: {
               vertical: "center",
               horizontal: colIdx === 0 ? "center" : "left",
+              wrapText: false,
             },
-            border: {
-              top: { style: "thin", color: { rgb: "E5E5E5" } },
-              bottom: { style: "thin", color: { rgb: "E5E5E5" } },
-              right: { style: "thin", color: { rgb: "E5E5E5" } },
-              left: { style: "thin", color: { rgb: "E5E5E5" } },
-            },
+            border: borderStyle,
           };
         });
       });
 
       const wb = XLSX.utils.book_new();
+      // xlsx styles uchun bookSST kerak
+      wb.Workbook = { SheetNames: [], Sheets: {} };
       XLSX.utils.book_append_sheet(wb, ws, "Xodimlar");
-      XLSX.writeFile(wb, "Xodimlar-royxati.xlsx");
+      XLSX.writeFile(wb, "Xodimlar-royxati.xlsx", { bookType: "xlsx", cellStyles: true });
 
-      // Muvaffaqiyatli yuklandi
       showToast(t("export_success"));
     } catch (err) {
       console.error(err);
@@ -1114,49 +1188,6 @@ const EmployeeRegister = () => {
   return (
     <>
       <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
-
-        {/* ── Header ── */}
-        <div className="flex items-start justify-between w-full gap-4 flex-wrap">
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">
-              {t("employees_title") || "Xodimlar ro'yxati"}
-            </h1>
-            <span className="text-[#737373] text-sm">
-              {employees.length} {t("employees_count_label") || "ta xodim ko'rsatilmoqda"}
-            </span>
-          </div>
-
-          {addEmp &&
-            <AddButton
-              onOpen={() => {
-                setDetailEmployee(null);
-                setForm({
-                  full_name: "",
-                  password: "",
-                  tabel: "",
-                  phone: "",
-                  branch: null,
-                  department: null,
-                  position: null,
-                  roles: null,
-                  schedule: null,
-                  perm_attendance_mark: false,
-                  perm_attendance_view: "self",
-                  perm_kpi_view: "self",
-                  perm_employee_manage: false,
-                  perm_reports_export: false,
-                  perm_geozone_create: false,
-                  perm_roles_manage: false,
-                });
-                setErrors({});
-                setAddEmployeeModal(true);
-              }}
-              title={t("new_employee")}
-            />
-          }
-
-        </div>
-
         {/* ── Filters row ── */}
         <div className="flex items-center justify-between w-full gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1175,27 +1206,59 @@ const EmployeeRegister = () => {
               className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
               onClick={openListFilterModal}
             >
-              {hasListFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+              {hasListFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#DC2626]"></span>}
               <HugeIcon icon={FilterVerticalIcon} size={16} />
               {t("filter")}
             </button>
           </div>
 
           {/* Excel export */}
-          <button
-            type="button"
-            onClick={exportExcel}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0a0a0a] px-3 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
-          >
-            <PiMicrosoftExcelLogo size={16} className="text-[#22A565]" />
-            Excel
-            <HugeIcon icon={Download01Icon} size={15} />
-          </button>
+          <div className="flex items-center gap-3">
+            {addEmp &&
+              <AddButton
+                onOpen={() => {
+                  setDetailEmployee(null);
+                  setForm({
+                    full_name: "",
+                    password: "",
+                    tabel: "",
+                    phone: "",
+                    branch: null,
+                    department: null,
+                    position: null,
+                    roles: null,
+                    schedule: null,
+                    perm_attendance_mark: false,
+                    perm_attendance_view: "self",
+                    perm_kpi_view: "self",
+                    perm_employee_manage: false,
+                    perm_reports_export: false,
+                    perm_geozone_create: false,
+                    perm_roles_manage: false,
+                  });
+                  setErrors({});
+                  setAddEmployeeModal(true);
+                }}
+                title={t("new_employee")}
+                className="h-8!"
+              />
+            }
+
+            <button
+              type="button"
+              onClick={exportExcel}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0a0a0a] px-3 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
+            >
+              <PiMicrosoftExcelLogo size={16} className="text-[#22A565]" />
+              Excel
+              <HugeIcon icon={Download01Icon} size={15} />
+            </button>
+          </div>
         </div>
 
         {/* ── Table ── */}
         <div className="w-full overflow-hidden">
-          <div className="h-[calc(100vh-215px)] overflow-auto">
+          <div className="h-[calc(100vh-140px)] overflow-auto">
             <table className="w-full border-collapse text-left">
               <thead className="sticky top-0 z-20">
                 <tr className="bg-[#FAFAFA] dark:bg-[#262626] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
@@ -1204,11 +1267,11 @@ const EmployeeRegister = () => {
                     { label: t("full_name") || "Ism familya" },
                     { label: t("region") || "Viloyat" },
                     { label: t("district") || "Tuman" },
-                    { label: t("department") || "Bo'lim" },
                     { label: t("col_branch") || "Filial" },
+                    { label: t("department") || "Bo'lim" },
                     { label: t("position") || "Lavozim" },
-                    { label: t("work_start") || "Kelgan vaqti" },
-                    { label: "KPI" },
+                    { label: t("role") || "Rol" },
+                    { label: t("schedule") || "Kelgan vaqti" },
                   ].map((h, i) => (
                     <th
                       key={i}
@@ -1271,25 +1334,25 @@ const EmployeeRegister = () => {
                       </td>
 
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
-                        {emp.department_info?.name || ""}
+                        {emp.branch_info?.name || ""}
                       </td>
 
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
-                        {emp.branch_info?.name || ""}
+                        {emp.department_info?.name || ""}
                       </td>
 
                       <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
                         {emp.position_info?.name || ""}
                       </td>
 
-                      <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5] tabular-nums">
-                        {emp.schedule_info?.work_start_time
-                          ? emp.schedule_info.work_start_time.slice(0, 5)
-                          : ""}
+                      <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
+                        {emp.role_info?.name || ""}
                       </td>
 
-                      <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5]">
-                        {emp.discipline_kpi ?? ""}
+                      <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-[#f5f5f5] tabular-nums">
+                        {emp.schedule_info?.work_start_time
+                          ? emp.schedule_info.name
+                          : ""}
                       </td>
                     </tr>
                   ))
@@ -1621,12 +1684,12 @@ const EmployeeRegister = () => {
                   onClick={() => setPermOpen((p) => !p)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer"
                 >
-                  <HugeIcon icon={SquareArrowDown01Icon} size={18} className="text-[#0A0A0A] dark:text-[#f5f5f5]" />
+                  <HugeIcon icon={SquareArrowDown01Icon} size={18} className={`text-[#0A0A0A] transition-transform duration-200 dark:text-[#f5f5f5] ${permOpen ? "rotate-180" : ""}`} />
                 </button>
               </div>
 
               <div className={cn(
-                "flex flex-col gap-3 overflow-hidden transition-all duration-500 ease-in-out",
+                "flex flex-col gap-3 overflow-hidden transition-all duration-300 ease-in-out",
                 permOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
               )}>
                 <div ref={el => fieldRefs.current.roles = el} className="flex flex-col gap-2 divide-y divide-[#F0F0F0] dark:divide-[#1F1F1F]">
@@ -1712,12 +1775,12 @@ const EmployeeRegister = () => {
                   onClick={() => setTableOpen((p) => !p)}
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#F0F0F0] dark:hover:bg-[#262626] transition-colors cursor-pointer"
                 >
-                  <HugeIcon icon={SquareArrowDown01Icon} size={18} className="text-[#0A0A0A] dark:text-[#f5f5f5]" />
+                  <HugeIcon icon={SquareArrowDown01Icon} size={18} className={`text-[#0A0A0A] transition-transform duration-200 dark:text-[#f5f5f5] ${tableOpen ? "rotate-180" : ""}`} />
                 </button>
               </div>
 
               <div className={cn(
-                "flex flex-col gap-3 transition-all duration-500 ease-in-out",
+                "flex flex-col gap-3 transition-all duration-300 ease-in-out",
                 tableOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
               )}>
                 <div className="flex flex-col gap-1.5">
@@ -2027,9 +2090,9 @@ const EmployeeRegister = () => {
                   loadingMore={filterBranchPag.loading}
                   onScrollEnd={() => {
                     if (!filterBranchPag.hasMore || filterBranchPag.loading) return
-                    loadFilterBranches(filterBranchPag.page + 1, "")
+                    loadFilterBranches(filterBranchPag.page + 1, "", tempFilterRegion?.value, tempFilterDistrict?.value)
                   }}
-                  onSearch={(s) => loadFilterBranches(1, s)}
+                  onSearch={(s) => loadFilterBranches(1, s, tempFilterRegion?.value, tempFilterDistrict?.value)}
                 />
               )}
 
@@ -2046,7 +2109,7 @@ const EmployeeRegister = () => {
                 placeholder={!tempFilterRegion ? t("select_region_first") || "Avval viloyat tanlang" : t("district_branch_placeholder") || "Tuman tanlang"}
                 options={districts}
                 value={tempFilterDistrict?.value ?? null}
-                onChange={(opt) => setTempFilterDistrict(opt)}
+                onChange={handleFilterDistrictChange}
                 disabled={!tempFilterRegion}
                 loadingMore={filterDistrictPag.loading}
                 onScrollEnd={() => {
@@ -2054,9 +2117,7 @@ const EmployeeRegister = () => {
                   loadDistricts(tempFilterRegion.value, filterDistrictPag.page + 1, "")
                 }}
                 searchable={true}
-                onSearch={(s) => {
-                  if (tempFilterRegion?.value) loadDistricts(tempFilterRegion.value, 1, s)
-                }}
+                onSearch={(s) => { if (tempFilterRegion?.value) loadDistricts(tempFilterRegion.value, 1, s) }}
               />
             </div>
           </div>
@@ -2122,7 +2183,7 @@ const EmployeeRegister = () => {
                 placeholder={!tmpRegion ? t("select_region_first") : t("district_branch_placeholder") || "Tumanni tanlang"}
                 options={filterDistricts}
                 value={tmpDistrict?.value ?? null}
-                onChange={(opt) => setTmpDistrict(opt)}
+                onChange={handleListDistrictChange}
                 disabled={!tmpRegion}
                 loadingMore={listDistrictPag.loading}
                 onScrollEnd={() => {
@@ -2130,25 +2191,22 @@ const EmployeeRegister = () => {
                   loadListDistricts(tmpRegion.value, listDistrictPag.page + 1, "")
                 }}
                 searchable={true}
-                onSearch={(s) => {
-                  if (tmpRegion?.value) loadListDistricts(tmpRegion.value, 1, s)
-                }}
+                onSearch={(s) => { if (tmpRegion?.value) loadListDistricts(tmpRegion.value, 1, s) }}
               />
 
-              {/* Branch */}
               <Select
                 label={t("col_branch") || "Filial"}
                 placeholder={t("select_branch") || "Filialni tanlang"}
                 options={branches.map((b) => ({ value: b.id, label: b.name }))}
                 value={tmpBranch?.value ?? null}
-                onChange={(opt) => setTmpBranch(opt)}
+                onChange={handleListBranchChange}
                 loadingMore={listBranchPag.loading}
                 onScrollEnd={() => {
                   if (!listBranchPag.hasMore || listBranchPag.loading) return
-                  loadListBranches(listBranchPag.page + 1, "")
+                  loadListBranches(listBranchPag.page + 1, "", tmpRegion?.value, tmpDistrict?.value)
                 }}
                 searchable={true}
-                onSearch={(s) => loadListBranches(1, s)}
+                onSearch={(s) => loadListBranches(1, s, tmpRegion?.value, tmpDistrict?.value)}
               />
 
               <Select
@@ -2160,10 +2218,10 @@ const EmployeeRegister = () => {
                 loadingMore={listDepartmentPag.loading}
                 onScrollEnd={() => {
                   if (!listDepartmentPag.hasMore || listDepartmentPag.loading) return
-                  loadListDepartments(listDepartmentPag.page + 1, "")
+                  loadListDepartments(listDepartmentPag.page + 1, "", tmpBranch?.value)
                 }}
                 searchable={true}
-                onSearch={(s) => loadListDepartments(1, s)}
+                onSearch={(s) => loadListDepartments(1, s, tmpBranch?.value)}
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { Languages, Palette, Settings as SettingsIcon, Sun, Moon, Upload, KeyRound, Lock, Loader2 } from "lucide-react"
+import { Languages, Palette, Settings as SettingsIcon, Sun, Moon, Upload, KeyRound, Lock, Loader2, X } from "lucide-react"
 import { cn, apiErrorMessage } from "@/lib/utils"
 import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
@@ -66,6 +66,8 @@ const Settings = () => {
   const [pwdOpen, setPwdOpen] = useState(false)
   const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
 
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false)
+
   const showToast = (message) => setToast({ open: true, message, seq: Date.now() })
 
   const avatar = currentUser?.face_image
@@ -120,7 +122,12 @@ const Settings = () => {
         <Row
           leading={
             avatar ? (
-              <img src={avatar} alt={name} className="flex-shrink-0 w-10 h-10 rounded-full object-cover" />
+              <img
+                src={avatar}
+                alt={name}
+                onClick={() => setPhotoPreviewOpen(true)}
+                className="flex-shrink-0 w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+              />
             ) : (
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#85a6db] to-[#bfadea] flex items-center justify-center text-white text-sm font-semibold select-none">
                 {initials}
@@ -245,6 +252,30 @@ const Settings = () => {
         message={toast.message}
         onClose={() => setToast((p) => ({ ...p, open: false }))}
       />
+
+      {/* Profil rasmi — katta ko'rinish (lightbox) */}
+      {photoPreviewOpen && avatar && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setPhotoPreviewOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoPreviewOpen(false)}
+            className="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            aria-label="Yopish"
+          >
+            <X size={20} strokeWidth={2} />
+          </button>
+
+          <img
+            src={avatar}
+            alt={name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   )
 }

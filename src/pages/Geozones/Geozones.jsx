@@ -3,7 +3,7 @@ import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
-import { MapPin, MapPinned, Trash2, X, AlertTriangle, Search, ArrowLeft } from "lucide-react"
+import { MapPin, MapPinned, Trash2, X, AlertTriangle, Search, ArrowLeft, Plus } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
 import { CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
@@ -394,30 +394,39 @@ const Geozones = () => {
   return (
     <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
 
-      {/* ─── Header ─── */}
-      <div className="flex items-start justify-between w-full gap-4 flex-wrap">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t("geozone")}</h1>
-          <span className="text-[#737373] text-sm">{t("gz_subtitle")}</span>
+      {/* Qidiruv + Filter */}
+      <div className="w-full flex items-center justify-between">
+        <div className="flex items-center gap-2 w-1/2">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder={t("gz_search_ph")}
+              className="w-full h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] pl-9 pr-3 text-sm text-[#0A0A0A] dark:text-white placeholder:text-[#737373] outline-none focus:border-[#0090FF] transition-colors"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={openFilters}
+            className="relative inline-flex items-center gap-2 h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors"
+          >
+            {hasFilter && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0090FF] ring-2 ring-white dark:ring-[#0A0A0A]" />}
+            <HugeIcon icon={FilterVerticalIcon} size={16} />
+            {t("gz_filter")}
+          </button>
         </div>
-
-        {/* Ikkita borderli tugma — orasida bo'shliqsiz */}
         {addGeo &&
           <div className="flex items-center">
             <button
               type="button"
               onClick={() => setAddModal(true)}
-              className="inline-flex items-center h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
+              className="inline-flex items-center gap-2 h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
             >
-              {t("gz_new")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAddModal(true)}
-              title={t("gz_new")}
-              className="inline-flex items-center justify-center h-[38px] w-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors text-[#0A0A0A] dark:text-white"
-            >
-              <MapPinned size={16} />
+              <Plus size={16} />
+
+              {t("add")}
             </button>
           </div>
         }
@@ -426,31 +435,10 @@ const Geozones = () => {
       {/* ─── Body: list + detail ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
 
-        {/* ── Chap: qidiruv + ro'yxat ── */}
-        <div className="flex flex-col gap-3 min-w-0">
 
-          {/* Qidiruv + Filter */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={handleSearchChange}
-                placeholder={t("gz_search_ph")}
-                className="w-full h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] pl-9 pr-3 text-sm text-[#0A0A0A] dark:text-white placeholder:text-[#737373] outline-none focus:border-[#0090FF] transition-colors"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={openFilters}
-              className="relative inline-flex items-center gap-2 h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors"
-            >
-              {hasFilter && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0090FF] ring-2 ring-white dark:ring-[#0A0A0A]" />}
-              <HugeIcon icon={FilterVerticalIcon} size={16} />
-              {t("gz_filter")}
-            </button>
-          </div>
+        {/* ── Chap: qidiruv + ro'yxat ── */}
+        <div className="flex flex-col gap-3">
+
 
           {/* Ro'yxat */}
           <div className="flex flex-col gap-2.5 h-[calc(100vh-235px)] overflow-y-auto pr-1">

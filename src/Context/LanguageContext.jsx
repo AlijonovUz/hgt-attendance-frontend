@@ -1426,6 +1426,7 @@ export const translations = {
      analytics: { uz: "Analitika", cy: "Аналитика", en: "Analytics", ru: "Аналитика" },
      holidays: { uz: "Bayramlar", cy: "Байрамлар", en: "Holidays", ru: "Праздники" },
      schedules: { uz: "Ish grafiklari", cy: "Иш графиклари", en: "Schedules", ru: "Графики" },
+     schedule: { uz: "Ish grafigi", cy: "Иш графиги", en: "Schedule", ru: "График" },
      audits: { uz: "Audit", cy: "Аудит", en: "Audit", ru: "Аудит" },
      positions: { uz: "Lavozimlar", cy: "Лавозимлар", en: "Positions", ru: "Должности" },
      departments: { uz: "Bo'limlar", cy: "Бўлимлар", en: "Departments", ru: "Отделы" },
