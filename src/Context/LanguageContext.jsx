@@ -1724,10 +1724,10 @@ export const translations = {
           ru: "История действий"
      },
      history_m_faceid: {
-          uz: "FaceID tarixi",
-          cy: "FaceID тарихи",
-          en: "FaceID history",
-          ru: "История FaceID"
+          uz: "Yuz tanish tarixi",
+          cy: "Юз таниш тарихи",
+          en: "Face recognition history",
+          ru: "История распознавания лиц"
      },
      history_m_location: {
           uz: "Joylashuv tarixi",
@@ -1835,10 +1835,10 @@ export const translations = {
           ru: "Надежный"
      },
      status_failed: {
-          uz: "Ishonchsiz",
-          cy: "Ишончсиз",
-          en: "Untrusted",
-          ru: "Ненадежный"
+          uz: "Shubhali",
+          cy: "Шубҳали",
+          en: "Suspicious",
+          ru: "Подозрительный"
      },
 
      distance_m: {
@@ -1846,6 +1846,145 @@ export const translations = {
           cy: "Масофа (метр)",
           en: "Distance (meters)",
           ru: "Расстояние (метры)"
+     },
+
+     user: {
+          uz: "Foydalanuvchi",
+          cy: "Фойдаланувчи",
+          en: "User",
+          ru: "Пользователь"
+     },
+     attendance_event: {
+          uz: "Davomat hodisasi",
+          cy: "Давомат ҳодисаси",
+          en: "Attendance event",
+          ru: "Событие посещаемости"
+     },
+     daily_attendance: {
+          uz: "Kunlik Davomat",
+          cy: "Кунлик Давомат",
+          en: "Daily attendance",
+          ru: "Ежедневная посещаемость"
+     },
+     kpi_result: {
+          uz: "KPI Natijasi",
+          cy: "KPI Натижаси",
+          en: "KPI result",
+          ru: "Результат KPI"
+     },
+     branch: {
+          uz: "Filial",
+          cy: "Филиал",
+          en: "Branch",
+          ru: "Филиал"
+     },
+     department: {
+          uz: "Bo'lim",
+          cy: "Бўлим",
+          en: "Department",
+          ru: "Отдел"
+     },
+     position: {
+          uz: "Lavozim",
+          cy: "Лавозим",
+          en: "Position",
+          ru: "Должность"
+     },
+     role: {
+          uz: "Rol",
+          cy: "Рол",
+          en: "Role",
+          ru: "Роль"
+     },
+     permission: {
+          uz: "Ruxsat",
+          cy: "Рухсат",
+          en: "Permission",
+          ru: "Разрешение"
+     },
+     work_schedule: {
+          uz: "Ish grafigi",
+          cy: "Иш графиги",
+          en: "Work schedule",
+          ru: "График работы"
+     },
+     geofence: {
+          uz: "Geozona",
+          cy: "Геозона",
+          en: "Geofence",
+          ru: "Геозона"
+     },
+     weekday: {
+          uz: "Hafta kuni",
+          cy: "Ҳафта куни",
+          en: "Weekday",
+          ru: "День недели"
+     },
+     notification: {
+          uz: "Xabarnoma",
+          cy: "Хабарнома",
+          en: "Notification",
+          ru: "Уведомление"
+     },
+     detail_title: {
+          uz: "Foydalanuvchi va so'rov haqida ma'lumot",
+          cy: "Фойдаланувчи ва сўров ҳақида маълумот",
+          en: "User and request information",
+          ru: "Информация о пользователе и запросе"
+     },
+     record_id: {
+          uz: "Yozuv ID",
+          cy: "Ёзув ID",
+          en: "Record ID",
+          ru: "ID записи"
+     },
+     old_values: {
+          uz: "Eski qiymat",
+          cy: "Эски қиймат",
+          en: "Old value",
+          ru: "Старое значение"
+     },
+     new_values: {
+          uz: "Yangi qiymat",
+          cy: "Янги қиймат",
+          en: "New value",
+          ru: "Новое значение"
+     },
+     close: {
+          uz: "Yopish",
+          cy: "Ёпиш",
+          en: "Close",
+          ru: "Закрыть"
+     },
+     distance: {
+          uz: "Masofa",
+          cy: "Масофа",
+          en: "Distance",
+          ru: "Расстояние"
+     },
+     meter: {
+          uz: "metr",
+          cy: "метр",
+          en: "meter",
+          ru: "метр"
+     },
+     created_at: {
+          uz: "Yaratilgan vaqti",
+          cy: "Яратилган вақти",
+          en: "Created at",
+          ru: "Дата создания"
+     },
+     updated_at: {
+          uz: "Yangilangan vaqti",
+          cy: "Янгиланган вақти",
+          en: "Updated at",
+          ru: "Дата обновления"
+     },
+     message: {
+          uz: "Xabar",
+          cy: "Хабар",
+          en: "Message",
+          ru: "Сообщение"
      },
 
 }

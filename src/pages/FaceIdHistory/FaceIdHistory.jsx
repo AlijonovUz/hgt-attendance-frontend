@@ -1,5 +1,12 @@
 // src/pages/FaceIdHistory.jsx
 import { useEffect, useRef, useState, useCallback } from "react"
+
+// import qo'shish
+import * as XLSX from "xlsx-js-style"
+import { jsPDF } from "jspdf"
+import autoTable from "jspdf-autotable"
+import { ExportMenu } from "@/components/ui/ExportMenu"
+
 import dayjs from "dayjs"
 import { ArrowLeft, ChevronDownIcon, X, CheckCircle2, XCircle } from "lucide-react"
 import { useLanguage } from "@/Context/LanguageContext"
@@ -11,11 +18,7 @@ import { Modal } from "@/components/ui/modal"
 import { HugeIcon } from "@/components/ui/HugeIcon"
 import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { DatePicker } from "@/components/ui/DatePicker"
-import * as XLSX from "xlsx-js-style"
-import { jsPDF } from "jspdf"
-import autoTable from "jspdf-autotable"
-import { ExportMenu } from "@/components/ui/ExportMenu"
-
+import Toast from "@/components/ui/Toast"
 
 // NOTE: bu endpoint nomlarini loyihadagi haqiqiy region/district/branch
 // ro'yxat endpointlariga moslab o'zgartiring (hozircha taxminiy nomlar)
@@ -28,6 +31,16 @@ const STATUS_OPTIONS_KEYS = [
   { value: "true", labelKey: "status_success" },   // Ishonchli
   { value: "false", labelKey: "status_failed" },    // Shubhali
 ]
+
+// ─── Detail modal uchun ko'rsatish maydonlari (disabled ko'rinishda) ───
+const DetailField = ({ label, value, className }) => (
+  <div className={cn("flex flex-col gap-1.5", className)}>
+    <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
+    <div title={value} className="h-11 px-3.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] truncate">
+      {value ?? "—"}
+    </div>
+  </div>
+)
 
 const FaceIdHistory = () => {
   const { t, language } = useLanguage()
@@ -64,14 +77,45 @@ const FaceIdHistory = () => {
   const [filterStartDate, setFilterStartDate] = useState("")
   const [filterEndDate, setFilterEndDate] = useState("")
 
-  const hasFilter = !!(filterRegion || filterDistrict || filterBranch || filterStatus || startDate || endDate)
+  const hasFilter = !!(filterRegion || filterDistrict || filterBranch || filterStatus || filterStartDate || filterEndDate)
 
   const STATUS_OPTIONS = STATUS_OPTIONS_KEYS.map((o) => ({ value: o.value, label: t(o.labelKey) }))
+
+  const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
 
   // ─── Viloyat / Tuman / Filial ro'yxatlari (filter modal uchun) ───
   const [regions, setRegions] = useState([])
   const [districts, setDistricts] = useState([])
   const [branches, setBranches] = useState([])
+
+  const showToast = (message) =>
+    setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
+
+  // ─── Qator tafsiloti (detail) modal ───
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detail, setDetail] = useState(null)
+
+  const openDetail = async (id) => {
+    setDetailOpen(true)
+    setDetail(null)
+    setDetailLoading(true)
+    try {
+      const res = await axiosAPI.get(`attendance/face-logs/${id}/`)
+      if (res.status === 200) {
+        setDetail(res.data?.data || null)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
+  const closeDetail = () => {
+    setDetailOpen(false)
+    setDetail(null)
+  }
 
   const fetchRegions = async () => {
     try {
@@ -263,9 +307,9 @@ const FaceIdHistory = () => {
     const body = logs.map((r, i) => [
       i + 1,
       r.user_info?.full_name || "—",
-      r.region?.name || r?.region || "",
-      r.district?.name || r?.district || "",
-      r.branch?.name || r?.branch || "",
+      r.region_info?.name || r?.region || "",
+      r.district_info?.name || r?.district || "",
+      r.branch_info?.name || r?.branch || "",
       r.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali"),
       r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : "",
     ])
@@ -273,7 +317,7 @@ const FaceIdHistory = () => {
   }
 
   const exportExcel = () => {
-    if (!logs.length) return
+    if (!logs.length) return showToast(t("export_empty_warning"))
     const { headers, body } = buildExport()
     const ws = XLSX.utils.aoa_to_sheet([headers, ...body])
     ws["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 18 }]
@@ -293,14 +337,15 @@ const FaceIdHistory = () => {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "FaceID")
     XLSX.writeFile(wb, "faceid-tarixi.xlsx", { bookType: "xlsx", cellStyles: true })
+    showToast(t("export_excel_success"))
   }
 
   const exportPDF = () => {
-    if (!logs.length) return
+    if (!logs.length) return showToast(t("export_empty_warning"))
     const { headers, body } = buildExport()
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
     doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(10, 10, 10)
-    doc.text(t("history_m_faceid") || "FaceID Tarixi", 14, 14)
+    doc.text(t("face_id_history") || "FaceID Tarixi", 14, 14)
     doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(115, 115, 115)
     doc.text(dayjs().format("DD.MM.YYYY HH:mm"), 14, 21)
     autoTable(doc, {
@@ -319,15 +364,17 @@ const FaceIdHistory = () => {
       doc.text(`${i} / ${pc}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" })
     }
     doc.save("faceid-tarixi.pdf")
+    showToast(t("export_pdf_success"))
   }
 
   const exportCSV = () => {
-    if (!logs.length) return
+    if (!logs.length) return showToast(t("export_empty_warning"))
     const { headers, body } = buildExport()
     const escape = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s }
     const csv = "\uFEFF" + [headers, ...body].map(r => r.map(escape).join(",")).join("\r\n")
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "faceid-tarixi.csv" })
     a.click(); URL.revokeObjectURL(a.href)
+    showToast(t("export_csv_success"))
   }
 
   const COLS = 7
@@ -364,7 +411,7 @@ const FaceIdHistory = () => {
       <div className="w-full overflow-hidden">
         <div ref={tableContainerRef} className="h-[calc(100vh-145px)] overflow-auto">
           <table className="w-full border-collapse text-left">
-            <thead className="sticky top-0 z-[1]">
+            <thead className="sticky top-0 z-20">
               <tr className="bg-[#FAFAFA] dark:bg-[#262626] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
                 {[
                   { label: "#", cls: "w-12" },
@@ -410,11 +457,12 @@ const FaceIdHistory = () => {
                   {logs.map((log, i) => (
                     <tr
                       key={log.id}
+                      onClick={() => openDetail(log.id)}
                       className={cn(
-                        "border-b border-[#F0F0F0] dark:border-[#1A1A1A] hover:opacity-90",
+                        "border-b border-[#F0F0F0] dark:border-[#1A1A1A] hover:opacity-90 cursor-pointer",
                         log.is_success
                           ? "hover:bg-[#FAFAFA] dark:hover:bg-[#111]"
-                          : "bg-[#FFDBDC] dark:bg-[641723] hover:bg-[#FEE2E2] dark:hover:bg-[#321818]"
+                          : "bg-[#FFDBDC] dark:bg-[#2A1414] hover:bg-[#FEE2E2] dark:hover:bg-[#321818]"
                       )}
                     >
                       <td className="px-4 py-3.5 text-sm font-medium dark:text-[#f5f5f5]">{i + 1}</td>
@@ -578,6 +626,68 @@ const FaceIdHistory = () => {
           </div>
         </div>
       </Modal>
+
+      {/* ─── Tafsilot (detail) modal ─── */}
+      <Modal
+        isOpen={detailOpen}
+        onClose={closeDetail}
+        height={600}
+        header={
+          <div className="flex items-center gap-1">
+            <span
+              className="w-11 h-11 cursor-pointer flex items-center justify-center rounded-lg hover:bg-slate-100 transition dark:hover:bg-[#0a0a0a]"
+              onClick={closeDetail}
+            >
+              <ArrowLeft size={24} />
+            </span>
+            <h1 className="text-2xl font-semibold">{t("detail_title") || "Foydalanuvchi va so'rov haqida ma'lumot"}</h1>
+          </div>
+        }
+      >
+        <div className="flex flex-col justify-between h-full pb-2">
+          <div className="flex flex-col gap-4 overflow-y-auto">
+
+            {detailLoading ? (
+              <div className="flex flex-col gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-11 rounded-lg bg-[#F5F5F5] dark:bg-[#1A1A1A] animate-pulse" />
+                ))}
+              </div>
+            ) : detail && (
+              <div className="flex flex-col gap-3">
+                <DetailField label={t("col_employee") || "Xodim"} value={detail.user_info?.full_name} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <DetailField label={t("created_at") || "Yaratilgan vaqti"} value={detail.created_at ? dayjs(detail.created_at).format("DD.MM.YYYY HH:mm") : null} />
+                  <DetailField label={t("updated_at") || "Yangilangan vaqti"} value={(detail.updated_at || detail.created_at) ? dayjs(detail.updated_at || detail.created_at).format("DD.MM.YYYY HH:mm") : null} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <DetailField label={t("status") || "Xolat"} value={detail.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali")} />
+                  <DetailField label={t("message") || "Xabar"} value={detail.message} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end">
+            <button
+              className="flex items-center gap-1 text-sm font-medium cursor-pointer text-[#0090FF]"
+              onClick={closeDetail}
+            >
+              <X size={14} />
+              {t("close") || "Yopish"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Toast
+        key={toast.seq}
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   )
 }

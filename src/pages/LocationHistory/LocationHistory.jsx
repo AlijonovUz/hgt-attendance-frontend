@@ -18,6 +18,7 @@ import * as XLSX from "xlsx-js-style"
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import { ExportMenu } from "@/components/ui/ExportMenu"
+import Toast from "@/components/ui/Toast"
 
 // NOTE: `react-leaflet` va `leaflet` paketlari o'rnatilgan bo'lishi kerak:
 //   npm install leaflet react-leaflet
@@ -158,9 +159,14 @@ const LocationHistory = () => {
   const [filterStartDate, setFilterStartDate] = useState("")
   const [filterEndDate, setFilterEndDate] = useState("")
 
+  const [toast, setToast] = useState({ open: false, message: "", seq: 0 })
+
   const hasFilter = !!(filterRegion || filterDistrict || filterBranch || filterStatus || filterStartDate || filterEndDate)
 
   const STATUS_OPTIONS = STATUS_OPTIONS_KEYS.map((o) => ({ value: o.value, label: t(o.labelKey) }))
+
+  const showToast = (message) =>
+    setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
 
   // ─── Viloyat / Tuman / Filial ro'yxatlari (filter modal uchun) ───
   const [regions, setRegions] = useState([])
@@ -368,7 +374,7 @@ const LocationHistory = () => {
   }
 
   const exportExcel = () => {
-    if (!logs.length) return
+    if (!logs.length) return showToast(t("export_empty_warning"))
     const { headers, body } = buildExport()
     const ws = XLSX.utils.aoa_to_sheet([headers, ...body])
     ws["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 18 }]
@@ -388,10 +394,11 @@ const LocationHistory = () => {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Manzil tarixi")
     XLSX.writeFile(wb, "manzil-tarixi.xlsx", { bookType: "xlsx", cellStyles: true })
+    showToast(t("export_excel_success"))
   }
 
   const exportPDF = () => {
-    if (!logs.length) return
+    if (!logs.length) return showToast(t("export_empty_warning"))
     const { headers, body } = buildExport()
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
     doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(10, 10, 10)
@@ -414,15 +421,17 @@ const LocationHistory = () => {
       doc.text(`${i} / ${pc}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 6, { align: "center" })
     }
     doc.save("manzil-tarixi.pdf")
+    showToast(t("export_pdf_success"))
   }
 
   const exportCSV = () => {
-    if (!logs.length) return
+    if (!logs.length) return showToast(t("export_empty_warning"))
     const { headers, body } = buildExport()
     const escape = (v) => { const s = String(v ?? ""); return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s }
     const csv = "\uFEFF" + [headers, ...body].map(r => r.map(escape).join(",")).join("\r\n")
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "manzil-tarixi.csv" })
     a.click(); URL.revokeObjectURL(a.href)
+    showToast(t("export_csv_success"))
   }
 
   const COLS = 8
@@ -686,6 +695,14 @@ const LocationHistory = () => {
           </Modal>
         </>
       )}
+
+      <Toast
+        key={toast.seq}
+        open={toast.open}
+        message={toast.message}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
+
     </div>
   )
 }
