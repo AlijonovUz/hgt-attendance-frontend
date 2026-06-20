@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { Download, ChevronDown } from "lucide-react"
 import { PiMicrosoftExcelLogo, PiFilePdf, PiFileCsv } from "react-icons/pi"
 import { cn } from "@/lib/utils"
+import { HugeIcon } from "./HugeIcon"
+import { Csv02Icon, Download05Icon, Pdf02Icon } from "@hugeicons/core-free-icons"
 
 /**
  * Eksport (Yuklash) split-tugmasi: "Yuklash" + ochiluvchi Excel / PDF / CSV menyusi.
@@ -38,21 +40,21 @@ export const ExportMenu = ({ onExcel, onPDF, onCSV, label = "Yuklash", className
   }
 
   const items = [
-    { key: "excel", label: "Excel", icon: <PiMicrosoftExcelLogo size={18} className="text-[#22A565]" />, onClick: onExcel },
-    { key: "pdf", label: "PDF", icon: <PiFilePdf size={18} className="text-[#E5484D]" />, onClick: onPDF },
-    { key: "csv", label: "CSV", icon: <PiFileCsv size={18} className="text-[#F76B15]" />, onClick: onCSV },
+    { key: "excel", label: "Excel", icon: <PiMicrosoftExcelLogo size={18} className="text-[#2B9A66]" />, onClick: onExcel },
+    { key: "pdf", label: "PDF", icon: <HugeIcon icon={Pdf02Icon} size={18} className="text-[#0090FF]" />, onClick: onPDF },
+    { key: "csv", label: "CSV", icon: <HugeIcon icon={Csv02Icon} size={18} className="text-[#EA580C]" />, onClick: onCSV },
   ].filter((it) => typeof it.onClick === "function")
 
   return (
     <div ref={ref} className={cn("relative inline-flex", className)}>
       {/* Split tugma */}
-      <div className="inline-flex items-stretch rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0A0A0A] shadow-sm overflow-hidden">
+      <div className="inline-flex items-center rounded-lg overflow-hidden">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+          className="inline-flex rounded-lg border-2 border-[#e5e5e5] dark:border-[#404040] items-center gap-2 px-4 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
         >
-          <Download size={16} className="text-[#0090FF]" />
+          <HugeIcon icon={Download05Icon} size={16} className="text-[#0090FF]" />
           {label}
         </button>
         <button
@@ -60,7 +62,7 @@ export const ExportMenu = ({ onExcel, onPDF, onCSV, label = "Yuklash", className
           onClick={() => setOpen((o) => !o)}
           aria-label={label}
           aria-expanded={open}
-          className="inline-flex items-center px-2 border-l border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] transition-colors cursor-pointer"
+          className="flex rounded-lg border-2 border-[#e5e5e5] dark:border-[#404040] items-center gap-2 p-2 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
         >
           <ChevronDown size={16} className={cn("transition-transform", open && "rotate-180")} />
         </button>

@@ -34,7 +34,7 @@ export const LanguageSwitcher = () => {
                </button>
 
                {langDropdownOpen && (
-                    <div className={`absolute top-full right-0 mt-2 w-[140px] bg-login-left-bg border border-login-border rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-1 overflow-hidden z-20`}>
+                    <div className={`absolute top-full right-0 mt-2 w-[140px] bg-login-left-bg border border-login-border rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-1 overflow-hidden z-50`}>
                          {[
                               { value: 'uz', label: 'Uzbek' },
                               { value: 'cy', label: 'Ўзбек' },

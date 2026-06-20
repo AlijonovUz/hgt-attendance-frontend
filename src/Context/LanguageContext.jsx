@@ -198,6 +198,19 @@ export const translations = {
           ru: "После того как вы удалите эти данные, их восстановление станет невозможным, и вам придется начинать всё сначала!"
      },
 
+     start_date: {
+          uz: "Boshlanish sanasi",
+          cy: "Бошланиш санаси",
+          en: "Start date",
+          ru: "Дата начала"
+     },
+     end_date: {
+          uz: "Tugash sanasi",
+          cy: "Тугаш санаси",
+          en: "End date",
+          ru: "Дата окончания"
+     },
+
      // login page
      login_title: {
           uz: "Tizimga kirish",
@@ -1590,6 +1603,12 @@ export const translations = {
           en: "dd.mm.yyyy",
           ru: "дд.мм.гггг"
      },
+     gz_date_time_ph: {
+          uz: "kk.oo.yyyy hh:mm",
+          cy: "кк.оо.йийй хх:мм",
+          en: "dd.mm.yyyy hh:mm",
+          ru: "дд.мм.гггг хх:мм"
+     },
      ref_delete_confirm: {
           uz: "O'chirishni tasdiqlaysizmi?",
           cy: "Ўчиришни тасдиқлайсизми?",
@@ -1646,8 +1665,8 @@ export const translations = {
      set_sound_sub: { uz: "Yangi bildirishnomada ovoz", cy: "Янги билдиришномада овоз", en: "Sound on new notification", ru: "Звук при новом уведомлении" },
      set_version_title: { uz: "Tizim versiyasi", cy: "Тизим версияси", en: "System version", ru: "Версия системы" },
      set_lang_latin: { uz: "Lotin", cy: "Lotin", en: "Lotin", ru: "Lotin" },
-set_lang_cyrillic: { uz: "Кирил", cy: "Кирил", en: "Cyrillic", ru: "Кирил" },
-set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", ru: "Русский" },
+     set_lang_cyrillic: { uz: "Кирил", cy: "Кирил", en: "Cyrillic", ru: "Кирил" },
+     set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", ru: "Русский" },
 
      // ─── Profil (Mening profilim) ───
      profile_title: { uz: "Mening profilim", cy: "Менинг профилим", en: "My profile", ru: "Мой профиль" },
@@ -1689,6 +1708,146 @@ set_lang_russian: { uz: "Русский", cy: "Русский", en: "Russian", r
      pwd_success: { uz: "Parol muvaffaqiyatli o'zgartirildi", cy: "Парол муваффақиятли ўзгартирилди", en: "Password changed successfully", ru: "Пароль успешно изменён" },
      pwd_error: { uz: "Parolni o'zgartirib bo'lmadi", cy: "Паролни ўзгартириб бўлмади", en: "Could not change password", ru: "Не удалось изменить пароль" },
      pwd_old_wrong: { uz: "Eski parol noto'g'ri", cy: "Эски парол нотўғри", en: "Old password is incorrect", ru: "Старый пароль неверный" },
+
+
+     // loglar qismi
+     history_menu_title: {
+          uz: "Umumiy tarix",
+          cy: "Умумий тарих",
+          en: "History",
+          ru: "История"
+     },
+     history_m_actions: {
+          uz: "Harakatlar tarixi",
+          cy: "Ҳаракатлар тарихи",
+          en: "Action history",
+          ru: "История действий"
+     },
+     history_m_faceid: {
+          uz: "FaceID tarixi",
+          cy: "FaceID тарихи",
+          en: "FaceID history",
+          ru: "История FaceID"
+     },
+     history_m_location: {
+          uz: "Joylashuv tarixi",
+          cy: "Жойлашув тарихи",
+          en: "Location history",
+          ru: "История местоположений"
+     },
+     history_m_signature: {
+          uz: "Imzo tarixi",
+          cy: "Имзо тарихи",
+          en: "Signature history",
+          ru: "История подписей"
+     },
+
+     search_action_history: {
+          uz: "Qidirish...",
+          cy: "Қидириш...",
+          en: "Search...",
+          ru: "Поиск..."
+     },
+     col_user: {
+          uz: "Foydalanuvchi",
+          cy: "Фойдаланувчи",
+          en: "User",
+          ru: "Пользователь"
+     },
+     action_type: {
+          uz: "Harakat turi",
+          cy: "Ҳаракат тури",
+          en: "Action type",
+          ru: "Тип действия"
+     },
+     table_name_col: {
+          uz: "Jadval nomi",
+          cy: "Жадвал номи",
+          en: "Table name",
+          ru: "Название таблицы"
+     },
+     object_name_col: {
+          uz: "Obyekt nomi",
+          cy: "Объект номи",
+          en: "Object name",
+          ru: "Название объекта"
+     },
+     col_time: {
+          uz: "Vaqti",
+          cy: "Вақти",
+          en: "Time",
+          ru: "Время"
+     },
+     select_user: {
+          uz: "Foydalanuvchi tanlang",
+          cy: "Фойдаланувчи танланг",
+          en: "Select user",
+          ru: "Выберите пользователя"
+     },
+     select_action_type: {
+          uz: "Harakat turini tanlang",
+          cy: "Ҳаракат турини танланг",
+          en: "Select action type",
+          ru: "Выберите тип действия"
+     },
+     select_table_name: {
+          uz: "Jadval nomini tanlang",
+          cy: "Жадвал номини танланг",
+          en: "Select table name",
+          ru: "Выберите таблицу"
+     },
+     upload: {
+          uz: "Yuklash",
+          cy: "Юклаш",
+          en: "Download",
+          ru: "Загрузить"
+     },
+     action_create: {
+          uz: "Yaratildi",
+          cy: "Яратилди",
+          en: "Created",
+          ru: "Создано"
+     },
+     action_update: {
+          uz: "Yangilandi",
+          cy: "Янгиланди",
+          en: "Updated",
+          ru: "Обновлено"
+     },
+     action_delete: {
+          uz: "O'chirildi",
+          cy: "Ўчирилди",
+          en: "Deleted",
+          ru: "Удалено"
+     },
+     table_user: { uz: "Foydalanuvchi", cy: "Фойдаланувчи", en: "User", ru: "Пользователь" },
+     table_geozone: { uz: "Geozona", cy: "Геозона", en: "Geozone", ru: "Геозона" },
+     table_attendance_event: { uz: "Davomat hodisasi", cy: "Давомат ҳодисаси", en: "Attendance event", ru: "Событие посещаемости" },
+     table_daily_attendance: { uz: "Kunlik davomat", cy: "Кунлик давомат", en: "Daily attendance", ru: "Ежедневная посещаемость" },
+     table_kpi_result: { uz: "KPI natijasi", cy: "KPI натижаси", en: "KPI result", ru: "Результат KPI" },
+     table_faceid_log: { uz: "Face ID logi", cy: "Face ID логи", en: "Face ID log", ru: "Лог Face ID" },
+     table_gps_log: { uz: "GPS logi", cy: "GPS логи", en: "GPS log", ru: "Лог GPS" },
+
+     status_success: {
+          uz: "Ishonchli",
+          cy: "Ишончли",
+          en: "Trusted",
+          ru: "Надежный"
+     },
+     status_failed: {
+          uz: "Ishonchsiz",
+          cy: "Ишончсиз",
+          en: "Untrusted",
+          ru: "Ненадежный"
+     },
+
+     distance_m: {
+          uz: "Masofa (metr)",
+          cy: "Масофа (метр)",
+          en: "Distance (meters)",
+          ru: "Расстояние (метры)"
+     },
+
 }
 
 export function LanguageProvider({ children }) {
