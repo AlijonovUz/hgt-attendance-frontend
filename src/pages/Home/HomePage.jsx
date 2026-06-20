@@ -296,6 +296,19 @@ const HomePage = () => {
     late: d.late
   })) || [];
 
+  // Y o'qi uchun ma'lumotga qarab o'sadigan "chiroyli" yuqori chegara.
+  // Eng katta qiymatga ~20% bo'sh joy qo'shib, yumaloq songa yaxlitlaydi
+  // (masalan max 150 -> 200, max 80 -> 100).
+  const weeklyMax = Math.max(0, ...weeklyData.map(d => Math.max(d.onTime || 0, d.late || 0)));
+  const niceCeil = (v) => {
+    if (v <= 0) return 5;
+    const pow = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v / pow;
+    const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+    return nice * pow;
+  };
+  const weeklyYMax = Math.max(10, niceCeil(weeklyMax * 1.2));
+
   const todayStatus = todayStatusData?.today_status || todayStatusData;
 
   const isTodayDataEmpty = !todayStatus || (todayStatus.on_time === 0 && todayStatus.late === 0 && todayStatus.early_left === 0 && todayStatus.absent === 0);
@@ -505,9 +518,8 @@ const HomePage = () => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: "#737373" }}
-                  tickFormatter={(val) => `${val}%`}
-                  domain={[0, 100]}
-                  ticks={[0, 25, 50, 75, 100]}
+                  domain={[0, weeklyYMax]}
+                  allowDecimals={false}
                 />
                 <Tooltip
                   cursor={{ fill: "transparent" }}
