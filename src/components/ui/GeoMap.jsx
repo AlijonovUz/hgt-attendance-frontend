@@ -1,16 +1,42 @@
 import { useEffect, useRef, useState } from "react"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
+import "proj4leaflet"
 
-// Tile manbalari — API key talab qilmaydi
+// Yandex xaritasi EPSG:3395 (ellipsoidal Mercator) proyeksiyasidan foydalanadi —
+// Leaflet'ning standart EPSG:3857'idan farq qiladi. To'g'ri joylashuv uchun
+// maxsus CRS yaratamiz, aks holda kenglik bo'yicha siljish bo'ladi.
+const YANDEX_CRS = new L.Proj.CRS(
+  "EPSG:3395",
+  "+proj=merc +a=6378137 +b=6356752.314245179 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs",
+  {
+    origin: [-20037508.342789244, 20037508.342789244],
+    resolutions: (() => {
+      const res = []
+      for (let z = 0; z < 24; z++) res[z] = 156543.033928041 / Math.pow(2, z)
+      return res
+    })(),
+    bounds: L.bounds(
+      [-20037508.342789244, -20037508.342789244],
+      [20037508.342789244, 20037508.342789244]
+    ),
+  }
+)
+
+// Yandex tile manbalari — API key talab qilmaydi
 const TILE_STREET = {
-  url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  url: "https://core-renderer-tiles.maps.yandex.net/tiles?l=map&x={x}&y={y}&z={z}&scale=1&lang=ru_RU",
+  attribution: "&copy; <a href='https://yandex.uz/maps'>Yandex</a>",
   maxZoom: 19,
 }
 const TILE_SAT = {
-  url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  attribution: "Tiles &copy; Esri",
+  url: "https://core-sat.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&lang=ru_RU",
+  attribution: "&copy; <a href='https://yandex.uz/maps'>Yandex</a>",
+  maxZoom: 19,
+}
+// Sun'iy yo'ldosh ustiga qo'yiladigan shaffof yorliqlar qatlami (joy nomlari, ko'chalar)
+const TILE_LABELS = {
+  url: "https://core-renderer-tiles.maps.yandex.net/tiles?l=skl&x={x}&y={y}&z={z}&scale=1&lang=ru_RU",
   maxZoom: 19,
 }
 
@@ -39,6 +65,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const tileRef = useRef(null)
+  const labelsRef = useRef(null)
   const circleRef = useRef(null)
   const markerRef = useRef(null)
   const lastCenterRef = useRef(null)
@@ -53,7 +80,12 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
 
   const validLat = Number(lat)
   const validLng = Number(lng)
-  const hasCoord = Number.isFinite(validLat) && Number.isFinite(validLng)
+  // Bo'sh string Number("") === 0 bo'lib ketadi — uni koordinatasiz deb hisoblaymiz,
+  // aks holda xarita (0,0) — okean o'rtasiga uchib ketadi.
+  const hasCoord =
+    lat !== "" && lat != null &&
+    lng !== "" && lng != null &&
+    Number.isFinite(validLat) && Number.isFinite(validLng)
 
   // ── Xaritani bir marta yaratish ──
   useEffect(() => {
@@ -62,6 +94,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
     // Koordinata bo'lmasa — butun O'zbekiston ko'rinadi
     const center = hasCoord ? [validLat, validLng] : [41.377491, 64.585262]
     const map = L.map(containerRef.current, {
+      crs: YANDEX_CRS,
       center,
       zoom: hasCoord ? 15 : 6,
       zoomControl: true,
@@ -89,16 +122,30 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── Tile turini almashtirish ──
+  // ── Tile turini almashtirish + sun'iy yo'ldoshda nom yorliqlarini ko'rsatish ──
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
+
+    // Asosiy qatlam
     if (tileRef.current) map.removeLayer(tileRef.current)
     const cfg = satellite ? TILE_SAT : TILE_STREET
     tileRef.current = L.tileLayer(cfg.url, {
       attribution: cfg.attribution,
       maxZoom: cfg.maxZoom,
     }).addTo(map)
+
+    // Yorliqlar qatlami: ko'cha rejimida nomlar allaqachon bor,
+    // sun'iy yo'ldosh rejimida esa ularni alohida shaffof qatlam bilan qo'shamiz.
+    if (labelsRef.current) {
+      map.removeLayer(labelsRef.current)
+      labelsRef.current = null
+    }
+    if (satellite) {
+      labelsRef.current = L.tileLayer(TILE_LABELS.url, {
+        maxZoom: TILE_LABELS.maxZoom,
+      }).addTo(map)
+    }
   }, [satellite])
 
   // ── Markaz / radius o'zgarganda doira va markerni yangilash ──
