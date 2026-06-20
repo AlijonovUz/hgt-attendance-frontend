@@ -3,9 +3,9 @@ import { useParams } from "react-router-dom"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
-import { Pencil, Trash2, Plus, X, FileText, ArrowLeft } from "lucide-react"
+import { Pencil, Trash2, Plus, X, FileText, ArrowLeft, Trash2Icon } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, CancelCircleHalfDotIcon, CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
@@ -15,6 +15,7 @@ import { AddButton } from "@/components/ui/customAddButton"
 import { RoleModal } from "./RoleModal"
 import { ScheduleModal } from "./ScheduleModal"
 import { useSelector } from "react-redux"
+import { AlertModal } from "@/components/ui/ComfirmAlert"
 
 // "yyyy-mm-dd" (API'dan kelgan) -> "dd.mm.yyyy" (jadvalda ko'rsatish uchun)
 const formatDate = (value) => {
@@ -240,6 +241,10 @@ const ReferencePage = () => {
   const [editErrors, setEditErrors] = useState({})
   const [editSaving, setEditSaving] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const [showDeleleModal, setShowDeleleModal] = useState(false)
+  const [showDeleleScheModal, setShowDeleleScheModal] = useState(false)
+  const [showDeleleRolModal, setShowDeleleRolModal] = useState(false)
 
   const [filterSearch, setFilterSearch] = useState({})
 
@@ -513,10 +518,10 @@ const ReferencePage = () => {
   }
 
   const handleDelete = async (row) => {
-    if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
     setDeleteLoading(true)
     try {
       await axiosAPI.delete(`${config.endpoint}${row.id}/`)
+      setShowDeleleModal(false)
       showToast(t("ref_deleted") || "O'chirildi")
       setPage(1)
       setHasMore(true)
@@ -526,14 +531,15 @@ const ReferencePage = () => {
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setDeleteLoading(false)
+      setShowDeleleModal(false)
     }
   }
 
   const handleDeleteRol = async (row) => {
-    if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
     setDeleteLoading(true)
     try {
       await axiosAPI.delete(`users/roles/${row.id}/`)
+      setShowDeleleRolModal(false)
       showToast(t("ref_deleted") || "O'chirildi")
       setEditModal(false)
       setPage(1)
@@ -544,14 +550,15 @@ const ReferencePage = () => {
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setDeleteLoading(false)
+      setShowDeleleRolModal(false)
     }
   }
 
   const handleDeleteSche = async (row) => {
-    if (!window.confirm(t("ref_delete_confirm") || "O'chirishni tasdiqlaysizmi?")) return
     setDeleteLoading(true)
     try {
       await axiosAPI.delete(`users/schedules/${row.id}/`)
+      setShowDeleleScheModal(false)
       showToast(t("ref_deleted") || "O'chirildi")
       setEditModal(false)
       setPage(1)
@@ -562,6 +569,7 @@ const ReferencePage = () => {
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setDeleteLoading(false)
+      setShowDeleleScheModal(false)
     }
   }
 
@@ -704,41 +712,34 @@ const ReferencePage = () => {
   return (
     <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white h-[calc(100vh-3.5rem)] overflow-hidden">
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between w-full gap-4 flex-wrap">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t(config.titleKey)}</h1>
-          <span className="text-[#737373] text-sm">{t(config.subKey).replace("{n}", count)}</span>
-        </div>
+      {/* ── Qidiruv + Filter ── */}
+      <div className="flex w-full justify-between items-center">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input
+            type="text"
+            value={searchInput}
+            onChange={handleSearchChange}
+            placeholder={t("search") || "Qidirish..."}
+            className="h-9! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
+          />
 
+          {config.filters?.length > 0 && (
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
+              onClick={openFilters}
+            >
+              {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+              <HugeIcon icon={FilterVerticalIcon} size={16} />
+              {t("filter")}
+            </button>
+          )}
+        </div>
         {canCreate && (
           <AddButton
             onOpen={() => setAddModal(true)}
-            title={t(config.addKey)}
+            title={t("add")}
           />
-        )}
-      </div>
-
-      {/* ── Qidiruv + Filter ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          type="text"
-          value={searchInput}
-          onChange={handleSearchChange}
-          placeholder={t("search") || "Qidirish..."}
-          className="h-9! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
-        />
-
-        {config.filters?.length > 0 && (
-          <button
-            type="button"
-            className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
-            onClick={openFilters}
-          >
-            {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
-            <HugeIcon icon={FilterVerticalIcon} size={16} />
-            {t("filter")}
-          </button>
         )}
       </div>
 
@@ -1016,7 +1017,7 @@ const ReferencePage = () => {
           getErrMsg={getErrMsg}
           deleteLoading={deleteLoading}
           setEditModal={setEditModal}
-          onDelete={handleDeleteRol}
+          onDelete={() => setShowDeleleRolModal(true)}
         />
       ) : config.custom === "schedule" ? (
         <ScheduleModal
@@ -1025,7 +1026,7 @@ const ReferencePage = () => {
           scheduleData={editRow}
           canEdit={canEdit}
           canDelete={canDelete}
-          onDelete={handleDeleteSche}
+          onDelete={() => setShowDeleleScheModal(true)}
           deleteLoading={deleteLoading}
         />
       ) : (<Modal
@@ -1095,15 +1096,12 @@ const ReferencePage = () => {
             })}
           </div>
           {(canDelete || canEdit) &&
-            <div className="flex items-center justify-end gap-3 sticky bottom-0 z-10">
+            <div className="flex items-center justify-between gap-3 sticky bottom-0 z-10">
               {/* Delete tugmasi — faqat canDelete bo'lsa */}
               {canDelete && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setEditModal(false)
-                    handleDelete(editRow)
-                  }}
+                  onClick={() => setShowDeleleModal(true)}
                   disabled={deleteLoading}
                   className={cn(
                     "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
@@ -1113,7 +1111,6 @@ const ReferencePage = () => {
                   )}
                 >
                   <Trash2 size={18} />
-                  {t("delete") || "O'chirish"}
                 </button>
               )}
 
@@ -1138,8 +1135,73 @@ const ReferencePage = () => {
           }
         </div>
       </Modal>
-      )
-      }
+      )}
+
+      <AlertModal
+        isOpen={showDeleleModal}
+        onClose={() => setShowDeleleModal(false)}
+        onConfirm={handleDelete}
+        title={t("confirm_delate_title")}
+        description={t("confirm_delate_desc")}
+        confirmText={
+          <span className="flex items-center gap-2">
+            <Trash2Icon size={16} />
+            {t("delete")}
+          </span>
+        }
+        cancelText={
+          <span className="flex items-center gap-2">
+            <HugeIcon icon={CancelCircleHalfDotIcon} size={16} />
+            {t("cancel")}
+          </span>
+        }
+        confirmVariant="delete"
+        loading={deleteLoading}
+      />
+
+      <AlertModal
+        isOpen={showDeleleRolModal}
+        onClose={() => setShowDeleleRolModal(false)}
+        onConfirm={handleDeleteRol}
+        title={t("confirm_delate_title")}
+        description={t("confirm_delate_desc")}
+        confirmText={
+          <span className="flex items-center gap-2">
+            <Trash2Icon size={16} />
+            {t("delete")}
+          </span>
+        }
+        cancelText={
+          <span className="flex items-center gap-2">
+            <HugeIcon icon={CancelCircleHalfDotIcon} size={16} />
+            {t("cancel")}
+          </span>
+        }
+        confirmVariant="delete"
+        loading={deleteLoading}
+      />
+
+      <AlertModal
+        isOpen={showDeleleScheModal}
+        onClose={() => setShowDeleleScheModal(false)}
+        onConfirm={handleDeleteSche}
+        title={t("confirm_delate_title")}
+        description={t("confirm_delate_desc")}
+        confirmText={
+          <span className="flex items-center gap-2">
+            <Trash2Icon size={16} />
+            {t("delete")}
+          </span>
+        }
+        cancelText={
+          <span className="flex items-center gap-2">
+            <HugeIcon icon={CancelCircleHalfDotIcon} size={16} />
+            {t("cancel")}
+          </span>
+        }
+        confirmVariant="delete"
+        loading={deleteLoading}
+      />
 
       <Toast
         key={toast.seq}

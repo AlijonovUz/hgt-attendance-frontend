@@ -53,6 +53,10 @@ const pinIcon = L.divIcon({
   iconAnchor: [13, 36],
 })
 
+// Yandex/Web-Mercator tile sxemasidagi metr/piksel nisbati (resolutions jadvali bilan bir xil formula)
+const metersPerPixel = (lat, zoom) =>
+  (156543.03392804097 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom)
+
 /**
  * Haqiqiy interaktiv xarita: markaz nuqta + radius doirasi.
  *
@@ -149,21 +153,34 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
   }, [satellite])
 
   // ── Markaz / radius o'zgarganda doira va markerni yangilash ──
+  // Doira radiusini joriy zoom + kenglikka mos pikselga aylantirib chizadi (tile masshtabiga aniq mos keladi)
+  const updateCircleRadius = (center) => {
+    const map = mapRef.current
+    if (!map || !circleRef.current) return
+    const zoom = map.getZoom()
+    const mpp = metersPerPixel(center[0], zoom)
+    const pixelRadius = radius / mpp
+    circleRef.current.setRadius(pixelRadius)
+  }
+
   useEffect(() => {
     const map = mapRef.current
     if (!map || !hasCoord) return
     const center = [validLat, validLng]
 
     if (circleRef.current) {
-      circleRef.current.setLatLng(center).setRadius(radius)
+      circleRef.current.setLatLng(center)
+      updateCircleRadius(center)
     } else {
-      circleRef.current = L.circle(center, {
-        radius,
+      // L.circle o'rniga L.circleMarker — radius doim piksel sifatida beriladi
+      circleRef.current = L.circleMarker(center, {
+        radius: 0, // pastda darhol to'g'ri qiymat bilan yangilanadi
         color: "#0090FF",
         weight: 2,
         fillColor: "#0090FF",
         fillOpacity: 0.15,
       }).addTo(map)
+      updateCircleRadius(center)
     }
 
     if (markerRef.current) {
@@ -176,10 +193,24 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
     const key = `${validLat},${validLng}`
     if (lastCenterRef.current !== key) {
       lastCenterRef.current = key
-      map.fitBounds(circleRef.current.getBounds(), { padding: [24, 24], maxZoom: 17 })
+      // circleMarker'ning getBounds() yo'q, shuning uchun markazga moslab zoom qilamiz
+      map.setView(center, map.getZoom() < 15 ? 16 : map.getZoom())
+      setTimeout(() => updateCircleRadius(center), 0)
     }
   }, [validLat, validLng, radius, hasCoord])
 
+  // Zoom o'zgarganda doira piksel-radiusini qayta hisoblash (aks holda noto'g'ri kattalashib/kichraytirib qoladi)
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const handler = () => {
+      if (hasCoord) updateCircleRadius([validLat, validLng])
+    }
+    map.on("zoomend", handler)
+    return () => map.off("zoomend", handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [validLat, validLng, radius, hasCoord])
+  
   return (
     <div className={`relative w-full h-[300px] rounded-2xl overflow-hidden border border-[#E5E7EB] dark:border-[#2E2E2E] ${className}`}>
       <div ref={containerRef} className="absolute inset-0 z-0" />

@@ -293,7 +293,7 @@ export const RoleModal = ({ isOpen, onClose, onCreated, roleData = null, canDele
         </div>
 
         {(canDelete || canEdit) &&
-          <div className="flex items-center justify-end gap-3 sticky bottom-0 z-10 ">
+          <div className="flex items-center justify-between gap-3 sticky bottom-0 z-10 ">
             {/* Delete tugmasi — faqat canDelete bo'lsa */}
             <div>
               {canDelete && (
@@ -312,7 +312,6 @@ export const RoleModal = ({ isOpen, onClose, onCreated, roleData = null, canDele
                   )}
                 >
                   <Trash2 size={18} />
-                  {t("delete") || "O'chirish"}
                 </button>
               )}
             </div>

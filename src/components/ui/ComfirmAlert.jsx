@@ -19,9 +19,9 @@ export const AlertModal = ({
                confirm: "bg-[#DC2626] dark:bg-[#F87171] dark:text-[#171717]",
                cancel: "text-[#0A0A0A] dark:text-[#fff] border border-[#e5e5e5] dark:border-[#404040]"
           },
-          success: {
-               confirm: "bg-[#34C759] hover:bg-[#2DB84E] dark:bg-[#34C759] dark:hover:bg-[#2DB84E]",
-               cancel: "text-[#34C759] hover:bg-[#F0FFF5] dark:text-[#6BFF8B] dark:hover:bg-[#1A2A1A]"
+          delate: {
+               confirm: "bg-[#DC2626] dark:bg-[#F87171] dark:text-[#f5f5f5]!",
+               cancel: "text-[#0A0A0A] dark:text-[#fff] border border-[#e5e5e5] dark:border-[#404040]"
           },
           primary: {
                confirm: "bg-[#0090FF] hover:bg-[#0080E5] dark:bg-[#0090FF] dark:hover:bg-[#0080E5]",

@@ -185,7 +185,18 @@ export const translations = {
           en: "selected",
           ru: "выбрано"
      },
-
+     confirm_delate_title: {
+          uz: "Haqiqatan ham o'chirmoqchimisiz?",
+          cy: "Ҳақиқатан ҳам ўчирмоқчимисиз?",
+          en: "Are you sure you want to delete ?",
+          ru: "Вы уверены, что хотите удалить это?"
+     },
+     confirm_delate_desc: {
+          uz: "Ushbu ma'lumotni o'chirgandan so'ng, uni tiklash imkoni bo'lmaydi va siz hamma narsani boshidan boshlashingiz kerak bo'ladi!",
+          cy: "Ушбу маълумотларни ўчириб ташлаганингиздан сўнг, уларни қайта тиклаш имконсиз бўлади ва ҳаммасини бошидан бошлашингизга тўғри келади!",
+          en: "After deleting this information, it will be impossible to restore and you will have to start everything from scratch!",
+          ru: "После того как вы удалите эти данные, их восстановление станет невозможным, и вам придется начинать всё сначала!"
+     },
 
      // login page
      login_title: {
@@ -1415,6 +1426,7 @@ export const translations = {
      analytics: { uz: "Analitika", cy: "Аналитика", en: "Analytics", ru: "Аналитика" },
      holidays: { uz: "Bayramlar", cy: "Байрамлар", en: "Holidays", ru: "Праздники" },
      schedules: { uz: "Ish grafiklari", cy: "Иш графиклари", en: "Schedules", ru: "Графики" },
+     schedule: { uz: "Ish grafigi", cy: "Иш графиги", en: "Schedule", ru: "График" },
      audits: { uz: "Audit", cy: "Аудит", en: "Audit", ru: "Аудит" },
      positions: { uz: "Lavozimlar", cy: "Лавозимлар", en: "Positions", ru: "Должности" },
      departments: { uz: "Bo'limlar", cy: "Бўлимлар", en: "Departments", ru: "Отделы" },
