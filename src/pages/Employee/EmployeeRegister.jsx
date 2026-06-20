@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useLanguage } from "@/Context/LanguageContext";
 import { axiosAPI } from "@/services/axiosAPI";
-import { cn } from "@/lib/utils";
+import { cn, exportAoaToCsv } from "@/lib/utils";
 import { ArrowLeft, Check, ChevronDownIcon, Ellipsis, MoreVertical, Plus, X } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
-import { PiMicrosoftExcelLogo } from "react-icons/pi";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { ExportMenu } from "@/components/ui/ExportMenu";
 import { HugeIcon } from "@/components/ui/HugeIcon";
 import { ArrowDown01Icon, Cancel01Icon, CancelCircleHalfDotIcon, CheckmarkCircle04Icon, CheckmarkSquare01Icon, Download01Icon, FilterVerticalIcon, Search01Icon, Settings05Icon, SquareArrowDown01Icon, UserAccountIcon, UserLock01Icon, UserRemove02Icon } from "@hugeicons/core-free-icons";
 import { Select } from "@/components/ui/select";
@@ -990,6 +992,35 @@ const EmployeeRegister = () => {
     }, 400);
   };
 
+  // Excel / PDF / CSV uchun umumiy sarlavha + qatorlar
+  const buildExportData = () => {
+    const headers = [
+      "#",
+      t("full_name") || "Ism familya",
+      t("region") || "Viloyat",
+      t("district") || "Tuman",
+      t("col_branch") || "Filial",
+      t("department") || "Bo'lim",
+      t("position") || "Lavozim",
+      t("role") || "Rol",
+      t("schedule") || "Kelgan vaqti",
+    ];
+
+    const rows = employees.map((e, i) => [
+      (page - 1) * PAGE_SIZE + i + 1,
+      e.full_name || "",
+      e.branch_info?.region_info?.name || "",
+      e.branch_info?.district_info?.name || "",
+      e.branch_info?.name || "",
+      e.department_info?.name || "",
+      e.position_info?.name || "",
+      e.role_info?.name || "",
+      e.schedule_info?.work_start_time ? e.schedule_info.name : "",
+    ]);
+
+    return { headers, rows };
+  };
+
   const exportExcel = () => {
     if (!employees.length) {
       showToast(t("no_data_to_export"));
@@ -997,29 +1028,7 @@ const EmployeeRegister = () => {
     }
 
     try {
-      const headers = [
-        "#",
-        t("full_name") || "Ism familya",
-        t("region") || "Viloyat",
-        t("district") || "Tuman",
-        t("col_branch") || "Filial",
-        t("department") || "Bo'lim",
-        t("position") || "Lavozim",
-        t("role") || "Rol",
-        t("schedule") || "Kelgan vaqti",
-      ];
-
-      const rows = employees.map((e, i) => [
-        (page - 1) * PAGE_SIZE + i + 1,
-        e.full_name || "",
-        e.branch_info?.region_info?.name || "",
-        e.branch_info?.district_info?.name || "",
-        e.branch_info?.name || "",
-        e.department_info?.name || "",
-        e.position_info?.name || "",
-        e.role_info?.name || "",
-        e.schedule_info?.work_start_time ? e.schedule_info.name : "",
-      ]);
+      const { headers, rows } = buildExportData();
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 
@@ -1113,6 +1122,46 @@ const EmployeeRegister = () => {
       XLSX.writeFile(wb, "Xodimlar-royxati.xlsx", { bookType: "xlsx", cellStyles: true });
 
       showToast(t("export_success"));
+    } catch (err) {
+      console.error(err);
+      showToast(t("export_error"));
+    }
+  };
+
+  const exportPDF = () => {
+    if (!employees.length) {
+      showToast(t("no_data_to_export"));
+      return;
+    }
+    try {
+      const { headers, rows } = buildExportData();
+      const doc = new jsPDF({ orientation: "landscape" });
+      doc.setFontSize(14);
+      doc.text("Xodimlar ro'yxati", 14, 16);
+      autoTable(doc, {
+        head: [headers],
+        body: rows,
+        startY: 22,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [240, 240, 240], textColor: 20 },
+      });
+      doc.save("Xodimlar-royxati.pdf");
+      showToast(t("export_pdf_success"));
+    } catch (err) {
+      console.error(err);
+      showToast(t("export_error"));
+    }
+  };
+
+  const exportCSV = () => {
+    if (!employees.length) {
+      showToast(t("no_data_to_export"));
+      return;
+    }
+    try {
+      const { headers, rows } = buildExportData();
+      exportAoaToCsv("Xodimlar-royxati.csv", [headers, ...rows]);
+      showToast(t("export_csv_success"));
     } catch (err) {
       console.error(err);
       showToast(t("export_error"));
@@ -1244,15 +1293,12 @@ const EmployeeRegister = () => {
               />
             }
 
-            <button
-              type="button"
-              onClick={exportExcel}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0a0a0a] px-3 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
-            >
-              <PiMicrosoftExcelLogo size={16} className="text-[#22A565]" />
-              Excel
-              <HugeIcon icon={Download01Icon} size={15} />
-            </button>
+            <ExportMenu
+              onExcel={exportExcel}
+              onPDF={exportPDF}
+              onCSV={exportCSV}
+              label={t("download")}
+            />
           </div>
         </div>
 
