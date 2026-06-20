@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import "proj4leaflet"
+import { Crosshair, Layers } from "lucide-react"
 
 // Yandex xaritasi EPSG:3395 (ellipsoidal Mercator) proyeksiyasidan foydalanadi —
 // Leaflet'ning standart EPSG:3857'idan farq qiladi. To'g'ri joylashuv uchun
@@ -101,7 +102,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
       crs: YANDEX_CRS,
       center,
       zoom: hasCoord ? 15 : 6,
-      zoomControl: true,
+      zoomControl: false, // Figma'da +/- tugmalar yo'q; scroll bilan zoom ishlayveradi
       attributionControl: true,
     })
     mapRef.current = map
@@ -221,21 +222,30 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
         </div>
       )}
 
-      {/* Koordinata pill */}
+      {/* Koordinata pill — crosshair ikonkasi bilan (Figma) */}
       {hasCoord && (
         <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
-          {validLat.toFixed(4)}, {validLng.toFixed(4)}
+          <Crosshair size={14} className="text-[#0090FF] flex-shrink-0" />
+          <span className="tabular-nums">{validLat.toFixed(4)}, {validLng.toFixed(4)}</span>
         </div>
       )}
 
-      {/* Satellite / ko'cha almashtirish */}
+      {/* Qatlam almashtirish — faqat ikonka (Figma) */}
       <button
         type="button"
         onClick={() => setSatellite((s) => !s)}
-        className="absolute top-3 right-3 z-10 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
+        title={satellite ? "Ko'cha xaritasi" : "Sun'iy yo'ldosh"}
+        className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
       >
-        {satellite ? "Sun'iy yo'ldosh" : "Ko'cha"}
+        <Layers size={16} />
       </button>
+
+      {/* Radius badge — o'ng past (Figma) */}
+      {hasCoord && (
+        <div className="absolute bottom-3 right-3 z-10 rounded-lg bg-[#1A1A1A]/90 text-white px-2.5 py-1 text-[13px] font-medium shadow-sm tabular-nums">
+          {radius} metr
+        </div>
+      )}
     </div>
   )
 }
