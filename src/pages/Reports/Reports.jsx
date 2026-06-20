@@ -82,6 +82,12 @@ const Reports = () => {
   const [filterRegion, setFilterRegion] = useState(null)      // { value, label }
   const [filterDistrict, setFilterDistrict] = useState(null)
   const [filterStatus, setFilterStatus] = useState(null)
+  const [filterPosition, setFilterPosition] = useState(null)
+
+
+  const [positions, setPositions] = useState([])
+
+  const [positionPag, setPositionPag] = useState({ page: 1, hasMore: true, loading: false })
 
   // 2. Region'larni yuklash
   const fetchRegions = async () => {
@@ -97,6 +103,26 @@ const Reports = () => {
       console.error(err)
     } finally {
       setRegionsLoading(false)
+    }
+  }
+
+  const fetchPositions = async (pageNum = 1, search = "") => {
+    setPositionPag(p => ({ ...p, loading: true }))
+    if (pageNum === 1 && !search) {
+      // faqat boshlang'ich yuklashda tozalamaymiz, lekin yangi qidiruvda ro'yxat almashadi
+    }
+    try {
+      const params = { page: pageNum }
+      if (search?.trim()) params.search = search
+      const res = await axiosAPI.get("users/positions/", { params })
+      if (res.status === 200) {
+        const results = (res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
+        setPositions(prev => pageNum === 1 ? results : [...prev, ...results])
+        setPositionPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+      }
+    } catch (err) {
+      console.error(err)
+      setPositionPag(p => ({ ...p, loading: false }))
     }
   }
 
@@ -124,7 +150,7 @@ const Reports = () => {
 
   // 4. Modal ochilganda region'larni yuklash
   useEffect(() => {
-    if (openFilterModal) fetchRegions()
+    if (openFilterModal) { fetchRegions(); fetchPositions(1, ""); }
   }, [openFilterModal])
 
   // 5. Region o'zgarganda district'larni yuklash
@@ -182,6 +208,7 @@ const Reports = () => {
     if (filterRegion?.value) extraParams.region_id = filterRegion.value
     if (filterDistrict?.value) extraParams.district_id = filterDistrict.value
     if (filterStatus?.value) extraParams.status = filterStatus.value
+    if (filterPosition?.value) extraParams.position_id = filterPosition.value   // YANGI
     setOpenFilterModal(false)
     fetchReports(extraParams)
   }
@@ -191,8 +218,11 @@ const Reports = () => {
     setFilterRegion(null)
     setFilterDistrict(null)
     setFilterStatus(null)
+    setFilterPosition(null)              // YANGI
     setDistricts([])
+    setPositionPag({ page: 1, hasMore: true, loading: false })   // YANGI
   }
+
 
   // 9. Status options — tarjima orqali
   const STATUS_OPTIONS = [
@@ -316,7 +346,7 @@ const Reports = () => {
   const hasFilter = filterDistrict || filterRegion || filterStatus
 
   return (
-    <div className="p-4 flex flex-col items-start gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
+    <div className="p-4 pb-0! flex flex-col items-start gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
 
       {/* ─── Header ─── */}
       <div className="flex items-start justify-between w-full gap-4 flex-wrap">
@@ -447,11 +477,24 @@ const Reports = () => {
       </div>
 
       {/* ─── Jadval ─── */}
-      <div className="w-full h-[calc(100vh-215px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
+      {/* ─── Jadval ─── */}
+      <div className="w-full h-[calc(100vh-200px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden">
 
-        {/* Scrollable area: thead + tbody */}
+        {/* Scrollable area: faqat thead + tbody */}
         <div className="flex-1 overflow-y-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full border-collapse text-left table-fixed">
+            <colgroup>
+              <col className="w-[4%]" />
+              <col className="w-[18%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
+              <col className="w-[8%]" />
+              <col className="w-[9%]" />
+              <col className="w-[9%]" />
+              <col className="w-[9%]" />
+              <col className="w-[9%]" />
+              <col className="w-[8%]" />
+            </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
                 {[
@@ -468,10 +511,7 @@ const Reports = () => {
                 ].map((h, i) => (
                   <th
                     key={i}
-                    className={cn(
-                      "px-4 py-3 text-[13px] font-medium text-[#6B7280] dark:text-[#fafafa] whitespace-nowrap",
-                      i === 0 && "w-12 dark:text-[#444444]"
-                    )}
+                    className="px-4 py-3 text-[13px] font-medium text-[#6B7280] dark:text-[#fafafa] whitespace-nowrap truncate"
                   >
                     {h}
                   </th>
@@ -503,15 +543,11 @@ const Reports = () => {
                     className="border-b border-[#F0F0F0] dark:border-[#1F1F1F] hover:bg-[#FAFAFA] dark:hover:bg-[#141414] transition-colors"
                   >
                     <td className="px-4 py-3 text-sm text-[#737373] dark:text-[#444444]">{i + 1}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A] dark:text-white max-w-[220px] truncate" title={nameOf(r)}>
+                    <td className="px-4 py-3 text-sm font-medium text-[#1A1A1A] dark:text-white truncate" title={nameOf(r)}>
                       {nameOf(r)}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      {r.region}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {r.district}
-                    </td>
+                    <td className="px-4 py-3 text-sm truncate">{r.region}</td>
+                    <td className="px-4 py-3 text-sm truncate">{r.district}</td>
                     <td className="px-4 py-3">
                       <Pill>{fmt(r.total_expected)}</Pill>
                     </td>
@@ -537,13 +573,25 @@ const Reports = () => {
           </table>
         </div>
 
+        {/* Summary — scroll'dan tashqarida, flex-shrink-0, har doim eng pastda */}
         {!loading && results.length > 0 && summary && (
-          <div className="flex-shrink-0">
-            <table className="w-full ">
+          <div className="flex-shrink-0 border-t border-[#E5E7EB] dark:border-[#2E2E2E]">
+            <table className="w-full table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[4%]" />
+                <col className="w-[18%]" />
+                <col className="w-[13%]" />
+                <col className="w-[13%]" />
+                <col className="w-[8%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[9%]" />
+                <col className="w-[8%]" />
+              </colgroup>
               <tbody>
-                {/* Jami qatori — har doim pastda qotib turadi */}
-                <tr className="bg-[#EFF4FF] sticky bottom-0 z-[] dark:bg-[#1D2A52]">
-                  <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white w-[calc(100%-58%)]">
+                <tr className="bg-[#EFF4FF] dark:bg-[#1D2A52]">
+                  <td colSpan={4} className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white">
                     {t("total_row")}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#1A1A1A] dark:text-white tabular-nums">
@@ -640,7 +688,22 @@ const Reports = () => {
                   options={STATUS_OPTIONS}
                   value={filterStatus?.value ?? null}
                   onChange={(opt) => setFilterStatus(opt)}
-                  contanierClassName="col-span-2"
+                />
+              )}
+              {reportType === "employee" && (
+                <Select
+                  label={t("position")}
+                  placeholder={t("select_position")}
+                  options={positions}
+                  value={filterPosition?.value ?? null}
+                  onChange={(opt) => setFilterPosition(opt)}
+                  loadingMore={positionPag.loading}
+                  onScrollEnd={() => {
+                    if (!positionPag.hasMore || positionPag.loading) return
+                    fetchPositions(positionPag.page + 1, "")
+                  }}
+                  onSearch={(s) => fetchPositions(1, s)}
+                  searchable={true}
                 />
               )}
             </div>

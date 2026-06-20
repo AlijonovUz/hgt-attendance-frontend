@@ -712,41 +712,34 @@ const ReferencePage = () => {
   return (
     <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white h-[calc(100vh-3.5rem)] overflow-hidden">
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between w-full gap-4 flex-wrap">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t(config.titleKey)}</h1>
-          <span className="text-[#737373] text-sm">{t(config.subKey).replace("{n}", count)}</span>
-        </div>
+      {/* ── Qidiruv + Filter ── */}
+      <div className="flex w-full justify-between items-center">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input
+            type="text"
+            value={searchInput}
+            onChange={handleSearchChange}
+            placeholder={t("search") || "Qidirish..."}
+            className="h-9! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
+          />
 
+          {config.filters?.length > 0 && (
+            <button
+              type="button"
+              className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
+              onClick={openFilters}
+            >
+              {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
+              <HugeIcon icon={FilterVerticalIcon} size={16} />
+              {t("filter")}
+            </button>
+          )}
+        </div>
         {canCreate && (
           <AddButton
             onOpen={() => setAddModal(true)}
-            title={t(config.addKey)}
+            title={t("add")}
           />
-        )}
-      </div>
-
-      {/* ── Qidiruv + Filter ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input
-          type="text"
-          value={searchInput}
-          onChange={handleSearchChange}
-          placeholder={t("search") || "Qidirish..."}
-          className="h-9! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
-        />
-
-        {config.filters?.length > 0 && (
-          <button
-            type="button"
-            className="flex items-center gap-1 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3 text-[#0A0A0A] dark:text-white"
-            onClick={openFilters}
-          >
-            {hasFilter && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#0090FF]"></span>}
-            <HugeIcon icon={FilterVerticalIcon} size={16} />
-            {t("filter")}
-          </button>
         )}
       </div>
 
