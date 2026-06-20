@@ -145,7 +145,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
 
       {/* Koordinata pill */}
       {hasCoord && (
-        <div className="absolute top-3 left-3 z-[500] flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
           {validLat.toFixed(4)}, {validLng.toFixed(4)}
         </div>
       )}
@@ -154,7 +154,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
       <button
         type="button"
         onClick={() => setSatellite((s) => !s)}
-        className="absolute top-3 right-3 z-[500] rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
+        className="absolute top-3 right-3 z-10 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
       >
         {satellite ? "Sun'iy yo'ldosh" : "Ko'cha"}
       </button>

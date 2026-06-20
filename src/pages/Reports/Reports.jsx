@@ -67,6 +67,8 @@ const Reports = () => {
   const results = data?.results || []
   const summary = data?.summary || null
 
+  const [districtPag, setDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
+
   const showToast = (message) =>
     setToast((prev) => ({ open: true, message, seq: prev.seq + 1 }))
 
@@ -99,20 +101,24 @@ const Reports = () => {
   }
 
   // 3. District'larni yuklash (region tanlanganda)
-  const fetchDistricts = async (regionId) => {
-    setDistrictsLoading(true)
-    setFilterDistrict(null)
+  const fetchDistricts = async (regionId, pageNum = 1, search = "") => {
+    setDistrictPag(p => ({ ...p, loading: true }))
+    if (pageNum === 1) {
+      setFilterDistrict(null)
+      setDistricts([])
+    }
     try {
-      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
+      const params = { page: pageNum, region: regionId }
+      if (search?.trim()) params.search = search
+      const res = await axiosAPI.get("users/districts/", { params })
       if (res.status === 200) {
-        setDistricts(
-          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
-        )
+        const results = (res.data?.data?.results || []).map(d => ({ value: d.id, label: d.name }))
+        setDistricts(prev => pageNum === 1 ? results : [...prev, ...results])
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
       }
     } catch (err) {
       console.error(err)
-    } finally {
-      setDistrictsLoading(false)
+      setDistrictPag(p => ({ ...p, loading: false }))
     }
   }
 
@@ -126,7 +132,8 @@ const Reports = () => {
     setFilterRegion(opt)
     setDistricts([])
     setFilterDistrict(null)
-    if (opt?.value) fetchDistricts(opt.value)
+    setDistrictPag({ page: 1, hasMore: true, loading: false })
+    if (opt?.value) fetchDistricts(opt.value, 1, "")
   }
 
   // 6. fetchReports — filter param'larini qo'shish
@@ -453,10 +460,10 @@ const Reports = () => {
                   t("region"),
                   t("district"),
                   t("col_total"),
-                  t("col_arrived"),
-                  t("col_late"),
-                  t("col_absent"),
-                  t("col_early"),
+                  t("come"),
+                  t("latecomers"),
+                  t("absent"),
+                  t("early_leavers"),
                   t("col_discipline_kpi"),
                 ].map((h, i) => (
                   <th
@@ -474,7 +481,7 @@ const Reports = () => {
 
             <tbody>
               {loading ? (
-                Array.from({ length: 9 }).map((_, i) => (
+                Array.from({ length: 10 }).map((_, i) => (
                   <tr key={i} className="border-b border-[#F0F0F0] dark:border-[#1F1F1F]">
                     {Array.from({ length: colCount }).map((__, j) => (
                       <td key={j} className="px-4 py-3.5">
@@ -610,17 +617,21 @@ const Reports = () => {
               {/* District — region tanlanmasa disabled */}
               <Select
                 label={t("district_branch_title")}
-                placeholder={
-                  !filterRegion
-                    ? t("select_region_first")
-                    : t("district_branch_placeholder")
-                }
+                placeholder={!filterRegion ? t("select_region_first") : t("district_branch_placeholder")}
                 options={districts}
                 value={filterDistrict?.value ?? null}
                 onChange={(opt) => setFilterDistrict(opt)}
-                disabled={!filterRegion || districtsLoading}
+                disabled={!filterRegion}
+                loadingMore={districtPag.loading}
+                onScrollEnd={() => {
+                  if (!districtPag.hasMore || districtPag.loading || !filterRegion?.value) return
+                  fetchDistricts(filterRegion.value, districtPag.page + 1, "")
+                }}
+                onSearch={(s) => {
+                  if (filterRegion?.value) fetchDistricts(filterRegion.value, 1, s)
+                }}
+                searchable={true}
               />
-
               {/* Status — faqat employee uchun */}
               {reportType === "employee" && (
                 <Select

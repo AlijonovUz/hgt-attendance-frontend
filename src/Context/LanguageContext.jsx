@@ -670,7 +670,7 @@ export const translations = {
           ru: "Нет данных для экспорта"
      },
      region_branch_title: {
-          uz: "Viloyat filiali",
+          uz: "Viloyat",
           cy: "Вилоят филиали",
           en: "Regional branch",
           ru: "Областной филиал"
@@ -682,7 +682,7 @@ export const translations = {
           ru: "Выберите региональный филиал"
      },
      district_branch_title: {
-          uz: "Tuman filiali",
+          uz: "Tuman",
           cy: "Туман филиали",
           en: "District branch",
           ru: "Районный филиал"
@@ -1322,7 +1322,7 @@ export const translations = {
           ru: "Центральный аппарат"
      },
      zt_region_branch: {
-          uz: "Viloyat filiali",
+          uz: "Viloyat",
           cy: "Вилоят филиали",
           en: "Region branch",
           ru: "Областной филиал"
@@ -1431,6 +1431,12 @@ export const translations = {
           cy: "- муваффақиятли қўшилди",
           en: "- successfully added",
           ru: "- успешно добавлен"
+     },
+     update: {
+          uz: "Yangilandi!",
+          cy: "Янгиланди!",
+          en: "Updated successfully!",
+          ru: "Обновлено!"
      },
      employee_updated: {
           uz: "- muvaffaqiyatli tahrirlandi",
@@ -1547,6 +1553,19 @@ export const translations = {
           cy: "Ўчиришни тасдиқлайсизми?",
           en: "Confirm deletion?",
           ru: "Подтвердить удаление?"
+     },
+
+     logs: {
+          uz: "Loglar",
+          cy: "Логлар",
+          en: "Logs",
+          ru: "Логи"
+     },
+     dailys: {
+          uz: "Kunlik davomatlar",
+          cy: "Кунлик давоматлар",
+          en: "Daily attendance",
+          ru: "Ежедневные посещения"
      },
 
      // ─── Rollar ───

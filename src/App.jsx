@@ -61,17 +61,17 @@ const App = () => {
     (state) => state.references.userPermission
   );
 
-  const viewEmp =
+  const viewEmp = userPermission?.employees && 
     userPermission?.employees?.some(
-      (e) => e.code === "employee_view_all"
+      (e) => e.code === "employee_view_all" || e.code === "employee_view_district" || e.code === "employee_view_region" || e.code === "employee_view_branch" || e.code === "employee_view_dept"
     );
 
-  const viewgeo =
+  const viewgeo = userPermission?.geozones && 
     userPermission?.geozones?.some(
       (e) => e.code === "geozone_view"
     );
 
-  const viewRep =
+  const viewRep = userPermission?.reports && 
     userPermission?.reports?.some(
       (e) =>
         e.code === "report_type_employee" ||
