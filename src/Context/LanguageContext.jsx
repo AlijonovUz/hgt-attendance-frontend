@@ -1986,6 +1986,18 @@ export const translations = {
           en: "Message",
           ru: "Сообщение"
      },
+     map_normal: {
+          uz: "Ko'cha xaritasi",
+          cy: "Кўча харитаси",
+          en: "Street map",
+          ru: "Карта улиц"
+     },
+     map_satellite: {
+          uz: "Sun'iy yo'ldosh",
+          cy: "Сун'ий йўлдош",
+          en: "Satellite",
+          ru: "Спутник"
+     },
 
 }
 
