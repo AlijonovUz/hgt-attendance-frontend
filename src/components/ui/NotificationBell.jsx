@@ -345,8 +345,12 @@ export const NotificationBell = () => {
     // Optimistik: darhol o'qilgan ko'rinishga o'tkazamiz
     setItems((prev) => prev.map((it) => (it.id === n.id ? { ...it, is_read: true } : it)))
     setUnread((u) => Math.max(0, u - 1))
+
+    // WS/FCM orqali hali backendda saqlanmagan (tmp-) xabarlar uchun so'rov yubormaymiz
+    if (!n.id || String(n.id).startsWith("tmp-")) return
+
     try {
-      // read endpointi INTEGER id talab qiladi (route <int:pk>)
+      // read/ endpointi bildirishnoma UUID id'sini qabul qiladi (200 = "o'qildi")
       await axiosAPI.patch(`notifications/${n.id}/read/`)
       // Backenddagi haqiqiy son bilan badge'ni sinxronlaymiz
       fetchCount()
@@ -355,11 +359,6 @@ export const NotificationBell = () => {
       // 400/404 — "allaqachon o'qilgan / topilmadi": yakuniy holat baribir "o'qilgan",
       // shuning uchun orqaga QAYTARMAYMIZ (foydalanuvchi bosgan — o'qilgan bo'lib qolsin).
       if (status === 400 || status === 404) {
-        if (status === 404) {
-          console.warn(
-            `Bildirishnoma read 404 — id turi mos kelmasligi mumkin (id=${n.id}). Backend route <int:pk> kutadi.`
-          )
-        }
         fetchCount()
         return
       }
