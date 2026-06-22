@@ -553,12 +553,6 @@ export const translations = {
           en: "Branch",
           ru: "Филиал"
      },
-     late: {
-          uz: "Kechikkanlar",
-          cy: "Кечикканлар",
-          en: "Delayed",
-          ru: "Опоздавшие"
-     },
      onTime: {
           uz: "O‘z vaqtida",
           cy: "Ўз вақтида",

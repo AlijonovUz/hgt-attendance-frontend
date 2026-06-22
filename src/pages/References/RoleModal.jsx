@@ -265,7 +265,7 @@ export const RoleModal = ({ isOpen, onClose, onCreated, roleData = null, canDele
 
                       <div
                         className={cn(
-                          "flex flex-wrap gap-x-6 gap-y-1 overflow-hidden transition-all duration-300 ease-in-out",
+                          "grid grid-cols-4 gap-1 overflow-hidden transition-all duration-300 ease-in-out",
                           isOpenGroup ? "max-h-[600px] opacity-100 pb-2" : "max-h-0 opacity-0"
                         )}
                       >
@@ -274,13 +274,13 @@ export const RoleModal = ({ isOpen, onClose, onCreated, roleData = null, canDele
                             <Switch
                               checked={selected.has(perm.id)}
                               onChange={() => togglePerm(perm.id)}
-                              containerClassName="w-[40px] h-[21px]"
-                              thumbClassName="w-[17px] h-[17px]"
-                              checkedThumbClassName="translate-x-5"
+                              containerClassName="w-[30px] h-[16px]"
+                              thumbClassName="w-[12px] h-[12px]"
+                              checkedThumbClassName="translate-x-4"
                               uncheckedThumbClassName="translate-x-0.5"
                               disabled={!canEdit}
                             />
-                            <span className="text-sm text-[#0A0A0A] dark:text-white">{perm.name}</span>
+                            <span className="text-xs text-[#0A0A0A] dark:text-white">{perm.name}</span>
                           </div>
                         ))}
                       </div>

@@ -48,11 +48,11 @@ export const ExportMenu = ({ onExcel, onPDF, onCSV, label = "Yuklash", className
   return (
     <div ref={ref} className={cn("relative inline-flex", className)}>
       {/* Split tugma */}
-      <div className="inline-flex items-center rounded-lg overflow-hidden">
+      <div className="inline-flex items-center rounded-lg overflow-hidden border-2 border-[#e5e5e5] dark:border-[#404040]">
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="inline-flex rounded-lg border-2 border-[#e5e5e5] dark:border-[#404040] items-center gap-2 px-4 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
+          onClick={() => items[0].onClick()}
+          className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
         >
           <HugeIcon icon={Download05Icon} size={16} className="text-[#0090FF]" />
           {label}
@@ -62,7 +62,7 @@ export const ExportMenu = ({ onExcel, onPDF, onCSV, label = "Yuklash", className
           onClick={() => setOpen((o) => !o)}
           aria-label={label}
           aria-expanded={open}
-          className="flex rounded-lg border-2 border-[#e5e5e5] dark:border-[#404040] items-center gap-2 p-2 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
+          className="flex border-l-2 border-[#e5e5e5] dark:border-[#404040] items-center gap-2 p-2 text-sm font-semibold text-[#0A0A0A] dark:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#262626] cursor-pointer"
         >
           <ChevronDown size={16} className={cn("transition-transform", open && "rotate-180")} />
         </button>

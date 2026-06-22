@@ -312,7 +312,7 @@ const ActionHistory = () => {
           headers.forEach((_, c) => {
                const ref = XLSX.utils.encode_cell({ r: 0, c })
                if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
-               ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "F0F0F0" } }, font: { bold: true, sz: 10, color: { rgb: "0A0A0A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+               ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "3c83f6" } }, font: { bold: true, sz: 10, color: { rgb: "ffffff" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
           })
           body.forEach((_, rowIdx) => {
                headers.forEach((__, c) => {
@@ -332,17 +332,17 @@ const ActionHistory = () => {
           const { headers, body } = buildExport()
           const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
           doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(10, 10, 10)
-          doc.text(t("action_history") || "Harakatlar Tarixi", 14, 14)
+          doc.text(t("history_m_actions") || "Harakatlar Tarixi", 14, 14)
           doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(115, 115, 115)
           doc.text(dayjs().format("DD.MM.YYYY HH:mm"), 14, 21)
           autoTable(doc, {
                head: [headers], body,
                startY: 27, margin: { left: 14, right: 14 },
                styles: { fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 3, right: 3 }, lineColor: [212, 212, 212], lineWidth: 0.2, font: "helvetica", textColor: [26, 26, 26], overflow: "ellipsize" },
-               headStyles: { fillColor: [240, 240, 240], textColor: [10, 10, 10], fontStyle: "bold", fontSize: 8 },
+               headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
                alternateRowStyles: { fillColor: [250, 250, 250] },
                bodyStyles: { fillColor: [255, 255, 255] },
-               columnStyles: { 0: { halign: "center", cellWidth: 10 }, 1: { cellWidth: 32 }, 7: { cellWidth: 44 } },
+               columnStyles: { 0: { halign: "center", cellWidth: "auto" }, 1: { cellWidth: 32 }, 7: { cellWidth: 44 } },
           })
           const pc = doc.internal.getNumberOfPages()
           for (let i = 1; i <= pc; i++) {

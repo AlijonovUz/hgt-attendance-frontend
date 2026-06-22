@@ -1051,8 +1051,8 @@ const EmployeeRegister = () => {
         ...rows.map(() => ({ hpt: 26 })),
       ];
 
-      const HEADER_BG = "F0F0F0";
-      const HEADER_FONT = "0A0A0A";
+      const HEADER_BG = "3c83f6";
+      const HEADER_FONT = "ffffff";
       const ROW_ODD_BG = "FFFFFF";
       const ROW_EVEN_BG = "FAFAFA";
       const FONT_COLOR = "1A1A1A";
@@ -1143,7 +1143,7 @@ const EmployeeRegister = () => {
         body: rows,
         startY: 22,
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [240, 240, 240], textColor: 20 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
       });
       doc.save("Xodimlar-royxati.pdf");
       showToast(t("export_pdf_success"));
