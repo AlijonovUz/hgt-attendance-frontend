@@ -391,13 +391,22 @@ const LocationHistory = () => {
     headers.forEach((_, c) => {
       const ref = XLSX.utils.encode_cell({ r: 0, c })
       if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
-      ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "F0F0F0" } }, font: { bold: true, sz: 10, color: { rgb: "0A0A0A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+      ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "3c83f6" } }, font: { bold: true, sz: 10, color: { rgb: "ffffff" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
     })
     body.forEach((_, rowIdx) => {
+      const isUnreliable = logs[rowIdx]?.is_success === false
       headers.forEach((__, c) => {
         const ref = XLSX.utils.encode_cell({ r: rowIdx + 1, c })
         if (!ws[ref]) ws[ref] = { t: "s", v: "" }
-        ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: rowIdx % 2 === 1 ? "FAFAFA" : "FFFFFF" } }, font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+
+        let bgColor
+        if (isUnreliable) {
+          bgColor = "FFDBDC"
+        } else {
+          bgColor = rowIdx % 2 === 1 ? "FAFAFA" : "FFFFFF"
+        }
+
+        ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: bgColor } }, font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
       })
     })
     const wb = XLSX.utils.book_new()
@@ -418,10 +427,15 @@ const LocationHistory = () => {
       head: [headers], body,
       startY: 27, margin: { left: 14, right: 14 },
       styles: { fontSize: 8.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, lineColor: [212, 212, 212], lineWidth: 0.2, font: "helvetica", textColor: [26, 26, 26] },
-      headStyles: { fillColor: [240, 240, 240], textColor: [10, 10, 10], fontStyle: "bold", fontSize: 8.5 },
+      headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
       alternateRowStyles: { fillColor: [250, 250, 250] },
       bodyStyles: { fillColor: [255, 255, 255] },
-      columnStyles: { 0: { halign: "center", cellWidth: 10 }, 1: { cellWidth: 38 }, 5: { halign: "right" } },
+      columnStyles: { 0: { halign: "center", cellWidth: "auto" }, 1: { cellWidth: 32 }, 7: { cellWidth: 44 } },
+      didParseCell(data) {                                // ← PDF uchun
+        if (data.section === "body" && logs[data.row.index]?.is_success === false) {
+          data.cell.styles.fillColor = [255, 219, 220]   // #FFDBDC → RGB
+        }
+      },
     })
     const pc = doc.internal.getNumberOfPages()
     for (let i = 1; i <= pc; i++) {

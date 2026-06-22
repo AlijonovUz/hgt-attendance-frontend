@@ -33,10 +33,10 @@ const STATUS_OPTIONS_KEYS = [
 ]
 
 // ─── Detail modal uchun ko'rsatish maydonlari (disabled ko'rinishda) ───
-const DetailField = ({ label, value, className }) => (
+const DetailField = ({ label, value, className, inputClassName }) => (
   <div className={cn("flex flex-col gap-1.5", className)}>
     <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
-    <div title={value} className="h-11 px-3.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] truncate">
+    <div title={value} className={`h-11 px-3.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] truncate ${inputClassName}`}>
       {value ?? "—"}
     </div>
   </div>
@@ -307,9 +307,9 @@ const FaceIdHistory = () => {
     const body = logs.map((r, i) => [
       i + 1,
       r.user_info?.full_name || "—",
-      r.region_info?.name || r?.region || "",
-      r.district_info?.name || r?.district || "",
-      r.branch_info?.name || r?.branch || "",
+      r.region?.name || r?.region || "",
+      r.district?.name || r?.district || "",
+      r.branch?.name || r?.branch || "",
       r.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali"),
       r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : "",
     ])
@@ -325,13 +325,22 @@ const FaceIdHistory = () => {
     headers.forEach((_, c) => {
       const ref = XLSX.utils.encode_cell({ r: 0, c })
       if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
-      ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "F0F0F0" } }, font: { bold: true, sz: 10, color: { rgb: "0A0A0A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+      ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: "3c83f6" } }, font: { bold: true, sz: 10, color: { rgb: "ffffff" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
     })
     body.forEach((_, rowIdx) => {
+      const isUnreliable = logs[rowIdx]?.is_success === false  // ← shu yerda tekshiruv
       headers.forEach((__, c) => {
         const ref = XLSX.utils.encode_cell({ r: rowIdx + 1, c })
         if (!ws[ref]) ws[ref] = { t: "s", v: "" }
-        ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: rowIdx % 2 === 1 ? "FAFAFA" : "FFFFFF" } }, font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
+
+        let bgColor
+        if (isUnreliable) {
+          bgColor = "FFDBDC"                              // ← ishonchsiz: qizil
+        } else {
+          bgColor = rowIdx % 2 === 1 ? "FAFAFA" : "FFFFFF"  // ← oddiy: zebra
+        }
+
+        ws[ref].s = { fill: { patternType: "solid", fgColor: { rgb: bgColor } }, font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" }, alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" }, border: BORDER }
       })
     })
     const wb = XLSX.utils.book_new()
@@ -345,17 +354,23 @@ const FaceIdHistory = () => {
     const { headers, body } = buildExport()
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
     doc.setFont("helvetica", "bold").setFontSize(14).setTextColor(10, 10, 10)
-    doc.text(t("face_id_history") || "FaceID Tarixi", 14, 14)
+    doc.text(t("history_m_faceid") || "FaceID Tarixi", 14, 14)
     doc.setFont("helvetica", "normal").setFontSize(8.5).setTextColor(115, 115, 115)
     doc.text(dayjs().format("DD.MM.YYYY HH:mm"), 14, 21)
     autoTable(doc, {
       head: [headers], body,
       startY: 27, margin: { left: 14, right: 14 },
       styles: { fontSize: 8.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, lineColor: [212, 212, 212], lineWidth: 0.2, font: "helvetica", textColor: [26, 26, 26] },
-      headStyles: { fillColor: [240, 240, 240], textColor: [10, 10, 10], fontStyle: "bold", fontSize: 8.5 },
+      headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
       alternateRowStyles: { fillColor: [250, 250, 250] },
       bodyStyles: { fillColor: [255, 255, 255] },
-      columnStyles: { 0: { halign: "center", cellWidth: 10 }, 1: { cellWidth: 40 } },
+      columnStyles: { 0: { halign: "center", cellWidth: "auto" }, 1: { cellWidth: 40 } },
+      // columnStyles: { 0: { halign: "center", cellWidth: 10 }, 1: { cellWidth: 32 }, 7: { cellWidth: 44 } },
+      didParseCell(data) {
+        if (data.section === "body" && logs[data.row.index]?.is_success === false) {
+          data.cell.styles.fillColor = [255, 219, 220]
+        }
+      },
     })
     const pc = doc.internal.getNumberOfPages()
     for (let i = 1; i <= pc; i++) {
@@ -655,17 +670,16 @@ const FaceIdHistory = () => {
               </div>
             ) : detail && (
               <div className="flex flex-col gap-3">
-                <DetailField label={t("col_employee") || "Xodim"} value={detail.user_info?.full_name} />
-
                 <div className="grid grid-cols-2 gap-3">
                   <DetailField label={t("created_at") || "Yaratilgan vaqti"} value={detail.created_at ? dayjs(detail.created_at).format("DD.MM.YYYY HH:mm") : null} />
                   <DetailField label={t("updated_at") || "Yangilangan vaqti"} value={(detail.updated_at || detail.created_at) ? dayjs(detail.updated_at || detail.created_at).format("DD.MM.YYYY HH:mm") : null} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
+                  <DetailField label={t("col_employee") || "Xodim"} value={detail.user_info?.full_name} />
                   <DetailField label={t("status") || "Xolat"} value={detail.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali")} />
-                  <DetailField label={t("message") || "Xabar"} value={detail.message} />
                 </div>
+                <DetailField inputClassName="h-[90px]! items-start! pt-2!" label={t("message") || "Xabar"} value={detail.message} />
               </div>
             )}
           </div>

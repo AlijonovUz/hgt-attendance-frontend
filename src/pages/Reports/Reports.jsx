@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import * as XLSX from "xlsx-js-style"
 import { jsPDF } from "jspdf"
@@ -23,6 +23,7 @@ import { HugeIcon } from "@/components/ui/HugeIcon"
 import { Calendar02Icon, FilterVerticalIcon, Logout01Icon, Search01Icon, TimeQuarter02Icon } from "@hugeicons/core-free-icons"
 import { Modal } from "@/components/ui/modal"
 import { Select } from "@/components/ui/select"
+import { useLocation } from "react-router-dom"
 
 const calendarLocales = { uz, cy: uzCyrl, ru, en: enUS }
 
@@ -46,10 +47,16 @@ const Reports = () => {
   const { t, language } = useLanguage()
   const locale = calendarLocales[language] || uz
 
-  const [reportType, setReportType] = useState("branch") // 'branch' | 'employee'
+  const location = useLocation()
+
+  const filter = location?.state?.filter;
+  const page = location?.state?.page;
+
+  const [reportType, setReportType] = useState("branch")
   const [period, setPeriod] = useState("daily")
   const [selectedDate, setSelectedDate] = useState(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const activeFiltersRef = useRef({})
 
   const [data, setData] = useState({ results: [], summary: null })
   const [loading, setLoading] = useState(false)
@@ -57,7 +64,15 @@ const Reports = () => {
 
   const [openFilterModal, setOpenFilterModal] = useState(false)
 
-  const isBranch = reportType === "branch"
+  const [isBranch, setIsBranch] = useState(page === "employee" ? "employee" : "branch")
+
+  useEffect(() => {
+    if (page === "employee") {
+      setReportType(page)
+      setIsBranch("employee")
+    }
+  }, [page])
+
   const results = data?.results || []
   const summary = data?.summary || null
 
@@ -159,7 +174,7 @@ const Reports = () => {
   const fetchReports = async (extraParams = {}) => {
     setLoading(true)
     try {
-      const endpoint = isBranch
+      const endpoint = isBranch === "branch"
         ? "analytics/reports/by-branch/"
         : "analytics/reports/by-employee/"
 
@@ -195,39 +210,49 @@ const Reports = () => {
     }
   }
 
+
+  useEffect(() => {
+    if (filter) {
+      activeFiltersRef.current = { status: filter }
+      setFilterStatus({ value: filter })
+    }
+  }, [filter])
+
   // 7. Search tugmasi bosilganda
   const handleFilterSearch = () => {
     const extraParams = {}
     if (filterRegion?.value) extraParams.region = filterRegion.value
     if (filterDistrict?.value) extraParams.district = filterDistrict.value
     if (filterStatus?.value) extraParams.status = filterStatus.value
-    if (filterPosition?.value) extraParams.position = filterPosition.value   // YANGI
+    if (filterPosition?.value) extraParams.position = filterPosition.value
+
+    activeFiltersRef.current = extraParams
     setOpenFilterModal(false)
     fetchReports(extraParams)
   }
 
   // 8. Tozalash
   const handleFilterClear = () => {
+    activeFiltersRef.current = {} 
     setFilterRegion(null)
     setFilterDistrict(null)
     setFilterStatus(null)
-    setFilterPosition(null)              // YANGI
+    setFilterPosition(null)
     setDistricts([])
-    setPositionPag({ page: 1, hasMore: true, loading: false })   // YANGI
+    setPositionPag({ page: 1, hasMore: true, loading: false })
   }
 
 
   // 9. Status options — tarjima orqali
   const STATUS_OPTIONS = [
-    { value: "present", label: t("status_present") },
-    { value: "absent", label: t("status_absent") },
-    { value: "late", label: t("status_late") },
+    { value: "present", label: t("come") },
+    { value: "absent", label: t("absent") },
+    { value: "late", label: t("late") },
+    { value: "left_early", label: t("early_left") },
   ]
-
   useEffect(() => {
-    fetchReports()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportType, period, selectedDate])
+    fetchReports(activeFiltersRef.current)
+  }, [reportType, period, selectedDate, isBranch])
 
   const handlePeriodChange = (value) => {
     setSelectedDate(null)
@@ -255,28 +280,12 @@ const Reports = () => {
       : dayjs(selectedDate).format("DD.MM.YYYY")
     : t("byDate")
 
-  // ─── Export ───
-  const BORDER_CLR = "D4D4D4"
-  const FONT_COLOR = "1A1A1A"
-  const HEADER_BG = "F0F0F0"
-  const ODD_BG = "FFFFFF"
-  const EVEN_BG = "FAFAFA"
-  const TOTAL_BG = "EFF4FF"
-  const TOTAL_FONT = "1E3A8A"
-
-  const borderStyle = {
-    top: { style: "thin", color: { rgb: BORDER_CLR } },
-    bottom: { style: "thin", color: { rgb: BORDER_CLR } },
-    left: { style: "thin", color: { rgb: BORDER_CLR } },
-    right: { style: "thin", color: { rgb: BORDER_CLR } },
-  }
-
-  const nameOf = (r) => (isBranch ? r.branch : r.full_name) || "—"
+  const nameOf = (r) => (isBranch === "branch" ? r.branch : r.full_name) || "—"
 
   const buildExport = () => {
     const headers = [
       "#",
-      t(isBranch ? "col_branch" : "col_employee"),
+      t(isBranch === "branch" ? "col_branch" : "col_employee"),
       t("region"),
       t("district"),
       t("col_total"),
@@ -350,8 +359,8 @@ const Reports = () => {
         const ref = XLSX.utils.encode_cell({ r: 0, c })
         if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
         ws[ref].s = {
-          fill: { patternType: "solid", fgColor: { rgb: "F0F0F0" } },
-          font: { bold: true, sz: 10, color: { rgb: "0A0A0A" }, name: "Calibri" },
+          fill: { patternType: "solid", fgColor: { rgb: "3c83f6" } },
+          font: { bold: true, sz: 10, color: { rgb: "ffffff" }, name: "Calibri" },
           alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left", wrapText: false },
           border,
         }
@@ -438,8 +447,8 @@ const Reports = () => {
           overflow: "ellipsize",
         },
         headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [10, 10, 10],
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
           fontStyle: "bold",
           fontSize: 8.5,
           lineColor: [212, 212, 212],
@@ -615,7 +624,7 @@ const Reports = () => {
               <button
                 key={tab.value}
                 type="button"
-                onClick={() => setReportType(tab.value)}
+                onClick={() => { setReportType(tab.value); setIsBranch(tab.value) }}
                 className={cn(
                   "rounded-md px-2 py-[3px] text-[13px] font-semibold text-[#0A0A0A] dark:text-white cursor-pointer transition-colors",
                   reportType === tab.value
@@ -669,7 +678,7 @@ const Reports = () => {
               <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
                 {[
                   "#",
-                  t(isBranch ? "col_branch" : "col_employee"),
+                  t(isBranch === "branch" ? "col_branch" : "col_employee"),
                   t("region"),
                   t("district"),
                   t("col_total"),
