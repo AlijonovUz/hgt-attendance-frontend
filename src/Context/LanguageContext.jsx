@@ -1999,6 +1999,44 @@ export const translations = {
           ru: "Спутник"
      },
 
+     // ─── Bildirishnomalar (Notifications) ───
+     notif_title: {
+          uz: "Bildirishnomalar",
+          cy: "Билдиришномалар",
+          en: "Notifications",
+          ru: "Уведомления"
+     },
+     notif_empty: {
+          uz: "Hozircha bildirishnomalar yo'q",
+          cy: "Ҳозирча билдиришномалар йўқ",
+          en: "No notifications yet",
+          ru: "Пока нет уведомлений"
+     },
+     notif_empty_hint: {
+          uz: "Yangi bildirishnomalar shu yerda ko'rinadi",
+          cy: "Янги билдиришномалар шу ерда кўринади",
+          en: "New notifications will appear here",
+          ru: "Новые уведомления появятся здесь"
+     },
+     notif_mark_all: {
+          uz: "Hammasini o'qildi deb belgilash",
+          cy: "Ҳаммасини ўқилди деб белгилаш",
+          en: "Mark all as read",
+          ru: "Отметить все как прочитанные"
+     },
+     notif_unread: {
+          uz: "o'qilmagan",
+          cy: "ўқилмаган",
+          en: "unread",
+          ru: "непрочитанных"
+     },
+     notif_error: {
+          uz: "Bildirishnomalarni yuklab bo'lmadi",
+          cy: "Билдиришномаларни юклаб бўлмади",
+          en: "Failed to load notifications",
+          ru: "Не удалось загрузить уведомления"
+     },
+
 }
 
 export function LanguageProvider({ children }) {
