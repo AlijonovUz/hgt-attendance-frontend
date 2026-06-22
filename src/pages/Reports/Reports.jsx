@@ -198,10 +198,10 @@ const Reports = () => {
   // 7. Search tugmasi bosilganda
   const handleFilterSearch = () => {
     const extraParams = {}
-    if (filterRegion?.value) extraParams.region_id = filterRegion.value
-    if (filterDistrict?.value) extraParams.district_id = filterDistrict.value
+    if (filterRegion?.value) extraParams.region = filterRegion.value
+    if (filterDistrict?.value) extraParams.district = filterDistrict.value
     if (filterStatus?.value) extraParams.status = filterStatus.value
-    if (filterPosition?.value) extraParams.position_id = filterPosition.value   // YANGI
+    if (filterPosition?.value) extraParams.position = filterPosition.value   // YANGI
     setOpenFilterModal(false)
     fetchReports(extraParams)
   }

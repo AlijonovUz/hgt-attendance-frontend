@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Modal } from "@/components/ui/modal"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
+import { ArrowLeft02Icon, Calendar02Icon, Download01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { DatePicker } from "@/components/ui/DatePicker"
 import * as XLSX from "xlsx-js-style"
 import { jsPDF } from "jspdf"
@@ -20,30 +20,29 @@ import autoTable from "jspdf-autotable"
 import { ExportMenu } from "@/components/ui/ExportMenu"
 import Toast from "@/components/ui/Toast"
 
-// NOTE: `react-leaflet` va `leaflet` paketlari o'rnatilgan bo'lishi kerak:
-//   npm install leaflet react-leaflet
-// Xarita uchun Google Maps tile'laridan foydalanilmoqda (API key talab qilmaydi).
+
 const GOOGLE_TILE_URL = "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+const GOOGLE_SATELLITE_URL = "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
 const GOOGLE_TILE_SUBDOMAINS = ["mt0", "mt1", "mt2", "mt3"]
 
-// Xodimning GPS nuqtasini ko'rsatadigan joylashuv (location pin) ikonkasi
 const createPinIcon = (color = "#16A34A") => L.divIcon({
   className: "",
   html: `
-          <svg width="50" height="50" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 4px rgba(0,0,0,0.35));">
-               <path d="M18 2C11.373 2 6 7.373 6 14c0 9 12 20 12 20s12-11 12-20c0-6.627-5.373-12-12-12z" fill="${color}" stroke="#fff" stroke-width="2"/>
-               <circle cx="18" cy="14" r="5" fill="#fff"/>
-          </svg>
-     `,
+    <svg width="50" height="50" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 3px 4px rgba(0,0,0,0.35));">
+      <path d="M18 2C11.373 2 6 7.373 6 14c0 9 12 20 12 20s12-11 12-20c0-6.627-5.373-12-12-12z" fill="${color}" stroke="#fff" stroke-width="2"/>
+      <circle cx="18" cy="14" r="5" fill="#fff"/>
+    </svg>
+  `,
   iconSize: [36, 36],
   iconAnchor: [18, 34],
 })
 
-// ─── Tafsilot ko'rinishi: jadval qatorini bosganda jadval o'rniga shu chiqadi ───
 const LocationDetailMap = ({ log, onBack, t }) => {
   const lat = parseFloat(log.latitude)
   const lng = parseFloat(log.longitude)
   const hasCoords = !Number.isNaN(lat) && !Number.isNaN(lng)
+
+  const [isSatellite, setIsSatellite] = useState(false)
 
   const chips = [
     log.user_info?.full_name,
@@ -55,37 +54,46 @@ const LocationDetailMap = ({ log, onBack, t }) => {
 
   return (
     <div className="relative w-full h-[calc(100vh-90px)] rounded-xl overflow-hidden">
-      {/* Header chiplar */}
-      <div className="absolute top-3 left-12 right-3 z-[1000] flex items-center gap-2 flex-wrap">
+      <div className="absolute top-3 right-3 z-[1000] flex items-center w-full justify-between gap-2 flex-wrap">
+        <div className="ml-15 flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-11 h-9 flex items-center justify-center rounded-md bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] cursor-pointer"
+          >
+            <HugeIcon icon={ArrowLeft02Icon} size={24} className="text-[#0A0A0A] dark:text-white" />
+          </button>
+
+          {chips.map((c, i) => (
+            <span
+              key={i}
+              className="px-3 py-[7px] text-sm font-medium rounded-md bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white whitespace-nowrap"
+            >
+              {c}
+            </span>
+          ))}
+
+          <span
+            className={cn(
+              "px-3 py-[7px] text-sm font-medium rounded-md bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] inline-flex items-center gap-1 whitespace-nowrap",
+              log.is_success ? "text-[#16A34A]" : "text-[#DC2626]"
+            )}
+          >
+            {log.is_success ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+            {log.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali")}
+          </span>
+        </div>
+
+        {/* ─ Xarita turi tugmasi ─ */}
         <button
           type="button"
-          onClick={onBack}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] cursor-pointer"
+          onClick={() => setIsSatellite((v) => !v)}
+          className="px-3 py-[7px] text-sm font-medium cursor-pointer rounded-md bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white whitespace-nowrap"
         >
-          <ArrowLeft size={18} className="text-[#0A0A0A] dark:text-white" />
+          {isSatellite ? (t("map_normal") || "Oddiy xarita") : (t("map_satellite") || "Sun'iy yo'ldosh")}
         </button>
-
-        {chips.map((c, i) => (
-          <span
-            key={i}
-            className="px-3 py-1.5 text-sm font-medium rounded-full bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white whitespace-nowrap"
-          >
-            {c}
-          </span>
-        ))}
-
-        <span
-          className={cn(
-            "px-3 py-1.5 text-sm font-medium rounded-full bg-white dark:bg-[#1A1A1A] shadow-md border border-[#E5E7EB] dark:border-[#2E2E2E] inline-flex items-center gap-1 whitespace-nowrap",
-            log.is_success ? "text-[#16A34A]" : "text-[#DC2626]"
-          )}
-        >
-          {log.is_success ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-          {log.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali")}
-        </span>
       </div>
 
-      {/* Xarita */}
       {hasCoords ? (
         <MapContainer
           center={[lat, lng]}
@@ -94,7 +102,8 @@ const LocationDetailMap = ({ log, onBack, t }) => {
           className="w-full h-full"
         >
           <TileLayer
-            url={GOOGLE_TILE_URL}
+            key={isSatellite ? "satellite" : "normal"}
+            url={isSatellite ? GOOGLE_SATELLITE_URL : GOOGLE_TILE_URL}
             subdomains={GOOGLE_TILE_SUBDOMAINS}
             maxZoom={20}
           />
