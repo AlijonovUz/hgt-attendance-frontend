@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom"
-import { PanelLeftClose, PanelLeftOpen, ChevronRight, PanelLeft } from "lucide-react"
+import { ChevronRight, PanelLeft } from "lucide-react"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
+import { NotificationBell } from "@/components/ui/NotificationBell"
 import { useLanguage } from "@/Context/LanguageContext"
 
 // Route → translation key xaritasi
@@ -26,7 +27,7 @@ const routeMap = {
      "signature": "history_m_signature",
 }
 
-const Navbar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
+const Navbar = ({ setSidebarCollapsed }) => {
      const { t } = useLanguage()
      const { pathname } = useLocation()
 
@@ -83,9 +84,10 @@ const Navbar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                          })}
                     </nav>
 
-                    {/* Language Switcher */}
-                    <div className="flex-shrink-0">
+                    {/* Language Switcher + Bildirishnomalar */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                          <LanguageSwitcher />
+                         <NotificationBell />
                     </div>
 
                </div>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import "proj4leaflet"
-import { Crosshair, Layers } from "lucide-react"
+import { Layers } from "lucide-react"
 
 // Yandex xaritasi EPSG:3395 (ellipsoidal Mercator) proyeksiyasidan foydalanadi —
 // Leaflet'ning standart EPSG:3857'idan farq qiladi. To'g'ri joylashuv uchun
@@ -225,7 +225,23 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
       {/* Koordinata pill — crosshair ikonkasi bilan (Figma) */}
       {hasCoord && (
         <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] px-2.5 py-1.5 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-sm">
-          <Crosshair size={14} className="text-[#0090FF] flex-shrink-0" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="text-[#0090FF] flex-shrink-0"
+            aria-hidden="true"
+          >
+            <path d="M13.6771 7.99992C13.6771 11.1295 11.14 13.6666 8.01042 13.6666C4.8808 13.6666 2.34375 11.1295 2.34375 7.99992C2.34375 4.8703 4.8808 2.33325 8.01042 2.33325C11.14 2.33325 13.6771 4.8703 13.6771 7.99992Z" />
+            <path d="M15.0013 8H13.668" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2.33333 8H1" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 0.999919L8 2.33325" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M8 13.6667V15" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9.99997 8C9.99997 9.10457 9.10454 10 7.99997 10C6.8954 10 5.99997 9.10457 5.99997 8C5.99997 6.89543 6.8954 6 7.99997 6C9.10454 6 9.99997 6.89543 9.99997 8Z" />
+          </svg>
           <span className="tabular-nums">{validLat.toFixed(4)}, {validLng.toFixed(4)}</span>
         </div>
       )}

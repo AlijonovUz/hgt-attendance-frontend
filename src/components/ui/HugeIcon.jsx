@@ -9,7 +9,8 @@ export const HugeIcon = ({ icon, size = 16, strokeWidth = 2, className = "" }) =
      >
           {icon.map(([tag, attrs]) => {
                const Tag = tag;
-               return <Tag key={attrs.key} {...attrs} strokeWidth={strokeWidth} />;
+               const { key, ...rest } = attrs;
+               return <Tag key={key} {...rest} strokeWidth={strokeWidth} />;
           })}
      </svg>
 );
