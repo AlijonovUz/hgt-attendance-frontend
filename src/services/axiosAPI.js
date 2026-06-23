@@ -28,6 +28,7 @@ const processQueue = (error, token = null) => {
 const doLogout = () => {
   localStorage.removeItem("access")
   localStorage.removeItem("refresh")
+  localStorage.removeItem("registered_fcm_token") // keyingi login'da qurilma qayta ro'yxatdan o'tsin
   if (window.location.pathname !== "/login") {
     window.location.href = "/login"
   }
