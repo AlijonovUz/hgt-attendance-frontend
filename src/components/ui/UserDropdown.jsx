@@ -34,6 +34,7 @@ export const UserDropdown = ({ currentUser }) => {
                localStorage.removeItem("refresh");
                localStorage.removeItem("currentUser");
                localStorage.removeItem("userPermission");
+               localStorage.removeItem("registered_fcm_token"); // keyingi login'da qurilma qayta ro'yxatdan o'tsin
                
                navigate("/login", { replace: true })
           }, 1000)
