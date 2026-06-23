@@ -22,8 +22,10 @@ import Toast from "@/components/ui/Toast"
 
 
 const GOOGLE_TILE_URL = "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
-const GOOGLE_SATELLITE_URL = "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+const GOOGLE_SATELLITE_URL = "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
 const GOOGLE_TILE_SUBDOMAINS = ["mt0", "mt1", "mt2", "mt3"]
+
+const GOOGLE_LABELS_URL = "https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}"
 
 const createPinIcon = (color = "#16A34A") => L.divIcon({
   className: "",
@@ -42,6 +44,12 @@ const LocationDetailMap = ({ log, onBack, t }) => {
   const lng = parseFloat(log.longitude)
   const hasCoords = !Number.isNaN(lat) && !Number.isNaN(lng)
 
+  const geo = log.geozone_info
+  const geoLat = parseFloat(geo?.latitude)
+  const geoLng = parseFloat(geo?.longitude)
+  const geoRadius = Number(geo?.radius) || 0
+  const hasGeoCoords = !Number.isNaN(geoLat) && !Number.isNaN(geoLng) && geoRadius > 0
+
   const [isSatellite, setIsSatellite] = useState(false)
 
   const chips = [
@@ -49,6 +57,7 @@ const LocationDetailMap = ({ log, onBack, t }) => {
     log.region?.name,
     log.district?.name,
     log.branch?.name,
+    geoRadius ? `${t("radius") || "Radius"}: ${geoRadius} ${t("meter_short") || "metr"}` : null,
     log.created_at ? dayjs(log.created_at).format("DD.MM.YYYY HH:mm") : null,
   ].filter(Boolean)
 
@@ -84,7 +93,6 @@ const LocationDetailMap = ({ log, onBack, t }) => {
           </span>
         </div>
 
-        {/* ─ Xarita turi tugmasi ─ */}
         <button
           type="button"
           onClick={() => setIsSatellite((v) => !v)}
@@ -107,6 +115,35 @@ const LocationDetailMap = ({ log, onBack, t }) => {
             subdomains={GOOGLE_TILE_SUBDOMAINS}
             maxZoom={20}
           />
+
+          {/* Geozona radiusi — ko'k doira, shaffof to'ldirish + border (rasmdagidek) */}
+          {hasGeoCoords && (
+            <Circle
+              center={[geoLat, geoLng]}
+              radius={geoRadius}
+              pathOptions={{
+                color: "#0090FF",
+                weight: 2,
+                fillColor: "#0090FF",
+                fillOpacity: 0.12,
+              }}
+            />
+          )}
+
+          {/* Geozona markazi — kichik ko'k nuqta */}
+          {hasGeoCoords && (
+            <Circle
+              center={[geoLat, geoLng]}
+              radius={6}
+              pathOptions={{
+                color: "#0090FF",
+                weight: 2,
+                fillColor: "#0090FF",
+                fillOpacity: 1,
+              }}
+            />
+          )}
+
           <Marker position={[lat, lng]} icon={createPinIcon(log.is_success ? "#16A34A" : "#DC2626")} />
         </MapContainer>
       ) : (

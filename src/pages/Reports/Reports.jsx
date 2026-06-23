@@ -410,6 +410,7 @@ const Reports = () => {
       showToast(t("export_error"))
     }
   }
+  
   const exportPDF = () => {
     if (!results.length) return showToast(t("export_empty_warning"))
     try {

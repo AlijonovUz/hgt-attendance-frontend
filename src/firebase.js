@@ -20,9 +20,7 @@ export const app = initializeApp(firebaseConfig);
 // Web Push sertifikat kaliti (Firebase Console → Cloud Messaging → Web Push certificates).
 // .env'dagi VITE_FIREBASE_VAPID_KEY birinchi o'rinda; deploy'da env bo'lmasa ham push
 // ishlashi uchun hardcoded fallback (bu OCHIQ public kalit, maxfiy emas).
-const VAPID_KEY =
-  import.meta.env.VITE_FIREBASE_VAPID_KEY ||
-  "BCxHjPAihune7sXNLozVcPXnJsq5Xdy46jMD-DD2B-74L0Z3ymJsjWTfPyvXhYzASWCea8L3KzIXYFH5HWTxYQw";
+const VAPID_KEY = "BCxHjPAihune7sXNLozVcPXnJsq5Xdy46jMD-DD2B-74L0Z3ymJsjWTfPyvXhYzASWCea8L3KzIXYFH5HWTxYQw";
 
 // Messaging faqat qo'llab-quvvatlanadigan brauzerlarda (HTTPS/localhost) ishlaydi
 let messagingPromise = null;
@@ -116,14 +114,18 @@ export const requestForToken = async () => {
 // Sayt ochiq turganda keladigan FCM xabarlarni eshitish.
 // cb — har xabar uchun chaqiriladigan callback. Tozalash uchun unsubscribe qaytaradi.
 export const onForegroundMessage = (cb) => {
-  let unsub = () => {};
+  let active = true;
+  let unsub = null;
   getMessagingInstance().then((messaging) => {
-    if (messaging) {
+    if (messaging && active) {
       unsub = onMessage(messaging, (payload) => {
         console.log("📨 Foreground xabar keldi:", payload);
         cb?.(payload);
       });
     }
   });
-  return () => unsub();
+  return () => {
+    active = false;
+    if (unsub) unsub();
+  };
 };

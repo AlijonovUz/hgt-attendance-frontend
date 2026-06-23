@@ -242,9 +242,9 @@ const ReferencePage = () => {
   const [editSaving, setEditSaving] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const [showDeleleModal, setShowDeleleModal] = useState(false)
-  const [showDeleleScheModal, setShowDeleleScheModal] = useState(false)
-  const [showDeleleRolModal, setShowDeleleRolModal] = useState(false)
+  const [showDeleleModal, setShowDeleleModal] = useState(null)
+  const [showDeleleScheModal, setShowDeleleScheModal] = useState(null)
+  const [showDeleleRolModal, setShowDeleleRolModal] = useState(null)
 
   const [filterSearch, setFilterSearch] = useState({})
 
@@ -521,17 +521,19 @@ const ReferencePage = () => {
     setDeleteLoading(true)
     try {
       await axiosAPI.delete(`${config.endpoint}${row.id}/`)
-      setShowDeleleModal(false)
-      showToast(t("ref_deleted") || "O'chirildi")
+      setShowDeleleModal(null)
+      setEditModal(false)
+      showToast(t("action_delete") || "O'chirildi")
       setPage(1)
       setHasMore(true)
       if (scrollRef.current) scrollRef.current.scrollTop = 0
       fetchList(config, 1)
     } catch (err) {
+      console.error(err);
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setDeleteLoading(false)
-      setShowDeleleModal(false)
+      setShowDeleleModal(null)
     }
   }
 
@@ -539,14 +541,15 @@ const ReferencePage = () => {
     setDeleteLoading(true)
     try {
       await axiosAPI.delete(`users/roles/${row.id}/`)
-      setShowDeleleRolModal(false)
-      showToast(t("ref_deleted") || "O'chirildi")
+      setShowDeleleRolModal(null)
       setEditModal(false)
+      showToast(t("action_delete") || "O'chirildi")
       setPage(1)
       setHasMore(true)
       if (scrollRef.current) scrollRef.current.scrollTop = 0
       fetchList(config, 1, activeParamsRef.current)
     } catch (err) {
+      console.error(err);
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setDeleteLoading(false)
@@ -558,18 +561,19 @@ const ReferencePage = () => {
     setDeleteLoading(true)
     try {
       await axiosAPI.delete(`users/schedules/${row.id}/`)
-      setShowDeleleScheModal(false)
-      showToast(t("ref_deleted") || "O'chirildi")
+      setShowDeleleScheModal(null)
       setEditModal(false)
+      showToast(t("action_delete") || "O'chirildi")
       setPage(1)
       setHasMore(true)
       if (scrollRef.current) scrollRef.current.scrollTop = 0
       fetchList(config, 1, activeParamsRef.current)
     } catch (err) {
+      console.error(err);
       showToast(getErrMsg(err, t("gz_error")))
     } finally {
       setDeleteLoading(false)
-      setShowDeleleScheModal(false)
+      setShowDeleleScheModal(null)
     }
   }
 
@@ -1017,7 +1021,7 @@ const ReferencePage = () => {
           getErrMsg={getErrMsg}
           deleteLoading={deleteLoading}
           setEditModal={setEditModal}
-          onDelete={() => setShowDeleleRolModal(true)}
+          onDelete={() => setShowDeleleRolModal(editRow)}
         />
       ) : config.custom === "schedule" ? (
         <ScheduleModal
@@ -1026,7 +1030,7 @@ const ReferencePage = () => {
           scheduleData={editRow}
           canEdit={canEdit}
           canDelete={canDelete}
-          onDelete={() => setShowDeleleScheModal(true)}
+          onDelete={() => setShowDeleleScheModal(editRow)}
           deleteLoading={deleteLoading}
         />
       ) : (<Modal
@@ -1101,7 +1105,7 @@ const ReferencePage = () => {
               {canDelete && (
                 <button
                   type="button"
-                  onClick={() => setShowDeleleModal(true)}
+                  onClick={() => setShowDeleleModal(editRow)}
                   disabled={deleteLoading}
                   className={cn(
                     "px-5 py-3 flex items-center gap-2 rounded-xl text-[15px] font-semibold text-white transition-colors",
@@ -1139,8 +1143,8 @@ const ReferencePage = () => {
 
       <AlertModal
         isOpen={showDeleleModal}
-        onClose={() => setShowDeleleModal(false)}
-        onConfirm={handleDelete}
+        onClose={() => setShowDeleleModal(null)}
+        onConfirm={() => handleDelete(showDeleleModal)}
         title={t("confirm_delate_title")}
         description={t("confirm_delate_desc")}
         confirmText={
@@ -1161,8 +1165,8 @@ const ReferencePage = () => {
 
       <AlertModal
         isOpen={showDeleleRolModal}
-        onClose={() => setShowDeleleRolModal(false)}
-        onConfirm={handleDeleteRol}
+        onClose={() => setShowDeleleRolModal(null)}
+        onConfirm={() => handleDeleteRol(showDeleleRolModal)}
         title={t("confirm_delate_title")}
         description={t("confirm_delate_desc")}
         confirmText={
@@ -1183,8 +1187,8 @@ const ReferencePage = () => {
 
       <AlertModal
         isOpen={showDeleleScheModal}
-        onClose={() => setShowDeleleScheModal(false)}
-        onConfirm={handleDeleteSche}
+        onClose={() => setShowDeleleScheModal(null)}
+        onConfirm={() => handleDeleteSche(showDeleleScheModal)}
         title={t("confirm_delate_title")}
         description={t("confirm_delate_desc")}
         confirmText={

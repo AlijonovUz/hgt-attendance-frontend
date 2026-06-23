@@ -46,6 +46,20 @@ const normalizeIncoming = (raw) => {
   return n || {}
 }
 
+// Xabardan barqaror ID yaratish (dublikat popuplarni va bir nechta tablarni yagona qilish uchun)
+const getStableId = (n, language) => {
+  const title = pickText(n, "title", language)
+  const message = pickText(n, "message", language)
+  const str = `${title || ""}|${message || ""}`
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash |= 0
+  }
+  return `stable-${Math.abs(hash)}`
+}
+
 // VITE_BASE_URL (.../api/v1/) dan WS bazasini olish: ws(s)://host
 const WS_BASE = (import.meta.env.VITE_BASE_URL || "")
   .replace(/\/api\/v1\/?$/, "")
@@ -87,6 +101,10 @@ export const NotificationBell = () => {
 
   // Desktop popup takrorlanmasligi uchun ko'rsatilgan id'lar
   const notifiedIdsRef = useRef(new Set())
+
+  // WS/FCM reconnect'larida bir xil xabar qayta ishlanmasligi uchun ko'rilgan id'lar.
+  // Backend reconnect'da o'qilmaganlarni qayta yuborsa — count oshmaydi, popup takror chiqmaydi.
+  const seenIdsRef = useRef(new Set())
 
   // ── O'qilmaganlar sonini olish (qo'ng'iroqdagi qizil nuqta) ──
   const fetchCount = useCallback(async () => {
@@ -147,10 +165,25 @@ export const NotificationBell = () => {
         notifiedIdsRef.current.add(key)
         const title = pickText(notif, "title", language) || "Yangi bildirishnoma"
         const body = pickText(notif, "message", language)
-        const bn = new Notification(title, { body, icon: "/logo.svg", tag: key })
-        bn.onclick = () => {
-          window.focus()
-          bn.close()
+
+        const options = {
+          body,
+          icon: "/logo.svg",
+          tag: key,
+        }
+
+        // Service Worker orqali ko'rsatish (brauzer ko'p tablar orasida tag collapse'ni to'g'ri qo'llashi uchun)
+        if (typeof navigator !== "undefined" && navigator.serviceWorker && navigator.serviceWorker.ready) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(title, options).catch((err) => {
+              console.warn("[NOTIF] SW showNotification failed, using fallback:", err)
+              new Notification(title, options)
+            })
+          }).catch(() => {
+            new Notification(title, options)
+          })
+        } else {
+          new Notification(title, options)
         }
       } catch (err) {
         console.error(err)
@@ -175,10 +208,24 @@ export const NotificationBell = () => {
       const isUnread = n.is_read !== true
       const notif = {
         ...n,
-        id: n.id ?? `tmp-${new Date().getTime()}`,
+        id: n.id ?? getStableId(n, language),
         is_read: !!n.is_read,
         created_at: n.created_at || new Date().toISOString(),
       }
+
+      // YAGONA DEDUP DARVOZASI: real id'li xabar shu sessiyada allaqachon ishlangan bo'lsa —
+      // butunlay e'tiborsiz qoldiramiz. Aks holda WS reconnect'da backend o'qilmaganlarni
+      // qayta yuborganda count cheksiz oshib, popup ketma-ket chiqib ketadi.
+      const key = String(notif.id)
+      const hasRealId = notif.id != null && !key.startsWith("tmp-")
+      if (hasRealId) {
+        if (seenIdsRef.current.has(key)) {
+          console.log("[NOTIF] ⏭️ Takror (reconnect replay) — o'tkazib yuborildi:", key)
+          return
+        }
+        seenIdsRef.current.add(key)
+      }
+
       // UI ro'yxatiga qo'shish (dublikatni o'tkazib yuborish)
       setItems((prev) => {
         if (notif.id && prev.some((it) => it.id === notif.id)) return prev
@@ -189,7 +236,7 @@ export const NotificationBell = () => {
       if (isUnread) setUnread((u) => u + 1)
       if (isUnread) showDesktopNotification(notif)
     },
-    [showDesktopNotification]
+    [showDesktopNotification, language]
   )
 
   // Eng so'nggi handlerni ref'da saqlaymiz — WS callback'i barqaror qoladi
@@ -198,9 +245,7 @@ export const NotificationBell = () => {
     incomingRef.current = handleIncoming
   }, [handleIncoming])
 
-  // Mount: brauzer ruxsatini so'rash + o'qilmaganlar sonini olish.
-  // (40s polling OLIB TASHLANDI — count real-time socket orqali +1 bo'ladi,
-  //  sahifa yangilanганда esa shu fetchCount haqiqiy sonni qaytaradi.)
+
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {})

@@ -31,6 +31,9 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const [historyOpen, setHistoryOpen] = useState(() => location.pathname.startsWith("/history"))
      const historyActive = location.pathname.startsWith("/history")
 
+     const [reportsOpen, setReportsOpen] = useState(() => location.pathname.startsWith("/reports"))
+     const reportsActive = location.pathname.startsWith("/reports")
+
      const viewAULog = userPermission?.logs &&
           userPermission?.logs?.some(
                (e) => e.code === "log_view_audit"
@@ -62,7 +65,14 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
           );
 
      const viewgeo = userPermission?.geozones && userPermission?.geozones.some(e => e.code === "geozone_view")
+
      const viewRep = userPermission?.reports && userPermission?.reports.some(e => (e.code === "report_type_employee" || e.code === "report_type_branch"))
+
+     const viewRepGeneral = userPermission?.reports && userPermission?.reports.some(e => e.code === "report_type_employee" || e.code === "report_type_branch")
+     const viewRepKPI = userPermission?.kpis
+     const viewRepDaily = userPermission?.dailys
+     const viewRepEvents = userPermission?.reports
+
      const viewhol = userPermission?.holidays && userPermission?.holidays.some(e => e.code === "holiday_view")
      const viewsch = userPermission?.schedules && userPermission?.schedules.some(e => e.code === "schedule_view")
      const viewreg = userPermission?.regions
@@ -83,6 +93,13 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
           ...(viewsch ? [{ key: "schedule", labelKey: "ref_m_schedule" }] : []),
      ]
 
+     const REPORTS_CHILDREN = [
+          ...(viewRepGeneral ? [{ key: "general", labelKey: "report_m_general", path: "/reports/general" }] : []),
+          ...(viewRepKPI ? [{ key: "kpi", labelKey: "report_m_kpi", path: "/reports/kpi" }] : []),
+          ...(viewRepDaily ? [{ key: "daily", labelKey: "report_m_daily", path: "/reports/daily" }] : []),
+          ...(viewRepEvents ? [{ key: "events", labelKey: "report_m_events", path: "/reports/events" }] : []),
+     ]
+
      const sidebarItems = [
           {
                id: "home",
@@ -95,18 +112,6 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                icon: Users,
                label: t("employeeRestr"),
                path: "/employee-register",
-          }] : []),
-          ...(viewRep ? [{
-               id: "reports",
-               icon: FileBarChart2,
-               label: t("reports"),
-               path: "/reports",
-          }] : []),
-          ...(viewgeo ? [{
-               id: "geozone",
-               img: "/bar-chart.svg",
-               label: t("geozone"),
-               path: "/geozones",
           }] : []),
      ]
 
@@ -133,11 +138,11 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
           >
 
                {/* ─── TOP ─── */}
-               <div className="flex flex-col gap-1">
+               <div className={`flex flex-col ${sidebarCollapsed ? "" : "overflow-y-auto"} gap-1`}>
 
                     {/* Logo */}
                     <div
-                         className={`flex items-center gap-2.5 p-2.5 cursor-pointer min-w-0 ${sidebarCollapsed ? "ml-[3px]" : ""}`}
+                         className={`flex items-center sticky top-0 z-20 bg-[#FAFAFA] dark:bg-[#1C1C1C] gap-2.5 p-2.5 cursor-pointer min-w-0 ${sidebarCollapsed ? "ml-[3px]" : ""}`}
                          onClick={() => navigate("/")}
                     >
                          <img
@@ -164,7 +169,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                         to={item.path}
                                         end={item.path === ""}
                                         className={({ isActive }) =>
-                                             `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#1A1A1A] dark:text-white font-medium overflow-hidden
+                                             `flex items-center gap-3 px-3 py-2.5! rounded-lg text-sm text-[#1A1A1A] dark:text-white font-medium overflow-hidden
                                              ${isActive
                                                   ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs"
                                                   : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
@@ -187,48 +192,110 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                               )
                          })}
 
-                         {/* ─── Ma'lumotnomalar (ochiluvchi) ─── */}
-                         {(viewgeo || viewRep || viewhol || viewsch ||viewreg || viewdis || viewbrs || viewdep || viewpos || viewrol) &&
-                         <>
-                              <button
-                                   type="button"
-                                   onClick={() => setRefOpen((p) => !p)}
-                                   title={sidebarCollapsed ? t("ref_menu_title") : undefined}
-                                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
-                                   ${refActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
-                              >
-                                   <FileText size={18} className="flex-shrink-0" strokeWidth={1.7} />
-                                   <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
-                                   ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
-                                        {t("ref_menu_title")}
-                                   </span>
-                                   {!sidebarCollapsed && (
-                                        <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
-                                   )}
-                              </button>
+                         {/* ─── Hisobotlar (ochiluvchi) ─── */}
+                         {(viewRepGeneral || viewRepKPI || viewRepDaily || viewRepEvents) &&
+                              <>
+                                   <button
+                                        type="button"
+                                        onClick={() => setReportsOpen((p) => !p)}
+                                        title={sidebarCollapsed ? t("report_menu_title") : undefined}
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
+        ${reportsActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
+                                   >
+                                        <FileBarChart2 size={18} className="flex-shrink-0" strokeWidth={1.7} />
+                                        <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
+        ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
+                                             {t("report_menu_title")}
+                                        </span>
+                                        {!sidebarCollapsed && (
+                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${reportsOpen ? "rotate-180" : ""}`} />
+                                        )}
+                                   </button>
 
-                              {/* Ichki bo'limlar */}
-                              {refOpen && !sidebarCollapsed && (
-                                   <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
-                                        {REF_CHILDREN.map((child) => (
-                                             <NavLink
-                                                  key={child.key}
-                                                  to={`/references/${child.key}`}
-                                                  className={({ isActive }) =>
-                                                       `px-3 py-2 rounded-lg text-[13px] truncate
+                                   {reportsOpen && !sidebarCollapsed && (
+                                        <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
+                                             {REPORTS_CHILDREN.map((child) => (
+                                                  <NavLink
+                                                       key={child.key}
+                                                       to={child.path}
+                                                       className={({ isActive }) =>
+                                                            `px-3 py-2 rounded-lg text-[13px] truncate
+              ${isActive
+                                                                 ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                                 : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                            }`
+                                                       }
+                                                  >
+                                                       {t(child.labelKey)}
+                                                  </NavLink>
+                                             ))}
+                                        </div>
+                                   )}
+                              </>
+                         }
+
+                         {/* ─── Geozone ─── */}
+                         {viewgeo && (
+                              <NavLink
+                                   to="/geozones"
+                                   className={({ isActive }) =>
+                                        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#1A1A1A] dark:text-white font-medium overflow-hidden
+      ${isActive
+                                             ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs"
+                                             : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                        }`
+                                   }
+                                   title={sidebarCollapsed ? t("geozone") : undefined}
+                              >
+                                   <img src="/bar-chart.svg" alt="" className="w-[18px] h-[18px] flex-shrink-0 dark:invert" />
+                                   <span className={`whitespace-nowrap truncate transition-[opacity,transform] duration-300 ease-in-out ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
+                                        {t("geozone")}
+                                   </span>
+                              </NavLink>
+                         )}
+
+                         {/* ─── Ma'lumotnomalar (ochiluvchi) ─── */}
+                         {(viewgeo || viewRep || viewhol || viewsch || viewreg || viewdis || viewbrs || viewdep || viewpos || viewrol) &&
+                              <>
+                                   <button
+                                        type="button"
+                                        onClick={() => setRefOpen((p) => !p)}
+                                        title={sidebarCollapsed ? t("ref_menu_title") : undefined}
+                                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
+                                   ${refActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
+                                   >
+                                        <FileText size={18} className="flex-shrink-0" strokeWidth={1.7} />
+                                        <span className={`whitespace-nowrap truncate flex-1 text-left transition-[opacity,transform] duration-300 ease-in-out
+                                   ${sidebarCollapsed ? "opacity-0 -translate-x-1 w-0" : "opacity-100 translate-x-0 w-auto"}`}>
+                                             {t("ref_menu_title")}
+                                        </span>
+                                        {!sidebarCollapsed && (
+                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
+                                        )}
+                                   </button>
+
+                                   {/* Ichki bo'limlar */}
+                                   {refOpen && !sidebarCollapsed && (
+                                        <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
+                                             {REF_CHILDREN.map((child) => (
+                                                  <NavLink
+                                                       key={child.key}
+                                                       to={`/references/${child.key}`}
+                                                       className={({ isActive }) =>
+                                                            `px-3 py-2 rounded-lg text-[13px] truncate
                                                   ${isActive
-                                                            ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
-                                                            : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
-                                                       }`
-                                                  }
-                                             >
-                                                  {t(child.labelKey)}
-                                             </NavLink>
-                                        ))}
-                                   </div>
-                              )}
-                         </>
-                    }
+                                                                 ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                                 : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                            }`
+                                                       }
+                                                  >
+                                                       {t(child.labelKey)}
+                                                  </NavLink>
+                                             ))}
+                                        </div>
+                                   )}
+                              </>
+                         }
 
                          {/* ─── Umumiy tarix (ochiluvchi) ─── */}
                          {(viewAULog || viewFCLog || viewGPLog || viewSGLog) &&
@@ -275,7 +342,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                </div>
 
                {/* ─── BOTTOM ─── */}
-               <div className="flex flex-col gap-1 pb-2" onClick={(e) => e.stopPropagation()}>
+               <div className="flex flex-col sticky bottom-0 z-20 bg-[#FAFAFA] dark:bg-[#1C1C1C] gap-1 pb-2" onClick={(e) => e.stopPropagation()}>
 
                     {/* Bottom nav items */}
                     <nav className="flex flex-col gap-0.5 px-2">
