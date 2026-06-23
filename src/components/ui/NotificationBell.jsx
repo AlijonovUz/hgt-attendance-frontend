@@ -87,9 +87,6 @@ export const NotificationBell = () => {
 
   // Desktop popup takrorlanmasligi uchun ko'rsatilgan id'lar
   const notifiedIdsRef = useRef(new Set())
-  // Polling uchun: eng so'nggi ko'rilgan created_at (birinchi yuklashda spam bo'lmasin)
-  const newestSeenRef = useRef(null)
-  const pollInitedRef = useRef(false)
 
   // ── O'qilmaganlar sonini olish (qo'ng'iroqdagi qizil nuqta) ──
   const fetchCount = useCallback(async () => {
@@ -165,11 +162,21 @@ export const NotificationBell = () => {
   // ── Yangi xabar kelganda (WS yoki FCM-foreground) ──
   const handleIncoming = useCallback(
     (raw) => {
+      console.log("[NOTIF] 📥 handleIncoming chaqirildi, raw:", raw)
       const n = normalizeIncoming(raw)
+      console.log("[NOTIF] 📥 normalized:", n, "| is_read:", n?.is_read)
+      // Bo'sh / xizmat xabari (ping, ack va h.k.) — bildirishnoma emas, e'tiborsiz qoldiramiz
+      if (!n || (n.id == null && !n.title && !n.message && !n.title_uz_latn && !n.title_ru)) {
+        console.log("[NOTIF] ⏭️ Xizmat xabari / bo'sh — o'tkazib yuborildi")
+        return
+      }
+
+      // Socketdan kelgan xabarda is_read bor: false bo'lsa (yoki yo'q bo'lsa) — yangi/o'qilmagan
+      const isUnread = n.is_read !== true
       const notif = {
         ...n,
         id: n.id ?? `tmp-${new Date().getTime()}`,
-        is_read: false,
+        is_read: !!n.is_read,
         created_at: n.created_at || new Date().toISOString(),
       }
       // UI ro'yxatiga qo'shish (dublikatni o'tkazib yuborish)
@@ -177,8 +184,10 @@ export const NotificationBell = () => {
         if (notif.id && prev.some((it) => it.id === notif.id)) return prev
         return [notif, ...prev]
       })
-      setUnread((u) => u + 1)
-      showDesktopNotification(notif)
+      // Faqat o'qilmagan bo'lsa countni state'da +1 qilamiz
+      // (sahifa yangilanganda haqiqiy son fetchCount orqali keladi)
+      if (isUnread) setUnread((u) => u + 1)
+      if (isUnread) showDesktopNotification(notif)
     },
     [showDesktopNotification]
   )
@@ -189,66 +198,14 @@ export const NotificationBell = () => {
     incomingRef.current = handleIncoming
   }, [handleIncoming])
 
-  // ── Polling: yangi bildirishnomalarni aniqlab, desktop popup chiqarish ──
-  // (Brauzer ochiq turganda — hatto boshqa tabda — WS/FCM bo'lmasa ham ishlaydi.)
-  const pollNotifications = useCallback(async () => {
-    try {
-      const res = await axiosAPI.get("notifications/", { params: { page: 1 } })
-      if (res.status !== 200) return
-      const data = res.data?.data || {}
-      const results = data.results || []
-
-      // Badge (count) ni ham yangilab qo'yamiz
-      fetchCount()
-
-      // Panel ochiq bo'lsa, 1-sahifani yangilab turamiz
-      if (open) {
-        setItems((prev) => {
-          if (prev.length === 0) return results
-          // mavjudlarni saqlab, faqat yangilarini oldinga qo'shamiz
-          const known = new Set(prev.map((it) => String(it.id)))
-          const fresh = results.filter((r) => !known.has(String(r.id)))
-          return fresh.length ? [...fresh, ...prev] : prev
-        })
-      }
-
-      // Birinchi yuklash: faqat bazaviy nuqtani belgilaymiz (eski xabarlarga popup chiqmasin)
-      const newestTs = results[0]?.created_at || null
-      if (!pollInitedRef.current) {
-        pollInitedRef.current = true
-        newestSeenRef.current = newestTs
-        // Mavjud xabarlarni "ko'rilgan" deb belgilaymiz (popup chiqmasligi uchun)
-        results.forEach((r) => notifiedIdsRef.current.add(String(r.id)))
-        return
-      }
-
-      // Yangi (oxirgi ko'rilgandan keyin yaratilgan) o'qilmaganlarga desktop popup
-      const isNewer = (ts) =>
-        !newestSeenRef.current || new Date(ts).getTime() > new Date(newestSeenRef.current).getTime()
-      const fresh = results.filter((r) => !r.is_read && isNewer(r.created_at))
-      if (newestTs) newestSeenRef.current = newestTs
-      // eskidan yangiga tartibda chiqaramiz
-      fresh.reverse().forEach((n) => showDesktopNotification(n))
-    } catch (err) {
-      console.error(err)
-    }
-  }, [open, fetchCount, showDesktopNotification])
-
-  // Eng so'nggi poll funksiyasini ref'da saqlaymiz (interval barqaror qolsin)
-  const pollRef = useRef(pollNotifications)
-  useEffect(() => {
-    pollRef.current = pollNotifications
-  }, [pollNotifications])
-
-  // Mount: brauzer ruxsatini so'rash + sonni olish + 40s da bir polling
+  // Mount: brauzer ruxsatini so'rash + o'qilmaganlar sonini olish.
+  // (40s polling OLIB TASHLANDI — count real-time socket orqali +1 bo'ladi,
+  //  sahifa yangilanганда esa shu fetchCount haqiqiy sonni qaytaradi.)
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {})
     }
     fetchCount()
-    pollRef.current() // boshlang'ich baseline
-    const id = setInterval(() => pollRef.current(), 40000)
-    return () => clearInterval(id)
   }, [fetchCount])
 
   // ── WebSocket (real-time) + FCM (push) ulanishi ──
@@ -266,10 +223,13 @@ export const NotificationBell = () => {
       return () => unsubFcm?.()
     }
 
+    console.log("[NOTIF] 🚀 WS effekti ishga tushdi | WS_BASE:", WS_BASE)
+
     // Har (re)connectda yangi ticket bilan WS URL olish
     const getTicketUrl = async () => {
       const res = await axiosAPI.post("notifications/tickets/")
       const ticket = res.data?.data?.ticket
+      console.log("[NOTIF] 🎟️ Ticket olindi:", ticket)
       if (!ticket) throw new Error("Ticket olinmadi")
       return `${WS_BASE}/ws/notifications/?ticket=${ticket}`
     }
@@ -280,7 +240,7 @@ export const NotificationBell = () => {
         if (cancelled) return
         notificationSocket.connect(url, (data) => incomingRef.current(data), getTicketUrl)
       } catch (err) {
-        console.error("WS ulanishda xato:", err)
+        console.error("[NOTIF] ❌ WS ulanishda xato (ticket?):", err)
       }
     }
     startWs()
