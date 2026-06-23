@@ -2145,6 +2145,44 @@ export const translations = {
           ru: "Не удалось загрузить уведомления"
      },
 
+     // ─── Davomat hodisalari (Attendance events) ───
+     event_type: {
+          uz: "Hodisa turi",
+          cy: "Ҳодиса тури",
+          en: "Event type",
+          ru: "Тип события"
+     },
+     select_event: {
+          uz: "Hodisa tanlang",
+          cy: "Ҳодиса танланг",
+          en: "Select event",
+          ru: "Выберите событие"
+     },
+     event_check_in: {
+          uz: "Kelish",
+          cy: "Келиш",
+          en: "Check in",
+          ru: "Приход"
+     },
+     event_lunch_start: {
+          uz: "Tushlikka chiqish",
+          cy: "Тушликка чиқиш",
+          en: "Lunch start",
+          ru: "Уход на обед"
+     },
+     event_lunch_end: {
+          uz: "Tushlikdan qaytish",
+          cy: "Тушликдан қайтиш",
+          en: "Lunch end",
+          ru: "Возврат с обеда"
+     },
+     event_check_out: {
+          uz: "Ketish",
+          cy: "Кетиш",
+          en: "Check out",
+          ru: "Уход"
+     },
+
 }
 
 export function LanguageProvider({ children }) {
