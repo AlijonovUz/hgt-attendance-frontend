@@ -753,6 +753,12 @@ export const translations = {
           en: "Attendance KPI (%)",
           ru: "KPI посещаемости (%)"
      },
+     attendance_kpi: {
+          uz: "Davomat KPI",
+          cy: "Давомат KPI",
+          en: "Attendance KPI",
+          ru: "KPI посещаемости"
+     },
      rating_title: {
           uz: "Reyting",
           cy: "Рейтинг",

@@ -20,9 +20,7 @@ export const app = initializeApp(firebaseConfig);
 // Web Push sertifikat kaliti (Firebase Console → Cloud Messaging → Web Push certificates).
 // .env'dagi VITE_FIREBASE_VAPID_KEY birinchi o'rinda; deploy'da env bo'lmasa ham push
 // ishlashi uchun hardcoded fallback (bu OCHIQ public kalit, maxfiy emas).
-const VAPID_KEY =
-  import.meta.env.VITE_FIREBASE_VAPID_KEY ||
-  "BCxHjPAihune7sXNLozVcPXnJsq5Xdy46jMD-DD2B-74L0Z3ymJsjWTfPyvXhYzASWCea8L3KzIXYFH5HWTxYQw";
+const VAPID_KEY = "BCxHjPAihune7sXNLozVcPXnJsq5Xdy46jMD-DD2B-74L0Z3ymJsjWTfPyvXhYzASWCea8L3KzIXYFH5HWTxYQw";
 
 // Messaging faqat qo'llab-quvvatlanadigan brauzerlarda (HTTPS/localhost) ishlaydi
 let messagingPromise = null;

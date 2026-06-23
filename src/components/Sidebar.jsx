@@ -133,16 +133,16 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      return (
           <div
                className={`
-               relative z-20 flex flex-col justify-between flex-shrink-0 h-full bg-[#FAFAFA] dark:bg-[#1C1C1C] border-r border-[#E5E7EB] dark:border-[#2E2E2E] transition-[width] duration-300 ease-in-out ${sidebarCollapsed ? "w-[60px]" : "w-[255px] overflow-y-auto"}`}
+               relative z-20 flex flex-col justify-between flex-shrink-0 h-full bg-[#FAFAFA] dark:bg-[#1C1C1C] border-r border-[#E5E7EB] dark:border-[#2E2E2E] transition-[width] duration-300 ease-in-out ${sidebarCollapsed ? "w-[60px]" : "w-[255px]"}`}
                onClick={() => setSidebarCollapsed(sidebarCollapsed ? false : false)}
           >
 
                {/* ─── TOP ─── */}
-               <div className="flex flex-col gap-1">
+               <div className={`flex flex-col ${sidebarCollapsed ? "" : "overflow-y-auto"} gap-1`}>
 
                     {/* Logo */}
                     <div
-                         className={`flex items-center gap-2.5 p-2.5 cursor-pointer min-w-0 ${sidebarCollapsed ? "ml-[3px]" : ""}`}
+                         className={`flex items-center sticky top-0 z-20 bg-[#FAFAFA] dark:bg-[#1C1C1C] gap-2.5 p-2.5 cursor-pointer min-w-0 ${sidebarCollapsed ? "ml-[3px]" : ""}`}
                          onClick={() => navigate("/")}
                     >
                          <img
@@ -169,7 +169,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                         to={item.path}
                                         end={item.path === ""}
                                         className={({ isActive }) =>
-                                             `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[#1A1A1A] dark:text-white font-medium overflow-hidden
+                                             `flex items-center gap-3 px-3 py-2.5! rounded-lg text-sm text-[#1A1A1A] dark:text-white font-medium overflow-hidden
                                              ${isActive
                                                   ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs"
                                                   : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"

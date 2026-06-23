@@ -12,8 +12,12 @@ import {
   FilterVerticalIcon,
 } from "@hugeicons/core-free-icons"
 import { Input } from "@/components/ui/input"
+import ExportMenu from "@/components/ui/ExportMenu"
+import * as XLSX from "xlsx-js-style"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
-const DailyAttendance = () => {
+const index = () => {
   const { t } = useLanguage()
 
   const [results, setResults] = useState([])
@@ -53,6 +57,170 @@ const DailyAttendance = () => {
     applied.user || applied.region || applied.district ||
     applied.branch || applied.department || applied.rating_category
   )
+
+  const buildExport = () => {
+    const headers = [
+      "#",
+      t("col_employee"),
+      t("region"),
+      t("district"),
+      t("col_branch"),
+      t("department"),
+      t("report_month_title"),
+      t("attendance_kpi_title"),
+      t("monthly_kpi_title"),
+      t("rating_title"),
+      t("total_score_title"),
+    ]
+    const body = results.map((r, i) => [
+      i + 1,
+      r.user_info?.full_name || "",
+      r.region?.name || "",
+      r.district?.name || "",
+      r.branch?.name || "",
+      r.department?.name || "",
+      r.month ? dayjs(r.month).format("DD.MM.YYYY") : "",
+      r.attendance_kpi ?? "",
+      r.monthly_kpi ?? "",
+      r.rating_display ?? "",
+      r.total_score ?? "",
+    ])
+    return { headers, body, totalRow: null }
+  }
+
+  const exportExcel = () => {
+    if (!results.length) return
+    try {
+      const { headers, body } = buildExport()
+      const aoa = [headers, ...body]
+      const ws = XLSX.utils.aoa_to_sheet(aoa)
+
+      ws["!cols"] = [
+        { wch: 6 }, { wch: 30 }, { wch: 20 }, { wch: 20 },
+        { wch: 20 }, { wch: 20 }, { wch: 14 }, { wch: 16 },
+        { wch: 14 }, { wch: 16 }, { wch: 14 },
+      ]
+      ws["!rows"] = [{ hpt: 28 }, ...body.map(() => ({ hpt: 22 }))]
+
+      const border = {
+        top: { style: "thin", color: { rgb: "D4D4D4" } },
+        bottom: { style: "thin", color: { rgb: "D4D4D4" } },
+        left: { style: "thin", color: { rgb: "D4D4D4" } },
+        right: { style: "thin", color: { rgb: "D4D4D4" } },
+      }
+
+      headers.forEach((_, c) => {
+        const ref = XLSX.utils.encode_cell({ r: 0, c })
+        if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
+        ws[ref].s = {
+          fill: { patternType: "solid", fgColor: { rgb: "3c83f6" } },
+          font: { bold: true, sz: 10, color: { rgb: "ffffff" }, name: "Calibri" },
+          alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" },
+          border,
+        }
+      })
+
+      body.forEach((_, rowIdx) => {
+        const isEven = rowIdx % 2 === 1
+        headers.forEach((__, c) => {
+          const ref = XLSX.utils.encode_cell({ r: rowIdx + 1, c })
+          if (!ws[ref]) ws[ref] = { t: "s", v: "" }
+          ws[ref].s = {
+            fill: { patternType: "solid", fgColor: { rgb: isEven ? "FAFAFA" : "FFFFFF" } },
+            font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" },
+            alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" },
+            border,
+          }
+        })
+      })
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, "Hisobot")
+      XLSX.writeFile(wb, `kpi-hisoboti.xlsx`, { bookType: "xlsx", cellStyles: true })
+    } catch (err) { console.error(err) }
+  }
+
+  const exportPDF = () => {
+    if (!results.length) return
+    try {
+      const { headers, body } = buildExport()
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" })
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(14)
+      doc.setTextColor(10, 10, 10)
+      doc.text(t("attendance_kpi"), 14, 14)
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(8.5)
+      doc.setTextColor(115, 115, 115)
+      doc.text(dayjs().format("DD.MM.YYYY HH:mm"), 14, 21)
+
+      autoTable(doc, {
+        head: [headers],
+        body,
+        startY: 27,
+        margin: { left: 14, right: 14 },
+        styles: {
+          fontSize: 8.5,
+          cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+          lineColor: [212, 212, 212],
+          lineWidth: 0.2,
+          font: "helvetica",
+          textColor: [26, 26, 26],
+        },
+        headStyles: {
+          fillColor: [59, 130, 246],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8.5,
+        },
+        alternateRowStyles: { fillColor: [250, 250, 250] },
+        bodyStyles: { fillColor: [255, 255, 255] },
+        columnStyles: {
+          0: { halign: "center", cellWidth: 10 },
+          1: { cellWidth: 36 },
+        },
+      })
+
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(7.5)
+        doc.setTextColor(160, 160, 160)
+        doc.text(
+          `${i} / ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 6,
+          { align: "center" }
+        )
+      }
+
+      doc.save(`kpi-hisoboti.pdf`)
+    } catch (err) { console.error(err) }
+  }
+
+  const exportCSV = () => {
+    if (!results.length) return
+    try {
+      const { headers, body } = buildExport()
+      const aoa = [headers, ...body]
+      const escape = (v) => {
+        const s = String(v ?? "")
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"`
+          : s
+      }
+      const csv = "\uFEFF" + aoa.map((row) => row.map(escape).join(",")).join("\r\n")
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `kpi-hisoboti.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) { console.error(err) }
+  }
 
   // ── Fetch: asosiy data ──
 
@@ -295,19 +463,27 @@ const DailyAttendance = () => {
             {t("filter")}
           </button>
         </div>
+        <ExportMenu
+          onExcel={exportExcel}
+          onPDF={exportPDF}
+          onCSV={exportCSV}
+          label={t("download")}
+        />
       </div>
 
       {/* ─── Table ─── */}
-      <div 
-      className="w-full h-[calc(100vh-130px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden"
-          onScroll={(e) => {
-    const el = e.currentTarget
-    if (!loading && hasMore && el.scrollHeight - el.scrollTop - el.clientHeight < 150) {
-      fetchData(page + 1)
-    }
-  }}
+      <div
+        className="w-full h-[calc(100vh-130px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-hidden"
       >
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className="flex-1 overflow-y-auto"
+          onScroll={(e) => {
+            const el = e.currentTarget
+            if (!loading && hasMore && el.scrollHeight - el.scrollTop - el.clientHeight < 150) {
+              fetchData(page + 1)
+            }
+          }}
+        >
           <table className="w-full border-collapse text-left text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
@@ -528,4 +704,4 @@ const DailyAttendance = () => {
   )
 }
 
-export default DailyAttendance
+export default index
