@@ -178,7 +178,7 @@ const index = () => {
         alternateRowStyles: { fillColor: [250, 250, 250] },
         bodyStyles: { fillColor: [255, 255, 255] },
         columnStyles: {
-          0: { halign: "center", cellWidth: 10 },
+          0: { halign: "center", cellWidth: "auto" },
           1: { cellWidth: 36 },
         },
       })

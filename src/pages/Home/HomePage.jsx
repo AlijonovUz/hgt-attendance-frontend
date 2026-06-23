@@ -43,6 +43,12 @@ const HomePage = () => {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const locale = calendarLocales[language] || uz;
+  const userPermission = useSelector((state) => state.references.userPermission)
+
+  const viewEmp = userPermission?.employees &&
+    userPermission?.employees?.some(
+      (e) => e.code === "employee_view_all" || e.code === "employee_view_district" || e.code === "employee_view_region" || e.code === "employee_view_branch" || e.code === "employee_view_dept"
+    );
 
   const regions = useSelector((state) => state.references.regions)
 
@@ -234,7 +240,7 @@ const HomePage = () => {
       icon: IdIcon,
       bg: "bg-[#F5F5F5] dark:bg-[#262626]",
       iconBg: "bg-white",
-      navigate: "/employee-register",
+      ...(viewEmp ? {navigate: "/employee-register"} : {}),
     },
     {
       key: "present",
@@ -455,7 +461,7 @@ const HomePage = () => {
               className={cn(
                 "rounded-2xl p-4 flex flex-col gap-3 shadow-sm border cursor-pointer border-black/5", stat.bg
               )}
-              onClick={() => navigate(stat.navigate, { state: {page: stat?.page, filter: stat?.filter_key } })}
+              onClick={() => navigate(stat.navigate, { state: { page: stat?.page, filter: stat?.filter_key } })}
             >
               {/* Top row: label + icon */}
               <div className="flex items-center justify-between">

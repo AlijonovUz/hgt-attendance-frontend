@@ -19,6 +19,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { Modal } from "@/components/ui/modal"
 import { Select } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
 const fmt = (n) =>
   Number(n ?? 0)
@@ -82,6 +83,13 @@ const DailyAttendance = () => {
   const [districts, setDistricts] = useState([])
   const [branches, setBranches] = useState([])
   const [departments, setDepartments] = useState([])
+
+  // ── Filter options pagination ──
+  const [userPag, setUserPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [schedulePag, setSchedulePag] = useState({ page: 1, hasMore: true, loading: false })
+  const [districtPag, setDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [branchPag, setBranchPag] = useState({ page: 1, hasMore: true, loading: false })
+  const [deptPag, setDeptPag] = useState({ page: 1, hasMore: true, loading: false })
 
   // ── Active filters ref (survives re-renders) ──
   const activeFiltersRef = useRef({})
@@ -178,78 +186,172 @@ const DailyAttendance = () => {
   // ── Load filter options when modal opens ──
   useEffect(() => {
     if (!openFilterModal) return
-    fetchUsers()
-    fetchSchedules()
+    fetchUsers(1, "")
+    fetchSchedules(1, "")
     fetchRegions()
-    fetchBranches()
-    fetchDepartments()
+    fetchBranches(1, "", null, null)     // filial — hech narsa tanlanmagan
+    fetchDepartments(1, "", null)        // bo'lim — hech narsa tanlanmagan
   }, [openFilterModal])
 
-  // Region → districts
-  useEffect(() => {
-    if (filterRegion?.value) fetchDistricts(filterRegion.value)
-    else setDistricts([])
-  }, [filterRegion])
-
-  // ── Option loaders ──
-  const fetchUsers = async (s = "") => {
+  // ── Option loaders (sahifalanadigan) ──
+  const fetchUsers = async (pageNum = 1, q = "") => {
+    setUserPag((p) => ({ ...p, loading: true }))
+    if (pageNum === 1) setUsers([])
     try {
-      const res = await axiosAPI.get("users/", { params: { search: s, page: 1 } })
-      if (res.status === 200)
-        setUsers((res.data?.data?.results || []).map((u) => ({ value: u.id, label: u.full_name })))
-    } catch { }
+      const res = await axiosAPI.get("users/employees/", { params: { search: q, page: pageNum } })
+      if (res.status === 200) {
+        const list = (res.data?.data?.results || []).map((u) => ({ value: u.id, label: u.full_name }))
+        setUsers((prev) => (pageNum === 1 ? list : [...prev, ...list]))
+        setUserPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+      }
+    } catch (err) {
+      console.error(err)
+      setUserPag((p) => ({ ...p, loading: false }))
+    }
   }
 
-  const fetchSchedules = async (s = "") => {
+  const fetchSchedules = async (pageNum = 1, q = "") => {
+    setSchedulePag((p) => ({ ...p, loading: true }))
+    if (pageNum === 1) setSchedules([])
     try {
-      const res = await axiosAPI.get("schedules/", { params: { search: s, page: 1 } })
-      if (res.status === 200)
-        setSchedules(
-          (res.data?.data?.results || []).map((sc) => ({ value: sc.name, label: sc.name }))
-        )
-    } catch { }
+      const res = await axiosAPI.get("users/schedules/", { params: { search: q, page: pageNum } })
+      if (res.status === 200) {
+        const list = (res.data?.data?.results || []).map((sc) => ({ value: sc.name, label: sc.name }))
+        setSchedules((prev) => (pageNum === 1 ? list : [...prev, ...list]))
+        setSchedulePag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+      }
+    } catch (err) {
+      console.error(err)
+      setSchedulePag((p) => ({ ...p, loading: false }))
+    }
   }
 
   const fetchRegions = async () => {
     try {
       const res = await axiosAPI.get("users/regions/")
       if (res.status === 200)
-        setRegions(
-          (res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
-        )
-    } catch { }
+        setRegions((res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name })))
+    } catch (err) { console.error(err) }
   }
 
-  const fetchDistricts = async (regionId, s = "") => {
+  const fetchDistricts = async (regionId, pageNum = 1, q = "") => {
+    setDistrictPag((p) => ({ ...p, loading: true }))
+    if (pageNum === 1) setDistricts([])
     try {
-      const res = await axiosAPI.get("users/districts/", {
-        params: { region: regionId, search: s, page: 1 },
-      })
-      if (res.status === 200)
-        setDistricts(
-          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
-        )
-    } catch { }
+      const params = { page: pageNum, region: regionId }
+      if (q?.trim()) params.search = q
+      const res = await axiosAPI.get("users/districts/", { params })
+      if (res.status === 200) {
+        const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
+        setDistricts((prev) => (pageNum === 1 ? list : [...prev, ...list]))
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+
+        // ✅ Bitta tuman bo'lsa — avtomatik tanla va filiallarni filter qil
+        if (pageNum === 1 && list.length === 1) {
+          const only = list[0]
+          setFilterDistrict(only)
+          fetchBranches(1, "", regionId, only.value)
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      setDistrictPag((p) => ({ ...p, loading: false }))
+    }
   }
 
-  const fetchBranches = async (s = "") => {
+  const fetchBranches = async (pageNum = 1, q = "", regionId = null, districtId = null) => {
+    setBranchPag((p) => ({ ...p, loading: true }))
+    if (pageNum === 1) setBranches([])
     try {
-      const res = await axiosAPI.get("branches/", { params: { search: s, page: 1 } })
-      if (res.status === 200)
-        setBranches(
-          (res.data?.data?.results || []).map((b) => ({ value: b.id, label: b.name }))
-        )
-    } catch { }
+      const params = { page: pageNum }
+      if (q?.trim()) params.search = q
+      if (regionId) params.region = regionId
+      if (districtId) params.district = districtId
+      const res = await axiosAPI.get("users/branches/", { params })
+      if (res.status === 200) {
+        const list = (res.data?.data?.results || []).map((b) => ({ value: b.id, label: b.name }))
+        setBranches((prev) => (pageNum === 1 ? list : [...prev, ...list]))
+        setBranchPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+
+        // ✅ Bitta filial bo'lsa — avtomatik tanla va bo'limlarni filter qil
+        if (pageNum === 1 && list.length === 1) {
+          const only = list[0]
+          setFilterBranch(only)
+          setFilterDepartment(null)
+          fetchDepartments(1, "", only.value)
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      setBranchPag((p) => ({ ...p, loading: false }))
+    }
   }
 
-  const fetchDepartments = async (s = "") => {
+  const fetchDepartments = async (pageNum = 1, q = "", branchId = null) => {
+    setDeptPag((p) => ({ ...p, loading: true }))
+    if (pageNum === 1) setDepartments([])
     try {
-      const res = await axiosAPI.get("departments/", { params: { search: s, page: 1 } })
-      if (res.status === 200)
-        setDepartments(
-          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
-        )
-    } catch { }
+      const params = { page: pageNum }
+      if (q?.trim()) params.search = q
+      if (branchId) params.branch = branchId
+      const res = await axiosAPI.get("users/departments/", { params })
+      if (res.status === 200) {
+        const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
+        setDepartments((prev) => (pageNum === 1 ? list : [...prev, ...list]))
+        setDeptPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+
+        // ✅ Bitta bo'lim bo'lsa — avtomatik tanla
+        if (pageNum === 1 && list.length === 1) {
+          setFilterDepartment(list[0])
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      setDeptPag((p) => ({ ...p, loading: false }))
+    }
+  }
+
+  // ── Kaskad handler'lar ──
+
+  // 1. Viloyat o'zgarganda → tuman reset, filial qayta load (region bo'yicha)
+  const handleRegionChange = (opt) => {
+    setFilterRegion(opt)
+    setFilterDistrict(null)
+    setFilterBranch(null)
+    setFilterDepartment(null)
+    setDistricts([])
+    setDistrictPag({ page: 1, hasMore: true, loading: false })
+    setBranches([])
+    setDepartments([])
+
+    if (opt?.value) {
+      fetchDistricts(opt.value, 1, "")
+      fetchBranches(1, "", opt.value, null)
+    } else {
+      // Viloyat tozalandi — filiallarni hammasi ko'rsin
+      fetchBranches(1, "", null, null)
+      fetchDepartments(1, "", null)
+    }
+  }
+
+  // 2. Tuman o'zgarganda → filial qayta load (region + district bo'yicha)
+  const handleDistrictChange = (opt) => {
+    setFilterDistrict(opt)
+    setFilterBranch(null)
+    setFilterDepartment(null)
+    setBranches([])
+    setDepartments([])
+
+    const regionId = filterRegion?.value || null
+    fetchBranches(1, "", regionId, opt?.value || null)
+  }
+
+  // 3. Filial o'zgarganda → bo'lim qayta load (branch bo'yicha)
+  const handleBranchChange = (opt) => {
+    setFilterBranch(opt)
+    setFilterDepartment(null)
+    setDepartments([])
+    fetchDepartments(1, "", opt?.value || null)
   }
 
   // ── Filter handlers ──
@@ -274,16 +376,18 @@ const DailyAttendance = () => {
     setFilterBranch(null)
     setFilterDepartment(null)
     setDistricts([])
+    setBranches([])
+    setDepartments([])
+    setDistrictPag({ page: 1, hasMore: true, loading: false })
+    setBranchPag({ page: 1, hasMore: true, loading: false })
+    setDeptPag({ page: 1, hasMore: true, loading: false })
+    // Hammasini qayta load qilamiz
+    fetchBranches(1, "", null, null)
+    fetchDepartments(1, "", null)
   }
 
   const hasActiveFilter =
     filterUser || filterSchedule || filterRegion || filterDistrict || filterBranch || filterDepartment
-
-  // ── Search submit ──
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-    setSearch(searchInput)
-  }
 
   // ── Export helpers ──
   const buildExport = () => {
@@ -303,17 +407,17 @@ const DailyAttendance = () => {
     ]
     const body = results.map((r, i) => [
       i + 1,
-      r.user_info?.full_name || "—",
-      r.region || "—",
-      r.district || "—",
-      r.branch || "—",
-      r.department || "—",
-      r.date ? dayjs(r.date).format("DD.MM.YYYY") : "—",
-      r.schedule_name || "—",
-      r.present ?? 0,
-      r.late ?? 0,
-      r.absent ?? 0,
-      r.left_early ?? 0,
+      r.user_info?.full_name || "",
+      r.region || "",
+      r.district || "",
+      r.branch || "",
+      r.department || "",
+      r.date ? dayjs(r.date).format("DD.MM.YYYY") : "",
+      r.schedule_name || "",
+      r.present ?? "",
+      r.late ?? "",
+      r.absent ?? "",
+      r.left_early ?? "",
     ])
     return { headers, body }
   }
@@ -325,6 +429,10 @@ const DailyAttendance = () => {
       const aoa = [headers, ...body]
       const ws = XLSX.utils.aoa_to_sheet(aoa)
       ws["!cols"] = headers.map((_, i) => ({ wch: i === 1 ? 28 : i === 0 ? 6 : 16 }))
+      ws["!rows"] = [
+        { hpt: 32 },
+        ...body.map(() => ({ hpt: 26 })),
+      ]
       const border = {
         top: { style: "thin", color: { rgb: "D4D4D4" } },
         bottom: { style: "thin", color: { rgb: "D4D4D4" } },
@@ -336,8 +444,8 @@ const DailyAttendance = () => {
         if (!ws[ref]) ws[ref] = { t: "s", v: headers[c] }
         ws[ref].s = {
           fill: { patternType: "solid", fgColor: { rgb: "3c83f6" } },
-          font: { bold: true, sz: 10, color: { rgb: "ffffff" }, name: "Calibri" },
-          alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" },
+          font: { bold: true, sz: 11, color: { rgb: "ffffff" }, name: "Calibri" },
+          alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left", wrapText: false },
           border,
         }
       })
@@ -349,7 +457,7 @@ const DailyAttendance = () => {
           ws[ref].s = {
             fill: { patternType: "solid", fgColor: { rgb: isEven ? "FAFAFA" : "FFFFFF" } },
             font: { sz: 10, color: { rgb: "1A1A1A" }, name: "Calibri" },
-            alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left" },
+            alignment: { vertical: "center", horizontal: c === 0 ? "center" : "left", wrapText: false },
             border,
           }
         })
@@ -399,7 +507,10 @@ const DailyAttendance = () => {
           fontSize: 8,
         },
         alternateRowStyles: { fillColor: [250, 250, 250] },
-        columnStyles: { 0: { halign: "center", cellWidth: 8 } },
+        columnStyles: {
+          0: { halign: "center", cellWidth: "auto" },
+          1: { cellWidth: 36 },
+        },
       })
       const pageCount = doc.internal.getNumberOfPages()
       for (let i = 1; i <= pageCount; i++) {
@@ -448,30 +559,32 @@ const DailyAttendance = () => {
   }
 
   return (
-    <div className="p-4 pb-0! flex flex-col items-start gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
+    <div className="px-4 pt-3 flex flex-col items-start gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
 
       {/* ─── Toolbar: Search + Filter ─── */}
-      <div className="flex items-center gap-3 w-full flex-wrap">
+      <div className="flex items-center justify-between w-full flex-wrap">
 
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder={t("search_placeholder") || "Qidirish..."}
-          className="pl-9 pr-3 py-1.5 text-sm rounded-lg border border-[#E5E5E5] dark:border-[#2E2E2E] bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white placeholder-[#9CA3AF] outline-none focus:border-[#0090FF] transition-colors w-[220px]"
-        />
+        <div className="flex items-center gap-3">
+          <Input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("search") || "Qidirish..."}
+            className="w-[384px]"
+          />
 
-        {/* Filter button */}
-        <button
-          className="flex items-center gap-1.5 cursor-pointer relative border-[1.7px] text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3"
-          onClick={() => setOpenFilterModal(true)}
-        >
-          {Object.keys(activeFiltersRef.current).length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#DC2626]" />
-          )}
-          <HugeIcon icon={FilterVerticalIcon} size={16} />
-          {t("filter") || "Filter"}
-        </button>
+          {/* Filter button */}
+          <button
+            className="flex items-center gap-1.5 cursor-pointer relative border shadow-xs text-sm border-[#E5E5E5] dark:border-[#404040] rounded-lg py-1.5 px-3"
+            onClick={() => setOpenFilterModal(true)}
+          >
+            {hasActiveFilter && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#DC2626]" />
+            )}
+            <HugeIcon icon={FilterVerticalIcon} size={16} />
+            {t("filter") || "Filter"}
+          </button>
+        </div>
 
         <ExportMenu onExcel={exportExcel} onPDF={exportPDF} onCSV={exportCSV} label={t("download") || "Yuklash"} />
       </div>
@@ -479,7 +592,7 @@ const DailyAttendance = () => {
       {/* ─── Table ─── */}
       <div
         ref={tableWrapRef}
-        className="w-full h-[calc(100vh-200px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-y-auto"
+        className="w-full h-[calc(100vh-130px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-y-auto"
       >
         <table className="w-full border-collapse text-left table-fixed">
           <colgroup>
@@ -534,7 +647,7 @@ const DailyAttendance = () => {
                   colSpan={COL_COUNT}
                   className="px-4 py-16 text-center text-sm text-[#737373]"
                 >
-                  {t("reports_empty") || "Ma'lumot topilmadi"}
+                  {t("no_data_found") || "Ma'lumot topilmadi"}
                 </td>
               </tr>
             ) : (
@@ -551,19 +664,19 @@ const DailyAttendance = () => {
                       className="px-4 py-3 text-sm font-medium text-[#1A1A1A] dark:text-white truncate"
                       title={r.user_info?.full_name}
                     >
-                      {r.user_info?.full_name || "—"}
+                      {r.user_info?.full_name || ""}
                     </td>
                     <td className="px-4 py-3 text-sm truncate text-[#1A1A1A] dark:text-white">
-                      {r.region || "—"}
+                      {r.region?.name || ""}
                     </td>
                     <td className="px-4 py-3 text-sm truncate text-[#1A1A1A] dark:text-white">
-                      {r.district || "—"}
+                      {r.district?.name || ""}
                     </td>
                     <td className="px-4 py-3 text-sm truncate text-[#1A1A1A] dark:text-white">
-                      {r.branch || "—"}
+                      {r.branch?.name || ""}
                     </td>
                     <td className="px-4 py-3 text-sm truncate text-[#1A1A1A] dark:text-white">
-                      {r.department || "—"}
+                      {r.department?.name || ""}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#1A1A1A] dark:text-white whitespace-nowrap">
                       {r.date ? dayjs(r.date).format("DD.MM.YYYY") : "—"}
@@ -572,7 +685,7 @@ const DailyAttendance = () => {
                       className="px-4 py-3 text-sm truncate text-[#1A1A1A] dark:text-white"
                       title={r.schedule_name}
                     >
-                      {r.schedule_name || "—"}
+                      {r.schedule_name || ""}
                     </td>
                     <td className="px-4 py-3">
                       <Pill icon={CheckCircle2} iconClass="text-[#22A565]">
@@ -597,19 +710,19 @@ const DailyAttendance = () => {
                   </tr>
                 ))}
 
-                {/* Scroll sentinel */}
-                <tr>
-                  <td colSpan={COL_COUNT} className="p-0">
-                    <div ref={sentinelRef} className="h-1" />
-                  </td>
-                </tr>
-
                 {/* Loading more */}
                 {loadingMore && (
                   Array.from({ length: 4 }).map((_, i) => (
                     <SkeletonRow key={`more-${i}`} cols={COL_COUNT} />
                   ))
                 )}
+
+                {/* Infinite scroll sentinel */}
+                <tr>
+                  <td colSpan={COL_COUNT}>
+                    <div ref={sentinelRef} className="h-1" />
+                  </td>
+                </tr>
               </>
             )}
           </tbody>
@@ -625,7 +738,7 @@ const DailyAttendance = () => {
       />
 
       {/* ─── Filter Modal ─── */}
-      <Modal isOpen={openFilterModal} onClose={() => setOpenFilterModal(false)} height={560}>
+      <Modal isOpen={openFilterModal} onClose={() => setOpenFilterModal(false)} height={600}>
         <div className="flex flex-col justify-between h-full">
           {/* Top */}
           <div className="flex flex-col gap-3">
@@ -650,6 +763,7 @@ const DailyAttendance = () => {
 
             {/* Selects */}
             <div className="grid grid-cols-2 gap-3">
+              {/* Xodim */}
               <Select
                 label={t("col_employee") || "Xodim"}
                 placeholder={t("select_employee") || "Xodim tanlang"}
@@ -657,31 +771,40 @@ const DailyAttendance = () => {
                 value={filterUser?.value ?? null}
                 onChange={(opt) => setFilterUser(opt)}
                 searchable
-                onSearch={(s) => fetchUsers(s)}
+                loadingMore={userPag.loading}
+                onScrollEnd={() => {
+                  if (!userPag.hasMore || userPag.loading) return
+                  fetchUsers(userPag.page + 1, "")
+                }}
+                onSearch={(s) => fetchUsers(1, s)}
               />
 
+              {/* Ish grafigi */}
               <Select
                 label={t("schedule") || "Ish grafigi"}
-                placeholder={t("select_schedule") || "Grafigini tanlang"}
+                placeholder={t("work_schedule_subtitle") || "Grafigini tanlang"}
                 options={schedules}
                 value={filterSchedule?.value ?? null}
                 onChange={(opt) => setFilterSchedule(opt)}
                 searchable
-                onSearch={(s) => fetchSchedules(s)}
+                loadingMore={schedulePag.loading}
+                onScrollEnd={() => {
+                  if (!schedulePag.hasMore || schedulePag.loading) return
+                  fetchSchedules(schedulePag.page + 1, "")
+                }}
+                onSearch={(s) => fetchSchedules(1, s)}
               />
 
+              {/* Viloyat → handleRegionChange */}
               <Select
                 label={t("region") || "Viloyat"}
                 placeholder={t("region_branch_placeholder") || "Viloyat tanlang"}
                 options={regions}
                 value={filterRegion?.value ?? null}
-                onChange={(opt) => {
-                  setFilterRegion(opt)
-                  setFilterDistrict(null)
-                  setDistricts([])
-                }}
+                onChange={handleRegionChange}
               />
 
+              {/* Tuman → handleDistrictChange (viloyat tanlanmasa disabled) */}
               <Select
                 label={t("district") || "Tuman"}
                 placeholder={
@@ -691,22 +814,42 @@ const DailyAttendance = () => {
                 }
                 options={districts}
                 value={filterDistrict?.value ?? null}
-                onChange={(opt) => setFilterDistrict(opt)}
+                onChange={handleDistrictChange}
                 disabled={!filterRegion}
                 searchable
-                onSearch={(s) => filterRegion?.value && fetchDistricts(filterRegion.value, s)}
+                loadingMore={districtPag.loading}
+                onScrollEnd={() => {
+                  if (!districtPag.hasMore || districtPag.loading || !filterRegion?.value) return
+                  fetchDistricts(filterRegion.value, districtPag.page + 1, "")
+                }}
+                onSearch={(s) => {
+                  if (filterRegion?.value) fetchDistricts(filterRegion.value, 1, s)
+                }}
               />
 
+              {/* Filial → handleBranchChange */}
               <Select
                 label={t("branch") || "Filial"}
                 placeholder={t("select_branch") || "Filial tanlang"}
                 options={branches}
                 value={filterBranch?.value ?? null}
-                onChange={(opt) => setFilterBranch(opt)}
+                onChange={handleBranchChange}
                 searchable
-                onSearch={(s) => fetchBranches(s)}
+                loadingMore={branchPag.loading}
+                onScrollEnd={() => {
+                  if (!branchPag.hasMore || branchPag.loading) return
+                  fetchBranches(
+                    branchPag.page + 1, "",
+                    filterRegion?.value || null,
+                    filterDistrict?.value || null
+                  )
+                }}
+                onSearch={(s) =>
+                  fetchBranches(1, s, filterRegion?.value || null, filterDistrict?.value || null)
+                }
               />
 
+              {/* Bo'lim → filial bo'yicha filterlanadi */}
               <Select
                 label={t("department") || "Bo'lim"}
                 placeholder={t("select_department") || "Bo'lim tanlang"}
@@ -714,7 +857,12 @@ const DailyAttendance = () => {
                 value={filterDepartment?.value ?? null}
                 onChange={(opt) => setFilterDepartment(opt)}
                 searchable
-                onSearch={(s) => fetchDepartments(s)}
+                loadingMore={deptPag.loading}
+                onScrollEnd={() => {
+                  if (!deptPag.hasMore || deptPag.loading) return
+                  fetchDepartments(deptPag.page + 1, "", filterBranch?.value || null)
+                }}
+                onSearch={(s) => fetchDepartments(1, s, filterBranch?.value || null)}
               />
             </div>
           </div>
