@@ -10,6 +10,7 @@ class NotificationSocket {
     this.maxReconnectAttempts = 5
     this.connectionId = 0 // eskirgan ulanish callbacklarini e'tiborsiz qoldirish uchun
     this.reconnectTimer = null
+    this.stableTimer = null // ulanish barqarorligini kuzatish (flapping'da cheksiz reconnect'ni oldini olish)
     // Reconnect paytida yangi ticket bilan URL olish uchun (ixtiyoriy)
     this.urlProvider = null
   }
@@ -46,8 +47,15 @@ class NotificationSocket {
     this.socket.onopen = () => {
       if (activeConnectionId !== this.connectionId) return
       console.log(`[WS] ✅ ULANDI (#${activeConnectionId}) — endi xabar kutilyapti...`)
-      this.reconnectAttempts = 0
       if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+      // MUHIM: reconnectAttempts'ni DARHOL tiklamaymiz. Aks holda ulanib-darrov uziladigan
+      // (flapping) ulanishda hisoblagich har safar 0 ga tushib, cheksiz reconnect halqasi
+      // hosil bo'ladi (backend har ulanishda o'qilmaganlarni qayta yuboradi → ketma-ket popup).
+      // Faqat ulanish 3s barqaror tursagina "sog'lom" deb hisoblab nollaymiz.
+      if (this.stableTimer) clearTimeout(this.stableTimer)
+      this.stableTimer = setTimeout(() => {
+        if (activeConnectionId === this.connectionId) this.reconnectAttempts = 0
+      }, 3000)
     }
 
     this.socket.onmessage = (event) => {
@@ -75,6 +83,7 @@ class NotificationSocket {
         `[WS] 🔴 YOPILDI (#${activeConnectionId}) | code=${event.code} | reason="${event.reason || "(bo'sh)"}" | wasClean=${event.wasClean}`
       )
       this.socket = null
+      if (this.stableTimer) clearTimeout(this.stableTimer)
       if (!this.manuallyClosed) this._reconnect()
     }
   }
@@ -123,6 +132,7 @@ class NotificationSocket {
     this.reconnectAttempts = 0
     this.connectionId++ // eskirgan callbacklarni o'chirish
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+    if (this.stableTimer) clearTimeout(this.stableTimer)
     if (this.socket) {
       this.socket.close()
       this.socket = null
