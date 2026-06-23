@@ -679,7 +679,7 @@ const FaceIdHistory = () => {
                   <DetailField label={t("col_employee") || "Xodim"} value={detail.user_info?.full_name} />
                   <DetailField label={t("status") || "Xolat"} value={detail.is_success ? (t("status_success") || "Ishonchli") : (t("status_failed") || "Shubhali")} />
                 </div>
-                <DetailField inputClassName="h-[90px]! items-start! pt-2!" label={t("message") || "Xabar"} value={detail.message} />
+                <DetailField inputClassName="min-h-[90px]! items-start! pt-2! whitespace-break-spaces max-w-full" label={t("message") || "Xabar"} value={detail.message} />
               </div>
             )}
           </div>

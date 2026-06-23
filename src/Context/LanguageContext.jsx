@@ -711,6 +711,108 @@ export const translations = {
           en: "Select a district branch",
           ru: "Выберите районный филиал"
      },
+     report_menu_title: {
+          uz: "Hisobotlar",
+          cy: "Ҳисоботлар",
+          en: "Reports",
+          ru: "Отчёты"
+     },
+     report_m_general: {
+          uz: "Hisobotlar",
+          cy: "Ҳисоботлар",
+          en: "Reports",
+          ru: "Отчёты"
+     },
+     report_m_kpi: {
+          uz: "KPI natijalari",
+          cy: "КПИ натижалари",
+          en: "KPI results",
+          ru: "Результаты KPI"
+     },
+     report_m_daily: {
+          uz: "Kunlik davomat",
+          cy: "Кунлик давомат",
+          en: "Daily attendance",
+          ru: "Ежедневная посещаемость"
+     },
+     report_m_events: {
+          uz: "Davomat hodisalari",
+          cy: "Давомат ҳодисалари",
+          en: "Attendance events",
+          ru: "События посещаемости"
+     },
+     report_month_title: {
+          uz: "Hisobot oyi",
+          cy: "Ҳисобот ойи",
+          en: "Report month",
+          ru: "Отчётный месяц"
+     },
+     attendance_kpi_title: {
+          uz: "Davomat KPI (%)",
+          cy: "Давомат KPI (%)",
+          en: "Attendance KPI (%)",
+          ru: "KPI посещаемости (%)"
+     },
+     attendance_kpi: {
+          uz: "Davomat KPI",
+          cy: "Давомат KPI",
+          en: "Attendance KPI",
+          ru: "KPI посещаемости"
+     },
+     rating_title: {
+          uz: "Reyting",
+          cy: "Рейтинг",
+          en: "Rating",
+          ru: "Рейтинг"
+     },
+     total_score_title: {
+          uz: "Umumiy ball",
+          cy: "Умумий балл",
+          en: "Total score",
+          ru: "Общий балл"
+     },
+     monthly_kpi_title: {
+          uz: "Oylik KPI (%)",
+          cy: "Ойлик KPI (%)",
+          en: "Monthly KPI (%)",
+          ru: "Ежемесячный KPI (%)"
+     },
+     excellent: {
+          uz: "A'lo",
+          cy: "Аъло",
+          en: "Excellent",
+          ru: "Отлично"
+     },
+     good: {
+          uz: "Yaxshi",
+          cy: "Яхши",
+          en: "Good",
+          ru: "Хорошо"
+     },
+     satisfactory: {
+          uz: "Qoniqarli",
+          cy: "Қониқарли",
+          en: "Satisfactory",
+          ru: "Удовлетворительно"
+     },
+     unsatisfactory: {
+          uz: "Qoniqarsiz",
+          cy: "Қониқарсиз",
+          en: "Unsatisfactory",
+          ru: "Неудовлетворительно"
+     },
+     select_rating: {
+          uz: "Reytingni tanlang",
+          cy: "Рейтингни танланг",
+          en: "Select rating",
+          ru: "Выберите рейтинг"
+     },
+     select_employee: {
+          uz: "Xodimni tanlang",
+          cy: "Ходимни танланг",
+          en: "Select employee",
+          ru: "Выберите сотрудника"
+     },
 
      // employee list
      employees_title: {
@@ -2029,6 +2131,44 @@ export const translations = {
           cy: "Билдиришномаларни юклаб бўлмади",
           en: "Failed to load notifications",
           ru: "Не удалось загрузить уведомления"
+     },
+
+     // ─── Davomat hodisalari (Attendance events) ───
+     event_type: {
+          uz: "Hodisa turi",
+          cy: "Ҳодиса тури",
+          en: "Event type",
+          ru: "Тип события"
+     },
+     select_event: {
+          uz: "Hodisa tanlang",
+          cy: "Ҳодиса танланг",
+          en: "Select event",
+          ru: "Выберите событие"
+     },
+     event_check_in: {
+          uz: "Kelish",
+          cy: "Келиш",
+          en: "Check in",
+          ru: "Приход"
+     },
+     event_lunch_start: {
+          uz: "Tushlikka chiqish",
+          cy: "Тушликка чиқиш",
+          en: "Lunch start",
+          ru: "Уход на обед"
+     },
+     event_lunch_end: {
+          uz: "Tushlikdan qaytish",
+          cy: "Тушликдан қайтиш",
+          en: "Lunch end",
+          ru: "Возврат с обеда"
+     },
+     event_check_out: {
+          uz: "Ketish",
+          cy: "Кетиш",
+          en: "Check out",
+          ru: "Уход"
      },
 
 }

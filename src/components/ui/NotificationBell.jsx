@@ -198,9 +198,7 @@ export const NotificationBell = () => {
     incomingRef.current = handleIncoming
   }, [handleIncoming])
 
-  // Mount: brauzer ruxsatini so'rash + o'qilmaganlar sonini olish.
-  // (40s polling OLIB TASHLANDI — count real-time socket orqali +1 bo'ladi,
-  //  sahifa yangilanганда esa shu fetchCount haqiqiy sonni qaytaradi.)
+
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {})
