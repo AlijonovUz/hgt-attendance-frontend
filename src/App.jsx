@@ -10,6 +10,9 @@ import {
   EmployeeRegister,
   Geozones,
   Reports,
+  ReportsKPI,
+  ReportsDaily,
+  ReportsEvents,
   Settings,
   ReferencePage,
   PrivacyPolicy,
@@ -27,10 +30,7 @@ const ProtectedRoute = ({ children, check }) => {
     (state) => state.references.userPermission
   );
 
-  if (
-    !userPermission ||
-    Object.keys(userPermission).length === 0
-  ) {
+  if (!userPermission || Object.keys(userPermission).length === 0) {
     return null;
   }
 
@@ -44,18 +44,12 @@ const ProtectedReference = ({ children }) => {
     (state) => state.references.userPermission
   );
 
-  if (
-    !userPermission ||
-    Object.keys(userPermission).length === 0
-  ) {
+  if (!userPermission || Object.keys(userPermission).length === 0) {
     return null;
   }
 
-  const permissionKey =
-    type === "schedule" ? "schedules" : type;
-
-  const hasAccess =
-    userPermission?.[permissionKey]?.length > 0;
+  const permissionKey = type === "schedule" ? "schedules" : type;
+  const hasAccess = userPermission?.[permissionKey]?.length > 0;
 
   return hasAccess ? children : <Navigate to="/" replace />;
 };
@@ -67,35 +61,26 @@ const App = () => {
 
   const viewEmp = userPermission?.employees &&
     userPermission?.employees?.some(
-      (e) => e.code === "employee_view_all" || e.code === "employee_view_district" || e.code === "employee_view_region" || e.code === "employee_view_branch" || e.code === "employee_view_dept"
+      (e) => e.code === "employee_view_all" || e.code === "employee_view_district" ||
+        e.code === "employee_view_region" || e.code === "employee_view_branch" ||
+        e.code === "employee_view_dept"
     );
 
   const viewgeo = userPermission?.geozones &&
-    userPermission?.geozones?.some(
-      (e) => e.code === "geozone_view"
-    );
+    userPermission?.geozones?.some((e) => e.code === "geozone_view");
+
   const viewAULog = userPermission?.logs &&
-    userPermission?.logs?.some(
-      (e) => e.code === "log_view_audit"
-    );
+    userPermission?.logs?.some((e) => e.code === "log_view_audit");
   const viewSGLog = userPermission?.logs &&
-    userPermission?.logs?.some(
-      (e) => e.code === "log_view_signature"
-    );
+    userPermission?.logs?.some((e) => e.code === "log_view_signature");
   const viewGPLog = userPermission?.logs &&
-    userPermission?.logs?.some(
-      (e) => e.code === "log_view_gps"
-    );
+    userPermission?.logs?.some((e) => e.code === "log_view_gps");
   const viewFCLog = userPermission?.logs &&
-    userPermission?.logs?.some(
-      (e) => e.code === "log_view_face"
-    );
+    userPermission?.logs?.some((e) => e.code === "log_view_face");
 
   const viewRep = userPermission?.reports &&
     userPermission?.reports?.some(
-      (e) =>
-        e.code === "report_type_employee" ||
-        e.code === "report_type_branch"
+      (e) => e.code === "report_type_employee" || e.code === "report_type_branch"
     );
 
   const router = createBrowserRouter([
@@ -116,14 +101,48 @@ const App = () => {
             </ProtectedRoute>
           ),
         },
+
         {
           path: "reports",
+          element: (
+            <ProtectedRoute check={viewRep}>
+              <Navigate to="/reports/general" replace />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "reports/general",
           element: (
             <ProtectedRoute check={viewRep}>
               <Reports />
             </ProtectedRoute>
           ),
         },
+        {
+          path: "reports/kpi",
+          element: (
+            <ProtectedRoute check={viewRep}>
+              <ReportsKPI />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "reports/daily",
+          element: (
+            <ProtectedRoute check={viewRep}>
+              <ReportsDaily />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "reports/events",
+          element: (
+            <ProtectedRoute check={viewRep}>
+              <ReportsEvents />
+            </ProtectedRoute>
+          ),
+        },
+
         {
           path: "geozones",
           element: (
@@ -162,7 +181,7 @@ const App = () => {
             <ProtectedRoute check={viewGPLog}>
               <LocationHistory />
             </ProtectedRoute>
-          )
+          ),
         },
         {
           path: "history/signature",

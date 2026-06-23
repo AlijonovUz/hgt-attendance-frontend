@@ -246,7 +246,7 @@ const HomePage = () => {
       icon: BubbleChatDoneIcon,
       bg: "bg-[#ADDDC0]",
       iconBg: "bg-white",
-      navigate: "/reports",
+      navigate: "/reports/general",
       filter_key: "present",
       page: "employee"
     },
@@ -260,7 +260,7 @@ const HomePage = () => {
       icon: TimeQuarter02Icon,
       bg: "bg-[#FFC182]",
       iconBg: "bg-white",
-      navigate: "/reports",
+      navigate: "/reports/general",
       filter_key: "late",
       page: "employee"
     },
@@ -274,7 +274,7 @@ const HomePage = () => {
       icon: Login02Icon,
       bg: "bg-[#ACD8FC]",
       iconBg: "bg-white",
-      navigate: "/reports",
+      navigate: "/reports/general",
       filter_key: "left_early",
       page: "employee"
     },
@@ -288,7 +288,7 @@ const HomePage = () => {
       icon: PassportExpiredIcon,
       bg: "bg-[#FDBDBE]",
       iconBg: "bg-white",
-      navigate: "/reports",
+      navigate: "/reports/general",
       filter_key: "absent",
       page: "employee"
     },

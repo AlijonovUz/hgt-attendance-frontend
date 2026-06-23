@@ -8,7 +8,10 @@ import { useLanguage } from "@/Context/LanguageContext"
 const routeMap = {
      "": "mainPage",
      "employee-register": "employeeRestr",
-     "reports": "reports",
+     "general": "reports",
+     "kpi": "report_m_kpi",
+     "daily": "report_m_daily",
+     "events": "report_m_events",
      "geozones": "geozone",
      "settings": "settings",
      "references": "ref_menu_title",
