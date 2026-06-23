@@ -34,13 +34,14 @@ export const UserDropdown = ({ currentUser }) => {
                localStorage.removeItem("refresh");
                localStorage.removeItem("currentUser");
                localStorage.removeItem("userPermission");
+               localStorage.removeItem("registered_fcm_token"); // keyingi login'da qurilma qayta ro'yxatdan o'tsin
                
                navigate("/login", { replace: true })
           }, 1000)
      }
 
      return (
-          <div className="relative !z-50" ref={dropdownRef}>
+          <div className="relative !z-[5000]" ref={dropdownRef}>
                <button
                     onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
                     className="flex-shrink-0 p-1 rounded-md text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#E5E7EB] dark:hover:bg-[#2E2E2E] cursor-pointer"

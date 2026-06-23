@@ -162,11 +162,21 @@ export const NotificationBell = () => {
   // ── Yangi xabar kelganda (WS yoki FCM-foreground) ──
   const handleIncoming = useCallback(
     (raw) => {
+      console.log("[NOTIF] 📥 handleIncoming chaqirildi, raw:", raw)
       const n = normalizeIncoming(raw)
+      console.log("[NOTIF] 📥 normalized:", n, "| is_read:", n?.is_read)
+      // Bo'sh / xizmat xabari (ping, ack va h.k.) — bildirishnoma emas, e'tiborsiz qoldiramiz
+      if (!n || (n.id == null && !n.title && !n.message && !n.title_uz_latn && !n.title_ru)) {
+        console.log("[NOTIF] ⏭️ Xizmat xabari / bo'sh — o'tkazib yuborildi")
+        return
+      }
+
+      // Socketdan kelgan xabarda is_read bor: false bo'lsa (yoki yo'q bo'lsa) — yangi/o'qilmagan
+      const isUnread = n.is_read !== true
       const notif = {
         ...n,
         id: n.id ?? `tmp-${new Date().getTime()}`,
-        is_read: false,
+        is_read: !!n.is_read,
         created_at: n.created_at || new Date().toISOString(),
       }
       // UI ro'yxatiga qo'shish (dublikatni o'tkazib yuborish)
@@ -174,8 +184,10 @@ export const NotificationBell = () => {
         if (notif.id && prev.some((it) => it.id === notif.id)) return prev
         return [notif, ...prev]
       })
-      setUnread((u) => u + 1)
-      showDesktopNotification(notif)
+      // Faqat o'qilmagan bo'lsa countni state'da +1 qilamiz
+      // (sahifa yangilanganda haqiqiy son fetchCount orqali keladi)
+      if (isUnread) setUnread((u) => u + 1)
+      if (isUnread) showDesktopNotification(notif)
     },
     [showDesktopNotification]
   )
@@ -186,10 +198,7 @@ export const NotificationBell = () => {
     incomingRef.current = handleIncoming
   }, [handleIncoming])
 
-  // Mount: brauzer ruxsatini so'rash + o'qilmaganlar sonini bir marta olish.
-  // (Takroriy POLLING OLIB TASHLANDI — endi notification uchun har N soniyada
-  //  `notifications/` va `count/` so'rovlari YUBORILMAYDI. Count sahifa yuklanganda
-  //  olinadi; yangi xabar WS/FCM orqali real-time keladi.)
+
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {})
@@ -212,10 +221,13 @@ export const NotificationBell = () => {
       return () => unsubFcm?.()
     }
 
+    console.log("[NOTIF] 🚀 WS effekti ishga tushdi | WS_BASE:", WS_BASE)
+
     // Har (re)connectda yangi ticket bilan WS URL olish
     const getTicketUrl = async () => {
       const res = await axiosAPI.post("notifications/tickets/")
       const ticket = res.data?.data?.ticket
+      console.log("[NOTIF] 🎟️ Ticket olindi:", ticket)
       if (!ticket) throw new Error("Ticket olinmadi")
       return `${WS_BASE}/ws/notifications/?ticket=${ticket}`
     }
@@ -226,7 +238,7 @@ export const NotificationBell = () => {
         if (cancelled) return
         notificationSocket.connect(url, (data) => incomingRef.current(data), getTicketUrl)
       } catch (err) {
-        console.error("WS ulanishda xato:", err)
+        console.error("[NOTIF] ❌ WS ulanishda xato (ticket?):", err)
       }
     }
     startWs()
