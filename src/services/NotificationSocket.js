@@ -34,38 +34,46 @@ class NotificationSocket {
 
   _initialize() {
     const activeConnectionId = ++this.connectionId
+    console.log(`[WS] 🔌 Ulanishga urinish #${activeConnectionId}:`, this.url)
     try {
       this.socket = new WebSocket(this.url)
     } catch (error) {
-      console.error("❌ WebSocket yaratishda xato:", error)
+      console.error("[WS] ❌ WebSocket yaratishda xato:", error)
       this._reconnect()
       return
     }
 
     this.socket.onopen = () => {
       if (activeConnectionId !== this.connectionId) return
+      console.log(`[WS] ✅ ULANDI (#${activeConnectionId}) — endi xabar kutilyapti...`)
       this.reconnectAttempts = 0
       if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     }
 
     this.socket.onmessage = (event) => {
       if (activeConnectionId !== this.connectionId) return
+      console.log("[WS] 📩 XABAR KELDI (raw):", event.data)
       let data = event.data
       try {
         data = JSON.parse(event.data)
+        console.log("[WS] 📩 XABAR (parsed):", data)
       } catch {
-        /* JSON bo'lmasa o'z holicha qoladi */
+        console.log("[WS] ⚠️ Xabar JSON emas, o'z holicha qoldi")
       }
       if (this.messageCallback) this.messageCallback(data)
     }
 
-    this.socket.onerror = () => {
+    this.socket.onerror = (event) => {
       if (activeConnectionId !== this.connectionId) return
-      console.error("❌ WebSocket xatosi yuz berdi")
+      console.error("[WS] ❌ XATO yuz berdi:", event)
     }
 
-    this.socket.onclose = () => {
+    this.socket.onclose = (event) => {
       if (activeConnectionId !== this.connectionId) return
+      // code: 1000=normal, 1006=abnormal (proxy/tarmoq), 1011=server xatosi, 4xxx=app-level
+      console.warn(
+        `[WS] 🔴 YOPILDI (#${activeConnectionId}) | code=${event.code} | reason="${event.reason || "(bo'sh)"}" | wasClean=${event.wasClean}`
+      )
       this.socket = null
       if (!this.manuallyClosed) this._reconnect()
     }
@@ -73,9 +81,19 @@ class NotificationSocket {
 
   // Exponential backoff: 1s, 2s, 4s, 8s ... (max 10s)
   _reconnect() {
-    if (this.manuallyClosed || this.reconnectAttempts >= this.maxReconnectAttempts) return
+    if (this.manuallyClosed) {
+      console.log("[WS] ⏹️ Reconnect yo'q — qo'lda yopilgan")
+      return
+    }
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error(
+        `[WS] 💀 ${this.maxReconnectAttempts} urinish tugadi — BOSHQA ULANMAYDI (sahifani yangilang)`
+      )
+      return
+    }
     this.reconnectAttempts++
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 10000)
+    console.log(`[WS] 🔁 ${delay}ms dan keyin qayta urinish (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     this.reconnectTimer = setTimeout(async () => {
       // Ticket eskirgan bo'lishi mumkin — mavjud bo'lsa yangi URL olamiz
@@ -100,6 +118,7 @@ class NotificationSocket {
   }
 
   disconnect() {
+    console.log("[WS] ⏹️ disconnect() chaqirildi (qo'lda yopish)")
     this.manuallyClosed = true
     this.reconnectAttempts = 0
     this.connectionId++ // eskirgan callbacklarni o'chirish
