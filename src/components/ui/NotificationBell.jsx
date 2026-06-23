@@ -87,9 +87,6 @@ export const NotificationBell = () => {
 
   // Desktop popup takrorlanmasligi uchun ko'rsatilgan id'lar
   const notifiedIdsRef = useRef(new Set())
-  // Polling uchun: eng so'nggi ko'rilgan created_at (birinchi yuklashda spam bo'lmasin)
-  const newestSeenRef = useRef(null)
-  const pollInitedRef = useRef(false)
 
   // ── O'qilmaganlar sonini olish (qo'ng'iroqdagi qizil nuqta) ──
   const fetchCount = useCallback(async () => {
@@ -189,66 +186,15 @@ export const NotificationBell = () => {
     incomingRef.current = handleIncoming
   }, [handleIncoming])
 
-  // ── Polling: yangi bildirishnomalarni aniqlab, desktop popup chiqarish ──
-  // (Brauzer ochiq turganda — hatto boshqa tabda — WS/FCM bo'lmasa ham ishlaydi.)
-  const pollNotifications = useCallback(async () => {
-    try {
-      const res = await axiosAPI.get("notifications/", { params: { page: 1 } })
-      if (res.status !== 200) return
-      const data = res.data?.data || {}
-      const results = data.results || []
-
-      // Badge (count) ni ham yangilab qo'yamiz
-      fetchCount()
-
-      // Panel ochiq bo'lsa, 1-sahifani yangilab turamiz
-      if (open) {
-        setItems((prev) => {
-          if (prev.length === 0) return results
-          // mavjudlarni saqlab, faqat yangilarini oldinga qo'shamiz
-          const known = new Set(prev.map((it) => String(it.id)))
-          const fresh = results.filter((r) => !known.has(String(r.id)))
-          return fresh.length ? [...fresh, ...prev] : prev
-        })
-      }
-
-      // Birinchi yuklash: faqat bazaviy nuqtani belgilaymiz (eski xabarlarga popup chiqmasin)
-      const newestTs = results[0]?.created_at || null
-      if (!pollInitedRef.current) {
-        pollInitedRef.current = true
-        newestSeenRef.current = newestTs
-        // Mavjud xabarlarni "ko'rilgan" deb belgilaymiz (popup chiqmasligi uchun)
-        results.forEach((r) => notifiedIdsRef.current.add(String(r.id)))
-        return
-      }
-
-      // Yangi (oxirgi ko'rilgandan keyin yaratilgan) o'qilmaganlarga desktop popup
-      const isNewer = (ts) =>
-        !newestSeenRef.current || new Date(ts).getTime() > new Date(newestSeenRef.current).getTime()
-      const fresh = results.filter((r) => !r.is_read && isNewer(r.created_at))
-      if (newestTs) newestSeenRef.current = newestTs
-      // eskidan yangiga tartibda chiqaramiz
-      fresh.reverse().forEach((n) => showDesktopNotification(n))
-    } catch (err) {
-      console.error(err)
-    }
-  }, [open, fetchCount, showDesktopNotification])
-
-  // Eng so'nggi poll funksiyasini ref'da saqlaymiz (interval barqaror qolsin)
-  const pollRef = useRef(pollNotifications)
-  useEffect(() => {
-    pollRef.current = pollNotifications
-  }, [pollNotifications])
-
-  // Mount: brauzer ruxsatini so'rash + sonni olish + 40s da bir polling
+  // Mount: brauzer ruxsatini so'rash + o'qilmaganlar sonini bir marta olish.
+  // (Takroriy POLLING OLIB TASHLANDI — endi notification uchun har N soniyada
+  //  `notifications/` va `count/` so'rovlari YUBORILMAYDI. Count sahifa yuklanganda
+  //  olinadi; yangi xabar WS/FCM orqali real-time keladi.)
   useEffect(() => {
     if (typeof Notification !== "undefined" && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {})
     }
     fetchCount()
-    pollRef.current() // boshlang'ich baseline
-    const id = setInterval(() => pollRef.current(), 40000)
-    return () => clearInterval(id)
   }, [fetchCount])
 
   // ── WebSocket (real-time) + FCM (push) ulanishi ──
