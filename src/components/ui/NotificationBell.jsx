@@ -29,8 +29,8 @@ const pickText = (n, base, language) => {
 // WS yoki FCM'dan kelgan turli shakldagi payloadni Notification obyektiga keltirish
 const normalizeIncoming = (raw) => {
   let n = raw
-  // FCM foreground: data.payload ichida JSON-string
-  if (raw?.data?.payload) {
+  // FCM foreground: data.payload ichida JSON-string (bo'sh bo'lmasa)
+  if (raw?.data?.payload && raw.data.payload !== "{}") {
     try {
       n = JSON.parse(raw.data.payload)
     } catch {
@@ -160,6 +160,14 @@ export const NotificationBell = () => {
     (notif) => {
       try {
         if (typeof Notification === "undefined" || Notification.permission !== "granted") return
+
+        // Dublikatlarni oldini olish: faqat faol (ko'rinib turgan) tabdagina bildirishnoma ko'rsatamiz.
+        // Boshqa fondagi o'sha sayt tablari bildirishnoma chiqarmaydi (lekin UI'da count o'zgaradi).
+        if (document.visibilityState !== "visible") {
+          console.log("[NOTIF] Tab ko'rinmayapti (background), desktop bildirishnoma chiqarilmadi")
+          return
+        }
+
         const key = String(notif.id)
         if (notifiedIdsRef.current.has(key)) return // allaqachon ko'rsatilgan (WS/FCM/poll dedup)
         notifiedIdsRef.current.add(key)
@@ -195,15 +203,23 @@ export const NotificationBell = () => {
   // ── Yangi xabar kelganda (WS yoki FCM-foreground) ──
   const handleIncoming = useCallback(
     (raw) => {
-      console.log("[NOTIF] 📥 handleIncoming chaqirildi, raw:", raw)
+
+      // Agar WebSocket ulangan bo'lsa va xabar FCM dan kelgan bo'lsa — WS orqali kelgan xabar ustuvor,
+      // FCM foreground xabarni e'tiborsiz qoldiramiz (dublikat bo'lmasligi uchun)
+      const isFcmMessage = !!raw?.notification || !!raw?.data?.payload
+      const isWsConnected = notificationSocket.status === "OPEN"
+      if (isFcmMessage && isWsConnected) {
+        console.log("[NOTIF] ⏭️ WebSocket ulangan, FCM foreground xabari o'tkazib yuborildi")
+        return
+      }
+
       const n = normalizeIncoming(raw)
-      console.log("[NOTIF] 📥 normalized:", n, "| is_read:", n?.is_read)
       // Bo'sh / xizmat xabari (ping, ack va h.k.) — bildirishnoma emas, e'tiborsiz qoldiramiz
       if (!n || (n.id == null && !n.title && !n.message && !n.title_uz_latn && !n.title_ru)) {
         console.log("[NOTIF] ⏭️ Xizmat xabari / bo'sh — o'tkazib yuborildi")
         return
       }
-
+      
       // Socketdan kelgan xabarda is_read bor: false bo'lsa (yoki yo'q bo'lsa) — yangi/o'qilmagan
       const isUnread = n.is_read !== true
       const notif = {
@@ -252,6 +268,24 @@ export const NotificationBell = () => {
     }
     fetchCount()
   }, [fetchCount])
+
+  // SW'dan kelgan foreground push xabarlarni eshitish
+  useEffect(() => {
+    const handleSWMessage = (event) => {
+      if (event.data && event.data.type === "FCM_FOREGROUND_EVENT") {
+        console.log("[NOTIF] SW'dan foreground xabar keldi:", event.data.payload)
+        incomingRef.current(event.data.payload)
+      }
+    }
+    if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener("message", handleSWMessage)
+    }
+    return () => {
+      if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+        navigator.serviceWorker.removeEventListener("message", handleSWMessage)
+      }
+    }
+  }, [])
 
   // ── WebSocket (real-time) + FCM (push) ulanishi ──
   useEffect(() => {
