@@ -25,7 +25,7 @@ import Layout from "./components/Layout/Layout";
 import { EmptySection } from "./components/EmptySection";
 import { useSelector } from "react-redux";
 
-const ProtectedRoute = ({ children, check }) => {
+const ProtectedRoute = ({ children, checkFn }) => {
   const userPermission = useSelector(
     (state) => state.references.userPermission
   );
@@ -34,6 +34,7 @@ const ProtectedRoute = ({ children, check }) => {
     return null;
   }
 
+  const check = checkFn ? checkFn(userPermission) : false;
   return check ? children : <Navigate to="/" replace />;
 };
 
@@ -54,164 +55,168 @@ const ProtectedReference = ({ children }) => {
   return hasAccess ? children : <Navigate to="/" replace />;
 };
 
-const App = () => {
-  const userPermission = useSelector(
-    (state) => state.references.userPermission
+// Check helpers
+const checkViewEmp = (perms) =>
+  perms?.employees &&
+  perms.employees.some(
+    (e) =>
+      e.code === "employee_view_all" ||
+      e.code === "employee_view_district" ||
+      e.code === "employee_view_region" ||
+      e.code === "employee_view_branch" ||
+      e.code === "employee_view_dept"
   );
 
-  const viewEmp = userPermission?.employees &&
-    userPermission?.employees?.some(
-      (e) => e.code === "employee_view_all" || e.code === "employee_view_district" ||
-        e.code === "employee_view_region" || e.code === "employee_view_branch" ||
-        e.code === "employee_view_dept"
-    );
+const checkViewGeo = (perms) =>
+  perms?.geozones && perms.geozones.some((e) => e.code === "geozone_view");
 
-  const viewgeo = userPermission?.geozones &&
-    userPermission?.geozones?.some((e) => e.code === "geozone_view");
+const checkViewAULog = (perms) =>
+  perms?.logs && perms.logs.some((e) => e.code === "log_view_audit");
 
-  const viewAULog = userPermission?.logs &&
-    userPermission?.logs?.some((e) => e.code === "log_view_audit");
-  const viewSGLog = userPermission?.logs &&
-    userPermission?.logs?.some((e) => e.code === "log_view_signature");
-  const viewGPLog = userPermission?.logs &&
-    userPermission?.logs?.some((e) => e.code === "log_view_gps");
-  const viewFCLog = userPermission?.logs &&
-    userPermission?.logs?.some((e) => e.code === "log_view_face");
+const checkViewSGLog = (perms) =>
+  perms?.logs && perms.logs.some((e) => e.code === "log_view_signature");
 
-  const viewRep = userPermission?.reports &&
-    userPermission?.reports?.some(
-      (e) => e.code === "report_type_employee" || e.code === "report_type_branch"
-    );
+const checkViewGPLog = (perms) =>
+  perms?.logs && perms.logs.some((e) => e.code === "log_view_gps");
 
-  const viewRepKPI = userPermission?.kpis
-  const viewRepDaily = userPermission?.dailys
-  const viewRepEvents = userPermission?.reports
+const checkViewFCLog = (perms) =>
+  perms?.logs && perms.logs.some((e) => e.code === "log_view_face");
 
+const checkViewRep = (perms) =>
+  perms?.reports &&
+  perms.reports.some(
+    (e) => e.code === "report_type_employee" || e.code === "report_type_branch"
+  );
 
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Layout />,
-      errorElement: <EmptySection />,
-      children: [
-        {
-          index: true,
-          element: <HomePage />,
-        },
-        {
-          path: "employee-register",
-          element: (
-            <ProtectedRoute check={viewEmp}>
-              <EmployeeRegister />
-            </ProtectedRoute>
-          ),
-        },
+const checkViewRepKPI = (perms) => perms?.kpis;
+const checkViewRepDaily = (perms) => perms?.dailys;
+const checkViewRepEvents = (perms) => perms?.reports;
 
-        {
-          path: "reports",
-          element: (
-            <ProtectedRoute check={viewRep}>
-              <Navigate to="/reports/general" replace />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "reports/general",
-          element: (
-            <ProtectedRoute check={viewRep}>
-              <Reports />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "reports/kpi",
-          element: (
-            <ProtectedRoute check={viewRepKPI}>
-              <ReportsKPI />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "reports/daily",
-          element: (
-            <ProtectedRoute check={viewRepDaily}>
-              <ReportsDaily />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "reports/events",
-          element: (
-            <ProtectedRoute check={viewRepEvents}>
-              <ReportsEvents />
-            </ProtectedRoute>
-          ),
-        },
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    errorElement: <EmptySection />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: "employee-register",
+        element: (
+          <ProtectedRoute checkFn={checkViewEmp}>
+            <EmployeeRegister />
+          </ProtectedRoute>
+        ),
+      },
 
-        {
-          path: "geozones",
-          element: (
-            <ProtectedRoute check={viewgeo}>
-              <Geozones />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "references/:type",
-          element: (
-            <ProtectedReference>
-              <ReferencePage />
-            </ProtectedReference>
-          ),
-        },
-        {
-          path: "history/actions",
-          element: (
-            <ProtectedRoute check={viewAULog}>
-              <ActionHistory />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "history/faceid",
-          element: (
-            <ProtectedRoute check={viewFCLog}>
-              <FaceIdHistory />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "history/location",
-          element: (
-            <ProtectedRoute check={viewGPLog}>
-              <LocationHistory />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "history/signature",
-          element: (
-            <ProtectedRoute check={viewSGLog}>
-              <SignatureHistory />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "settings",
-          element: <Settings />,
-        },
-      ],
-    },
-    {
-      path: "/login",
-      element: <LoginPage />,
-    },
-    {
-      path: "/privacy-policy",
-      element: <PrivacyPolicy />,
-    },
-  ]);
+      {
+        path: "reports",
+        element: (
+          <ProtectedRoute checkFn={checkViewRep}>
+            <Navigate to="/reports/general" replace />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "reports/general",
+        element: (
+          <ProtectedRoute checkFn={checkViewRep}>
+            <Reports />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "reports/kpi",
+        element: (
+          <ProtectedRoute checkFn={checkViewRepKPI}>
+            <ReportsKPI />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "reports/daily",
+        element: (
+          <ProtectedRoute checkFn={checkViewRepDaily}>
+            <ReportsDaily />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "reports/events",
+        element: (
+          <ProtectedRoute checkFn={checkViewRepEvents}>
+            <ReportsEvents />
+          </ProtectedRoute>
+        ),
+      },
 
+      {
+        path: "geozones",
+        element: (
+          <ProtectedRoute checkFn={checkViewGeo}>
+            <Geozones />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "references/:type",
+        element: (
+          <ProtectedReference>
+            <ReferencePage />
+          </ProtectedReference>
+        ),
+      },
+      {
+        path: "history/actions",
+        element: (
+          <ProtectedRoute checkFn={checkViewAULog}>
+            <ActionHistory />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "history/faceid",
+        element: (
+          <ProtectedRoute checkFn={checkViewFCLog}>
+            <FaceIdHistory />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "history/location",
+        element: (
+          <ProtectedRoute checkFn={checkViewGPLog}>
+            <LocationHistory />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "history/signature",
+        element: (
+          <ProtectedRoute checkFn={checkViewSGLog}>
+            <SignatureHistory />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
+    ],
+  },
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/privacy-policy",
+    element: <PrivacyPolicy />,
+  },
+]);
+
+const App = () => {
   return <RouterProvider router={router} />;
 };
 

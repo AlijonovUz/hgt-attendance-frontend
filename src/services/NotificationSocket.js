@@ -25,6 +25,7 @@ class NotificationSocket {
     if (onMessage) this.messageCallback = onMessage
     if (urlProvider) this.urlProvider = urlProvider
     this.manuallyClosed = false
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
 
     if (this.socket) {
       if (this.socket.readyState === WebSocket.OPEN) return // allaqachon ulangan
@@ -105,15 +106,17 @@ class NotificationSocket {
     console.log(`[WS] 🔁 ${delay}ms dan keyin qayta urinish (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     this.reconnectTimer = setTimeout(async () => {
-      // Ticket eskirgan bo'lishi mumkin — mavjud bo'lsa yangi URL olamiz
+      if (this.manuallyClosed) return
       if (this.urlProvider) {
         try {
           const fresh = await this.urlProvider()
+          if (this.manuallyClosed) return
           if (fresh) this.url = fresh
         } catch (e) {
           console.error("Ticket yangilashda xato:", e)
         }
       }
+      if (this.manuallyClosed) return
       this._initialize()
     }, delay)
   }

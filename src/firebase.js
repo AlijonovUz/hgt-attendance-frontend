@@ -114,14 +114,18 @@ export const requestForToken = async () => {
 // Sayt ochiq turganda keladigan FCM xabarlarni eshitish.
 // cb — har xabar uchun chaqiriladigan callback. Tozalash uchun unsubscribe qaytaradi.
 export const onForegroundMessage = (cb) => {
-  let unsub = () => {};
+  let active = true;
+  let unsub = null;
   getMessagingInstance().then((messaging) => {
-    if (messaging) {
+    if (messaging && active) {
       unsub = onMessage(messaging, (payload) => {
         console.log("📨 Foreground xabar keldi:", payload);
         cb?.(payload);
       });
     }
   });
-  return () => unsub();
+  return () => {
+    active = false;
+    if (unsub) unsub();
+  };
 };
