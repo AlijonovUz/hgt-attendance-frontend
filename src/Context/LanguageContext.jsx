@@ -1123,6 +1123,18 @@ export const translations = {
           en: "Longitude",
           ru: "Долгота (Longitude)"
      },
+     radius: {
+          uz: "Radius",
+          cy: "Радиус",
+          en: "Radius",
+          ru: "Радиус"
+     },
+     meter_short: {
+          uz: "metr",
+          cy: "метр",
+          en: "m",
+          ru: "м"
+     },
      gz_radius: {
           uz: "Radius (metr)",
           cy: "Радиус (метр)",

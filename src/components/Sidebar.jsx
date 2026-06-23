@@ -69,9 +69,9 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      const viewRep = userPermission?.reports && userPermission?.reports.some(e => (e.code === "report_type_employee" || e.code === "report_type_branch"))
 
      const viewRepGeneral = userPermission?.reports && userPermission?.reports.some(e => e.code === "report_type_employee" || e.code === "report_type_branch")
-     const viewRepKPI = userPermission?.reports && userPermission?.reports.some(e => e.code === "report_type_kpi")
-     const viewRepDaily = userPermission?.reports && userPermission?.reports.some(e => e.code === "report_type_daily")
-     const viewRepEvents = userPermission?.reports && userPermission?.reports.some(e => e.code === "report_type_events")
+     const viewRepKPI = userPermission?.kpis
+     const viewRepDaily = userPermission?.dailys
+     const viewRepEvents = userPermission?.reports
 
      const viewhol = userPermission?.holidays && userPermission?.holidays.some(e => e.code === "holiday_view")
      const viewsch = userPermission?.schedules && userPermission?.schedules.some(e => e.code === "schedule_view")
@@ -94,10 +94,10 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
      ]
 
      const REPORTS_CHILDREN = [
-          { key: "general", labelKey: "report_m_general", path: "/reports/general" },
-          { key: "kpi", labelKey: "report_m_kpi", path: "/reports/kpi" },
-          { key: "daily", labelKey: "report_m_daily", path: "/reports/daily" },
-          { key: "events", labelKey: "report_m_events", path: "/reports/events" },
+          ...(viewRepGeneral ? [{ key: "general", labelKey: "report_m_general", path: "/reports/general" }] : []),
+          ...(viewRepKPI ? [{ key: "kpi", labelKey: "report_m_kpi", path: "/reports/kpi" }] : []),
+          ...(viewRepDaily ? [{ key: "daily", labelKey: "report_m_daily", path: "/reports/daily" }] : []),
+          ...(viewRepEvents ? [{ key: "events", labelKey: "report_m_events", path: "/reports/events" }] : []),
      ]
 
      const sidebarItems = [
@@ -193,7 +193,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                          })}
 
                          {/* ─── Hisobotlar (ochiluvchi) ─── */}
-                         {viewRepGeneral &&
+                         {(viewRepGeneral || viewRepKPI || viewRepDaily || viewRepEvents) &&
                               <>
                                    <button
                                         type="button"

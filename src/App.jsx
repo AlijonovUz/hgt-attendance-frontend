@@ -83,6 +83,11 @@ const App = () => {
       (e) => e.code === "report_type_employee" || e.code === "report_type_branch"
     );
 
+  const viewRepKPI = userPermission?.kpis
+  const viewRepDaily = userPermission?.dailys
+  const viewRepEvents = userPermission?.reports
+
+
   const router = createBrowserRouter([
     {
       path: "/",
@@ -121,7 +126,7 @@ const App = () => {
         {
           path: "reports/kpi",
           element: (
-            <ProtectedRoute check={viewRep}>
+            <ProtectedRoute check={viewRepKPI}>
               <ReportsKPI />
             </ProtectedRoute>
           ),
@@ -129,7 +134,7 @@ const App = () => {
         {
           path: "reports/daily",
           element: (
-            <ProtectedRoute check={viewRep}>
+            <ProtectedRoute check={viewRepDaily}>
               <ReportsDaily />
             </ProtectedRoute>
           ),
@@ -137,7 +142,7 @@ const App = () => {
         {
           path: "reports/events",
           element: (
-            <ProtectedRoute check={viewRep}>
+            <ProtectedRoute check={viewRepEvents}>
               <ReportsEvents />
             </ProtectedRoute>
           ),
