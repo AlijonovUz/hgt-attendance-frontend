@@ -88,6 +88,10 @@ export const NotificationBell = () => {
   // Desktop popup takrorlanmasligi uchun ko'rsatilgan id'lar
   const notifiedIdsRef = useRef(new Set())
 
+  // WS/FCM reconnect'larida bir xil xabar qayta ishlanmasligi uchun ko'rilgan id'lar.
+  // Backend reconnect'da o'qilmaganlarni qayta yuborsa — count oshmaydi, popup takror chiqmaydi.
+  const seenIdsRef = useRef(new Set())
+
   // ── O'qilmaganlar sonini olish (qo'ng'iroqdagi qizil nuqta) ──
   const fetchCount = useCallback(async () => {
     try {
@@ -179,6 +183,20 @@ export const NotificationBell = () => {
         is_read: !!n.is_read,
         created_at: n.created_at || new Date().toISOString(),
       }
+
+      // YAGONA DEDUP DARVOZASI: real id'li xabar shu sessiyada allaqachon ishlangan bo'lsa —
+      // butunlay e'tiborsiz qoldiramiz. Aks holda WS reconnect'da backend o'qilmaganlarni
+      // qayta yuborganda count cheksiz oshib, popup ketma-ket chiqib ketadi.
+      const key = String(notif.id)
+      const hasRealId = notif.id != null && !key.startsWith("tmp-")
+      if (hasRealId) {
+        if (seenIdsRef.current.has(key)) {
+          console.log("[NOTIF] ⏭️ Takror (reconnect replay) — o'tkazib yuborildi:", key)
+          return
+        }
+        seenIdsRef.current.add(key)
+      }
+
       // UI ro'yxatiga qo'shish (dublikatni o'tkazib yuborish)
       setItems((prev) => {
         if (notif.id && prev.some((it) => it.id === notif.id)) return prev
