@@ -115,6 +115,8 @@ const Geozones = () => {
   const [search, setSearch] = useState("")
   const searchTimer = useRef(null)
 
+  const [searchRegion, setSearchRegion] = useState("")
+
   const [regions, setRegions] = useState([])
   const [districts, setDistricts] = useState([])
 
@@ -184,26 +186,6 @@ const Geozones = () => {
     }
   }
 
-  const fetchBranches = async (pageNum = 1, search = "", pag, setPag, setter) => {
-    setPag(p => ({ ...p, loading: true }))
-    try {
-      const params = { page: pageNum }
-      if (search?.trim()) params.search = search
-      const res = await axiosAPI.get("users/branches/", { params })
-      if (res.status === 200) {
-        const results = (res.data?.data?.results || res.data?.results || []).map(b => ({
-          value: b.id,
-          label: b.name,
-        }))
-        setter(prev => pageNum === 1 ? results : [...prev, ...results])
-        setPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
-      }
-    } catch (err) {
-      console.error(err)
-      setPag(p => ({ ...p, loading: false }))
-    }
-  }
-
   const fetchRegions = async () => {
     try {
       const res = await axiosAPI.get("users/regions/")
@@ -234,6 +216,26 @@ const Geozones = () => {
     } catch (err) {
       console.error(err)
       setDistrictPag(p => ({ ...p, loading: false }))
+    }
+  }
+
+  const fetchBranches = async (pageNum = 1, search = "", pag, setPag, setter) => {
+    setPag(p => ({ ...p, loading: true }))
+    try {
+      const params = { page: pageNum }
+      if (search?.trim()) params.search = search
+      const res = await axiosAPI.get("users/branches/", { params })
+      if (res.status === 200) {
+        const results = (res.data?.data?.results || res.data?.results || []).map(b => ({
+          value: b.id,
+          label: b.name,
+        }))
+        setter(prev => pageNum === 1 ? results : [...prev, ...results])
+        setPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+      }
+    } catch (err) {
+      console.error(err)
+      setPag(p => ({ ...p, loading: false }))
     }
   }
 
@@ -392,10 +394,10 @@ const Geozones = () => {
   const radiusDirty = selected && detailRadius !== (selected.radius ?? RADIUS_MIN)
 
   return (
-    <div className="p-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
+    <div className="pb-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
 
       {/* Qidiruv + Filter */}
-      <div className="w-full flex items-center justify-between">
+      <div className="w-full px-4 py-3 bg-white dark:bg-[#0A0A0A] sticky top-0 z-10 flex items-center justify-between">
         <div className="flex items-center gap-2 w-1/2">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
@@ -433,77 +435,72 @@ const Geozones = () => {
       </div>
 
       {/* ─── Body: list + detail ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 px-4 gap-4 w-full">
 
 
-        {/* ── Chap: qidiruv + ro'yxat ── */}
-        <div className="flex flex-col gap-3">
-
-
-          {/* Ro'yxat */}
-          <div className="flex flex-col gap-2.5 h-[calc(100vh-235px)] overflow-y-auto pr-1">
-            {loading ? (
-              Array.from({ length: 7 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-[74px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0"
-                />
-              ))
-            ) : geozones.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 h-full text-[#737373]">
-                <MapPin size={28} strokeWidth={1.5} />
-                <span className="text-sm">{t("gz_empty")}</span>
-              </div>
-            ) : (
-              geozones.map((g) => {
-                const active = g.id === selectedId
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    onClick={() => setSelectedId(g.id)}
+        {/* Ro'yxat */}
+        <div className="flex flex-col gap-2.5 h-[calc(100vh-160px)] sticky top-20 z-10 overflow-y-auto pr-1">
+          {loading ? (
+            Array.from({ length: 7 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[74px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse border border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0"
+              />
+            ))
+          ) : geozones.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 h-full text-[#737373]">
+              <MapPin size={28} strokeWidth={1.5} />
+              <span className="text-sm">{t("gz_empty")}</span>
+            </div>
+          ) : (
+            geozones.map((g) => {
+              const active = g.id === selectedId
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setSelectedId(g.id)}
+                  className={cn(
+                    "group flex items-center gap-3 w-full text-left rounded-2xl border p-3.5 transition-colors flex-shrink-0 cursor-pointer",
+                    active
+                      ? "border-[#D4D4D4] dark:border-[#525252] bg-[#FAFAFA] dark:bg-[#1A1A1A] shadow-sm"
+                      : "border-[#E5E7EB] dark:border-[#2E2E2E] hover:bg-[#FAFAFA] dark:hover:bg-[#141414]"
+                  )}
+                >
+                  {/* Ikona */}
+                  <div
                     className={cn(
-                      "group flex items-center gap-3 w-full text-left rounded-2xl border p-3.5 transition-colors flex-shrink-0 cursor-pointer",
-                      active
-                        ? "border-[#D4D4D4] dark:border-[#525252] bg-[#FAFAFA] dark:bg-[#1A1A1A] shadow-sm"
-                        : "border-[#E5E7EB] dark:border-[#2E2E2E] hover:bg-[#FAFAFA] dark:hover:bg-[#141414]"
+                      "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                      active ? "bg-white dark:bg-[#262626] " : "bg-white dark:bg-[#1F1F1F]"
                     )}
                   >
-                    {/* Ikona */}
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                        active ? "bg-white dark:bg-[#262626] " : "bg-white dark:bg-[#1F1F1F]"
-                      )}
-                    >
-                      <MapPin size={18} className="text-[#0A0A0A] dark:text-white" />
-                    </div>
+                    <MapPin size={18} className="text-[#0A0A0A] dark:text-white" />
+                  </div>
 
-                    {/* Nom + meta */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
-                        {g.name}
-                      </p>
-                      <p className="text-[13px] text-[#737373] truncate">
-                        {ztLabel(g.zone_type)} - {g.radius} {t("gz_meter_short")}
-                      </p>
-                    </div>
+                  {/* Nom + meta */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
+                      {g.name}
+                    </p>
+                    <p className="text-[13px] text-[#737373] truncate">
+                      {ztLabel(g.zone_type)} - {g.radius} {t("gz_meter_short")}
+                    </p>
+                  </div>
 
-                    {/* Radio — yuqoriga tekislangan (Figma) */}
-                    <span
-                      className={cn(
-                        "w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 self-start mt-0.5",
-                        active ? "border-[#0090FF]" : "border-[#D4D4D4] dark:border-[#525252]"
-                      )}
-                    >
-                      {active && <span className="w-2 h-2 rounded-full bg-[#0090FF]" />}
-                    </span>
-                    
-                  </button>
-                )
-              })
-            )}
-          </div>
+                  {/* Radio — yuqoriga tekislangan (Figma) */}
+                  <span
+                    className={cn(
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 self-start mt-0.5",
+                      active ? "border-[#0090FF]" : "border-[#D4D4D4] dark:border-[#525252]"
+                    )}
+                  >
+                    {active && <span className="w-2 h-2 rounded-full bg-[#0090FF]" />}
+                  </span>
+
+                </button>
+              )
+            })
+          )}
         </div>
 
         {/* ── O'ng: detail ── */}
@@ -781,9 +778,11 @@ const Geozones = () => {
               <Select
                 label={t("gz_region")}
                 placeholder={t("gz_region_ph")}
-                options={regions}
+                options={regions.filter(r => r.label.toLowerCase().includes(searchRegion.toLowerCase()))}
                 value={draft.region}
                 onChange={handleDraftRegion}
+                searchable={true}
+                onSearch={(s) => setSearchRegion(s)}
               />
 
               {/* Tuman */}

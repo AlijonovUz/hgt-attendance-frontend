@@ -220,6 +220,7 @@ const ReferencePage = () => {
 
   // Select maydonlari uchun variantlar
   const [options, setOptions] = useState({})
+  const [optionsPag, setOptionsPag] = useState({})
 
   // Majburiy/yaroqsiz maydonlar
   const [errors, setErrors] = useState({})
@@ -394,16 +395,32 @@ const ReferencePage = () => {
   }, [loading, loadingMore, hasMore, config]); // page va search bu yerga yozilmaydi!
 
 
-  const loadOptions = async (field, parentValue) => {
+  const loadOptions = async (field, parentValue, pageNum = 1, search = "") => {
+    const key = field.name
+    setOptionsPag(prev => ({
+      ...prev,
+      [key]: { ...prev[key], loading: true }
+    }))
     try {
-      const params = field.dependsOn && parentValue ? { [field.param]: parentValue } : {}
+      const params = { page: pageNum }
+      if (search?.trim()) params.search = search
+      if (field.dependsOn && parentValue) params[field.param] = parentValue
       const res = await axiosAPI.get(field.optionsEndpoint, { params })
       if (res.status === 200) {
-        const opts = (res.data?.data?.results || res.data?.results || []).map((o) => ({ value: o.id, label: o.name }))
-        setOptions((prev) => ({ ...prev, [field.name]: opts }))
+        const data = res.data?.data || res.data || {}
+        const newOpts = (data.results || []).map(o => ({ value: o.id, label: o.name }))
+        setOptions(prev => ({
+          ...prev,
+          [key]: pageNum === 1 ? newOpts : [...(prev[key] || []), ...newOpts]
+        }))
+        setOptionsPag(prev => ({
+          ...prev,
+          [key]: { page: pageNum, hasMore: !!data.next, loading: false }
+        }))
       }
     } catch (err) {
       console.error(err)
+      setOptionsPag(prev => ({ ...prev, [key]: { ...prev[key], loading: false } }))
     }
   }
 
@@ -474,6 +491,7 @@ const ReferencePage = () => {
     setFilterValues({});
     setTmpFilters({});
     setFilterPagination({});
+    setOptionsPag({})
     activeParamsRef.current = {};
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
@@ -503,17 +521,14 @@ const ReferencePage = () => {
         .filter((f) => f.dependsOn === field.name)
         .forEach((dep) => {
           next[dep.name] = null
-          setOptions((o) => ({ ...o, [dep.name]: [] }))
-          if (value) loadOptions(dep, value)
+          setOptions(o => ({ ...o, [dep.name]: [] }))
+          setOptionsPag(p => ({ ...p, [dep.name]: { page: 1, hasMore: true, loading: false } }))
+          if (value) loadOptions(dep, value, 1, "")
         })
       return next
     })
     if (errors[field.name]) {
-      setErrors((prev) => {
-        const next = { ...prev }
-        delete next[field.name]
-        return next
-      })
+      setErrors((prev) => { const next = { ...prev }; delete next[field.name]; return next })
     }
   }
 
@@ -859,6 +874,14 @@ const ReferencePage = () => {
                           value={form[f.name] ?? null}
                           onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
                           className={cn(errors[f.name] && errorInputClass)}
+                          searchable={true}
+                          loadingMore={optionsPag[f.name]?.loading || false}
+                          onScrollEnd={() => {
+                            const pag = optionsPag[f.name]
+                            if (!pag?.hasMore || pag?.loading) return
+                            loadOptions(f, null, pag.page + 1, "")
+                          }}
+                          onSearch={(s) => loadOptions(f, null, 1, s)}
                         />
                         {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                       </div>
@@ -871,6 +894,14 @@ const ReferencePage = () => {
                           onChange={(opt) => handleFieldChange(pairDep, opt?.value ?? null)}
                           disabled={!form[f.name]}
                           className={cn(errors[pairDep.name] && errorInputClass)}
+                          searchable={true}
+                          loadingMore={optionsPag[pairDep.name]?.loading || false}
+                          onScrollEnd={() => {
+                            const pag = optionsPag[pairDep.name]
+                            if (!pag?.hasMore || pag?.loading) return
+                            loadOptions(pairDep, form[f.name], pag.page + 1, "")
+                          }}
+                          onSearch={(s) => loadOptions(pairDep, form[f.name], 1, s)}
                         />
                         {errors[pairDep.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                       </div>
@@ -887,6 +918,14 @@ const ReferencePage = () => {
                         value={form[f.name] ?? null}
                         onChange={(opt) => handleFieldChange(f, opt?.value ?? null)}
                         className={cn(errors[f.name] && errorInputClass)}
+                        searchable={true}
+                        loadingMore={optionsPag[f.name]?.loading || false}
+                        onScrollEnd={() => {
+                          const pag = optionsPag[f.name]
+                          if (!pag?.hasMore || pag?.loading) return
+                          loadOptions(f, null, pag.page + 1, "")
+                        }}
+                        onSearch={(s) => loadOptions(f, null, 1, s)}
                       />
                       {errors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                     </div>
@@ -1079,6 +1118,14 @@ const ReferencePage = () => {
                       value={editForm[f.name] ?? null}
                       onChange={(opt) => setEditForm(p => ({ ...p, [f.name]: opt?.value ?? null }))}
                       className={cn(editErrors[f.name] && errorInputClass)}
+                      searchable={true}
+                      loadingMore={optionsPag[f.name]?.loading || false}
+                      onScrollEnd={() => {
+                        const pag = optionsPag[f.name]
+                        if (!pag?.hasMore || pag?.loading) return
+                        loadOptions(f, null, pag.page + 1, "")
+                      }}
+                      onSearch={(s) => loadOptions(f, null, 1, s)}
                     />
                     {editErrors[f.name] && <span className="text-xs text-red-500">{t("field_required")}</span>}
                   </div>
