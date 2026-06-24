@@ -210,6 +210,24 @@ export const translations = {
           en: "End date",
           ru: "Дата окончания"
      },
+     date_range: {
+          uz: "Sana oralig'i",
+          cy: "Сана оралиғи",
+          en: "Date range",
+          ru: "Диапазон дат"
+     },
+     date_from: {
+          uz: "Dan",
+          cy: "Дан",
+          en: "From",
+          ru: "От"
+     },
+     date_to: {
+          uz: "Gacha",
+          cy: "Гача",
+          en: "To",
+          ru: "До"
+     },
 
      // login page
      login_title: {
