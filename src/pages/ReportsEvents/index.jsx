@@ -49,6 +49,9 @@ const ReportsEvents = () => {
   // ── Search ──
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
+
+  const [searchRegion, setSearchRegion] = useState("")
+
   const searchTimer = useRef(null)
 
   // ── Filter modal ──
@@ -235,13 +238,6 @@ const ReportsEvents = () => {
         const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
         setDistricts((prev) => (pageNum === 1 ? list : [...prev, ...list]))
         setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
-
-        // Bitta tuman bo'lsa — avtomatik tanla va filiallarni filter qil
-        if (pageNum === 1 && list.length === 1) {
-          const only = list[0]
-          setFilterDistrict(only)
-          fetchBranches(1, "", regionId, only.value)
-        }
       }
     } catch (err) {
       console.error(err)
@@ -262,14 +258,6 @@ const ReportsEvents = () => {
         const list = (res.data?.data?.results || []).map((b) => ({ value: b.id, label: b.name }))
         setBranches((prev) => (pageNum === 1 ? list : [...prev, ...list]))
         setBranchPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
-
-        // Bitta filial bo'lsa — avtomatik tanla va bo'limlarni filter qil
-        if (pageNum === 1 && list.length === 1) {
-          const only = list[0]
-          setFilterBranch(only)
-          setFilterDepartment(null)
-          fetchDepartments(1, "", only.value)
-        }
       }
     } catch (err) {
       console.error(err)
@@ -289,11 +277,6 @@ const ReportsEvents = () => {
         const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
         setDepartments((prev) => (pageNum === 1 ? list : [...prev, ...list]))
         setDeptPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
-
-        // Bitta bo'lim bo'lsa — avtomatik tanla
-        if (pageNum === 1 && list.length === 1) {
-          setFilterDepartment(list[0])
-        }
       }
     } catch (err) {
       console.error(err)
@@ -741,9 +724,11 @@ const ReportsEvents = () => {
               <Select
                 label={t("region") || "Viloyat"}
                 placeholder={t("region_branch_placeholder") || "Viloyat tanlang"}
-                options={regions}
+                options={regions.filter(r => r.label.toLowerCase().includes(searchRegion.toLowerCase()))}
                 value={filterRegion?.value ?? null}
                 onChange={handleRegionChange}
+                searchable={true}
+                onSearch={(s) => setSearchRegion(s)}
               />
 
               {/* Tuman → handleDistrictChange (viloyat tanlanmasa disabled) */}

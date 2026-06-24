@@ -1472,7 +1472,7 @@ export const translations = {
           ru: "Центральный аппарат"
      },
      zt_region_branch: {
-          uz: "Viloyat",
+          uz: "Viloyat filiali",
           cy: "Вилоят филиали",
           en: "Region branch",
           ru: "Областной филиал"

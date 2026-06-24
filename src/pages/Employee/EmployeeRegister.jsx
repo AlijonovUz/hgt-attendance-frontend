@@ -31,6 +31,8 @@ const EmployeeRegister = () => {
   const blockEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_block")
   const fireEmp = userPermission?.employees && userPermission?.employees.some(e => e.code === "employee_fire")
 
+  const [regionSearch, setRegionSearch] = useState("")
+  const [listRegionSearch, setListRegionSearch] = useState("")
 
   const [employees, setEmployees] = useState([]);
   const [count, setCount] = useState(0);
@@ -96,11 +98,6 @@ const EmployeeRegister = () => {
   const [tempFilterRegion, setTempFilterRegion] = useState(null)
   const [tempFilterDistrict, setTempFilterDistrict] = useState(null)
   const [tempFilterBranch, setTempFilterBranch] = useState(null)
-
-  const [districtPag, setDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
-  const [branchPag, setBranchPag] = useState({ page: 1, hasMore: true, loading: false })
-  const [departmentPag, setDepartmentPag] = useState({ page: 1, hasMore: true, loading: false })
-  const [positionPag, setPositionPag] = useState({ page: 1, hasMore: true, loading: false })
 
   // Filter modal uchun alohida
   const [filterBranchPag, setFilterBranchPag] = useState({ page: 1, hasMore: true, loading: false })
@@ -312,8 +309,6 @@ const EmployeeRegister = () => {
           const newData = res.data?.data?.results || []
           if (pageNum === 1) {
             setBranches(newData)
-            // Bitta natija bo'lsa avtomatik tanlash
-            if (newData.length === 1) setModalSelected(newData[0].id)
           } else {
             setBranches(prev => [...prev, ...newData])
           }
@@ -361,20 +356,6 @@ const EmployeeRegister = () => {
     }
   }
 
-  const fetchDistricts = async (regionId) => {
-    setTempFilterDistrict(null)
-    try {
-      const res = await axiosAPI.get("users/districts/", { params: { region: regionId } })
-      if (res.status === 200) {
-        setDistricts(
-          (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
-        )
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   // Districts (filter modal ichidagi)
   const loadDistricts = async (regionId, pageNum = 1, search = "", append = false) => {
     setFilterDistrictPag(p => ({ ...p, loading: true }))
@@ -383,7 +364,6 @@ const EmployeeRegister = () => {
       const mapped = results.map(d => ({ value: d.id, label: d.name }))
       setDistricts(prev => pageNum === 1 || !append ? mapped : [...prev, ...mapped])
       setFilterDistrictPag({ page: pageNum, hasMore, loading: false })
-      if (pageNum === 1 && mapped.length === 1) setTempFilterDistrict(mapped[0])
     } catch { setFilterDistrictPag(p => ({ ...p, loading: false })) }
   }
 
@@ -396,11 +376,10 @@ const EmployeeRegister = () => {
       const { results, hasMore } = await fetchPaginated("users/branches/", params, pageNum, search)
       setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
       setFilterBranchPag({ page: pageNum, hasMore, loading: false })
-      if (pageNum === 1 && results.length === 1) {
-        setTempFilterBranch({ value: results[0].id, label: results[0].name })
-      }
     } catch { setFilterBranchPag(p => ({ ...p, loading: false })) }
   }
+
+
   // List filter modal districts
   const loadListDistricts = async (regionId, pageNum = 1, search = "") => {
     setListDistrictPag(p => ({ ...p, loading: true }))
@@ -409,7 +388,6 @@ const EmployeeRegister = () => {
       const mapped = results.map(d => ({ value: d.id, label: d.name }))
       setFilterDistricts(prev => pageNum === 1 ? mapped : [...prev, ...mapped])
       setListDistrictPag({ page: pageNum, hasMore, loading: false })
-      if (pageNum === 1 && mapped.length === 1) setTmpDistrict(mapped[0])
     } catch { setListDistrictPag(p => ({ ...p, loading: false })) }
   }
 
@@ -423,9 +401,6 @@ const EmployeeRegister = () => {
       const { results, hasMore } = await fetchPaginated("users/branches/", params, pageNum, search)
       setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
       setListBranchPag({ page: pageNum, hasMore, loading: false })
-      if (pageNum === 1 && results.length === 1) {
-        setTmpBranch({ value: results[0].id, label: results[0].name })
-      }
     } catch { setListBranchPag(p => ({ ...p, loading: false })) }
   }
 
@@ -438,9 +413,6 @@ const EmployeeRegister = () => {
       const { results, hasMore } = await fetchPaginated("users/departments/", params, pageNum, search)
       setDepartments(prev => pageNum === 1 ? results : [...prev, ...results])
       setListDepartmentPag({ page: pageNum, hasMore, loading: false })
-      if (pageNum === 1 && results.length === 1) {
-        setTmpDepartment({ value: results[0].id, label: results[0].name })
-      }
     } catch { setListDepartmentPag(p => ({ ...p, loading: false })) }
   }
 
@@ -2145,9 +2117,13 @@ const EmployeeRegister = () => {
               <Select
                 label={t("region_branch_title") || "Viloyat"}
                 placeholder={t("region_branch_placeholder") || "Viloyatni tanlang"}
-                options={regions.map(r => ({ value: r.id, label: r.name }))}
+                options={regions
+                  .filter(r => r.name.toLowerCase().includes(regionSearch.toLowerCase()))
+                  .map(r => ({ value: r.id, label: r.name }))}
                 value={tempFilterRegion?.value ?? null}
                 onChange={handleRegionChange}
+                searchable={true}
+                onSearch={(s) => setRegionSearch(s)}
               />
 
               <Select
@@ -2218,9 +2194,13 @@ const EmployeeRegister = () => {
               <Select
                 label={t("region_branch_title") || "Viloyat"}
                 placeholder={t("region_branch_placeholder") || "Viloyatni tanlang"}
-                options={regions.map((r) => ({ value: r.id, label: r.name }))}
+                options={regions
+                  .filter(r => r.name.toLowerCase().includes(listRegionSearch.toLowerCase()))
+                  .map(r => ({ value: r.id, label: r.name }))}
                 value={tmpRegion?.value ?? null}
                 onChange={handleListRegionChange}
+                searchable={true}
+                onSearch={(s) => setListRegionSearch(s)}
               />
 
               {/* District — region tanlanmasa disabled */}
