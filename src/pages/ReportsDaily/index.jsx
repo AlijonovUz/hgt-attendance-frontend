@@ -16,10 +16,12 @@ import {
   Logout01Icon,
   FilterVerticalIcon,
   Search01Icon,
+  Calendar02Icon,
 } from "@hugeicons/core-free-icons"
 import { Modal } from "@/components/ui/modal"
 import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/DatePicker"
 
 const fmt = (n) =>
   Number(n ?? 0)
@@ -52,7 +54,7 @@ const SkeletonRow = ({ cols }) => (
 const COL_COUNT = 11
 
 const DailyAttendance = () => {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   // ── Data state ──
   const [results, setResults] = useState([])
@@ -75,6 +77,8 @@ const DailyAttendance = () => {
   const [filterDistrict, setFilterDistrict] = useState(null)
   const [filterBranch, setFilterBranch] = useState(null)
   const [filterDepartment, setFilterDepartment] = useState(null)
+  const [filterStartDate, setFilterStartDate] = useState(null)
+  const [filterEndDate, setFilterEndDate] = useState(null)
 
   // ── Filter options ──
   const [users, setUsers] = useState([])
@@ -363,6 +367,8 @@ const DailyAttendance = () => {
     if (filterDistrict?.value) extra.district = filterDistrict.value
     if (filterBranch?.value) extra.branch = filterBranch.value
     if (filterDepartment?.value) extra.department = filterDepartment.value
+    if (filterStartDate) extra.start_date = dayjs(filterStartDate).format("YYYY-MM-DD")
+    if (filterEndDate) extra.end_date = dayjs(filterEndDate).format("YYYY-MM-DD")
     activeFiltersRef.current = extra
     setOpenFilterModal(false)
     fetchData(extra)
@@ -375,6 +381,8 @@ const DailyAttendance = () => {
     setFilterDistrict(null)
     setFilterBranch(null)
     setFilterDepartment(null)
+    setFilterStartDate(null)
+    setFilterEndDate(null)
     setDistricts([])
     setBranches([])
     setDepartments([])
@@ -387,7 +395,7 @@ const DailyAttendance = () => {
   }
 
   const hasActiveFilter =
-    filterUser || filterSchedule || filterRegion || filterDistrict || filterBranch || filterDepartment
+    filterUser || filterSchedule || filterRegion || filterDistrict || filterBranch || filterDepartment || filterStartDate || filterEndDate
 
   // ── Export helpers ──
   const buildExport = () => {
@@ -849,6 +857,40 @@ const DailyAttendance = () => {
                 }}
                 onSearch={(s) => fetchDepartments(1, s, filterBranch?.value || null)}
               />
+
+              {/* Sana oralig'i */}
+              <div className="col-span-2 flex flex-col gap-1">
+                <span className="text-sm font-normal text-[#737373] dark:text-[#A3A3A3]">
+                  {t("date_range")}
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <DatePicker
+                    currentLang={language}
+                    label=" "
+                    placeholder={t("date_from")}
+                    widthClass="w-full"
+                    className="w-full"
+                    inputClassName="h-11! bg-white dark:bg-transparent!"
+                    value={filterStartDate}
+                    onChange={(d) => setFilterStartDate(d)}
+                    labelClassName="hidden"
+                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                  />
+                  <DatePicker
+                    currentLang={language}
+                    label=" "
+                    placeholder={t("date_to")}
+                    widthClass="w-full"
+                    className="w-full"
+                    inputClassName="h-11! bg-white dark:bg-transparent!"
+                    value={filterEndDate}
+                    onChange={(d) => setFilterEndDate(d)}
+                    labelClassName="hidden"
+                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                  />
+                </div>
+              </div>
+
             </div>
           </div>
 

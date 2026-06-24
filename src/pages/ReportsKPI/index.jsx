@@ -10,7 +10,9 @@ import { HugeIcon } from "@/components/ui/HugeIcon"
 import {
   Search01Icon,
   FilterVerticalIcon,
+  Calendar02Icon,
 } from "@hugeicons/core-free-icons"
+import { DatePicker } from "@/components/ui/DatePicker"
 import { Input } from "@/components/ui/input"
 import ExportMenu from "@/components/ui/ExportMenu"
 import * as XLSX from "xlsx-js-style"
@@ -18,7 +20,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 const index = () => {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
 
   const [results, setResults] = useState([])
   const [count, setCount] = useState(0)
@@ -37,6 +39,8 @@ const index = () => {
     branch: null,
     department: null,
     rating_category: "",
+    start_date: "",
+    end_date: "",
   }
   const [draft, setDraft] = useState(emptyDraft)
   const [applied, setApplied] = useState(emptyDraft)
@@ -55,7 +59,8 @@ const index = () => {
 
   const hasFilter = !!(
     applied.user || applied.region || applied.district ||
-    applied.branch || applied.department || applied.rating_category
+    applied.branch || applied.department || applied.rating_category ||
+    applied.start_date || applied.end_date
   )
 
   const buildExport = () => {
@@ -235,6 +240,8 @@ const index = () => {
       if (filters.branch) params.branch = filters.branch
       if (filters.department) params.department = filters.department
       if (filters.rating_category) params.rating_category = filters.rating_category
+      if (filters.start_date) params.start_date = dayjs(filters.start_date).format("YYYY-MM-DD")
+      if (filters.end_date) params.end_date = dayjs(filters.end_date).format("YYYY-MM-DD")
 
       const res = await axiosAPI.get("analytics/kpi/", { params })
       if (res.status === 200) {
@@ -414,6 +421,8 @@ const index = () => {
     if (draft.branch?.value) extraParams.branch = draft.branch.value
     if (draft.department?.value) extraParams.department = draft.department.value
     if (draft.rating_category?.value) extraParams.rating_category = draft.rating_category.value
+    if (draft.start_date) extraParams.start_date = draft.start_date
+    if (draft.end_date) extraParams.end_date = draft.end_date
 
     activeFiltersRef.current = extraParams
     setApplied({ ...draft })
@@ -678,6 +687,39 @@ const index = () => {
                 }}
                 onSearch={(s) => fetchDepartments(1, s, draft.branch?.value || null)}
               />
+
+              <div className="col-span-2 flex flex-col gap-1">
+                <span className="text-sm font-normal text-[#737373] dark:text-[#A3A3A3]">
+                  {t("date_range")}
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <DatePicker
+                    currentLang={language}
+                    label=" "
+                    placeholder={t("date_from")}
+                    widthClass="w-full"
+                    className="w-full"
+                    inputClassName="h-11! bg-white dark:bg-transparent!"
+                    value={draft.start_date}
+                    onChange={(d) => setDraft((p) => ({ ...p, start_date: d }))}
+                    labelClassName="hidden"
+                    calendarIcon={draft.start_date ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setDraft((p) => ({ ...p, start_date: "" })) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                  />
+                  <DatePicker
+                    currentLang={language}
+                    label=" "
+                    placeholder={t("date_to")}
+                    widthClass="w-full"
+                    className="w-full"
+                    inputClassName="h-11! bg-white dark:bg-transparent!"
+                    value={draft.end_date}
+                    onChange={(d) => setDraft((p) => ({ ...p, end_date: d }))}
+                    labelClassName="hidden"
+                    calendarIcon={draft.end_date ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setDraft((p) => ({ ...p, end_date: "" })) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                  />
+                </div>
+              </div>
+
             </div>
           </div>
 
