@@ -808,7 +808,7 @@ const ReportsEvents = () => {
                     value={filterStartDate}
                     onChange={(d) => setFilterStartDate(d)}
                     labelClassName="hidden"
-                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                   <DatePicker
                     currentLang={language}
@@ -820,7 +820,7 @@ const ReportsEvents = () => {
                     value={filterEndDate}
                     onChange={(d) => setFilterEndDate(d)}
                     labelClassName="hidden"
-                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                 </div>
               </div>

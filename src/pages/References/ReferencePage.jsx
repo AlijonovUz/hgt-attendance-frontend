@@ -735,7 +735,7 @@ const ReferencePage = () => {
       error={!!errors[f.name]}
       errorText={errors[f.name] ? t("field_required") : null}
       labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
     />
   )
 
@@ -1113,13 +1113,42 @@ const ReferencePage = () => {
               if (f.type === "date" && datePair) {
                 return (
                   <div key={i} className="grid grid-cols-2 gap-3">
-                    <DatePicker className="w-full" inputClassName="h-11" currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
-                    <DatePicker className="w-full" inputClassName="h-11" currentLang={currentLang} label={t(datePair.labelKey)} placeholder={t(datePair.phKey)} value={editForm[datePair.name]} onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))} error={!!editErrors[datePair.name]} />
+                    <DatePicker
+                      className="w-full"
+                      inputClassName="h-11"
+                      currentLang={currentLang}
+                      label={t(f.labelKey)}
+                      placeholder={t(f.phKey)}
+                      value={editForm[f.name]}
+                      onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))}
+                      error={!!editErrors[f.name]}
+                      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
+                    />
+                    <DatePicker
+                      className="w-full"
+                      inputClassName="h-11"
+                      currentLang={currentLang}
+                      label={t(datePair.labelKey)}
+                      placeholder={t(datePair.phKey)}
+                      value={editForm[datePair.name]}
+                      onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))}
+                      error={!!editErrors[datePair.name]}
+                      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
+                    />
                   </div>
                 )
               }
               if (f.type === "date") {
-                return <DatePicker key={i} currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
+                return <DatePicker
+                  key={i}
+                  currentLang={currentLang}
+                  label={t(f.labelKey)}
+                  placeholder={t(f.phKey)}
+                  value={editForm[f.name]}
+                  onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))}
+                  error={!!editErrors[f.name]}
+                  calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
+                />
               }
               if (f.type === "select") {
                 return (
