@@ -32,7 +32,7 @@ export const HelpModal = ({ isOpen, onClose }) => {
         </button>
       </div>
 
-      <p className="mt-3 text-[14px] leading-[20px] text-[#737373] dark:text-[#A3A3A3]">
+      <p className="mt-3 text-[15px] leading-[20px] text-[#737373] dark:text-[#A3A3A3]">
         Botni ulang - kelish, kechikish, ketish va shunga o'xshash muhim xabarlarni Telegram orqali oling.
       </p>
 
