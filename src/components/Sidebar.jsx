@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useLanguage } from "@/Context/LanguageContext"
-import { useTheme } from "@/Context/ThemeContext"
 import {
      LayoutDashboard,
      Users,
@@ -33,6 +32,39 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
 
      const [reportsOpen, setReportsOpen] = useState(() => location.pathname.startsWith("/reports"))
      const reportsActive = location.pathname.startsWith("/reports")
+
+     const toggleReports = () => {
+          setReportsOpen((prev) => {
+               const next = !prev
+               if (next) {
+                    setRefOpen(false)
+                    setHistoryOpen(false)
+               }
+               return next
+          })
+     }
+
+     const toggleReferences = () => {
+          setRefOpen((prev) => {
+               const next = !prev
+               if (next) {
+                    setReportsOpen(false)
+                    setHistoryOpen(false)
+               }
+               return next
+          })
+     }
+
+     const toggleHistory = () => {
+          setHistoryOpen((prev) => {
+               const next = !prev
+               if (next) {
+                    setReportsOpen(false)
+                    setRefOpen(false)
+               }
+               return next
+          })
+     }
 
      const viewAULog = userPermission?.logs &&
           userPermission?.logs?.some(
@@ -90,6 +122,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
           ...(viewpos ? [{ key: "positions", labelKey: "ref_m_position" }] : []),
           ...(viewrol ? [{ key: "roles", labelKey: "ref_m_role" }] : []),
           ...(viewhol ? [{ key: "holidays", labelKey: "ref_m_holiday" }] : []),
+          ...(viewhol ? [{ key: "holiday-calendar", labelKey: "ref_m_holiday_calendar" }] : []),
           ...(viewsch ? [{ key: "schedule", labelKey: "ref_m_schedule" }] : []),
      ]
 
@@ -197,7 +230,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                               <>
                                    <button
                                         type="button"
-                                        onClick={() => setReportsOpen((p) => !p)}
+                                        onClick={toggleReports}
                                         title={sidebarCollapsed ? t("report_menu_title") : undefined}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
         ${reportsActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
@@ -208,29 +241,30 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                              {t("report_menu_title")}
                                         </span>
                                         {!sidebarCollapsed && (
-                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${reportsOpen ? "rotate-180" : ""}`} />
+                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-300 ease-in-out text-[#6B7280] dark:text-[#9CA3AF] ${reportsOpen ? "rotate-180" : ""}`} />
                                         )}
                                    </button>
 
-                                   {reportsOpen && !sidebarCollapsed && (
-                                        <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
-                                             {REPORTS_CHILDREN.map((child) => (
-                                                  <NavLink
-                                                       key={child.key}
-                                                       to={child.path}
-                                                       className={({ isActive }) =>
-                                                            `px-3 py-2 rounded-lg text-[13px] truncate
+                                   <div
+                                        className={`ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E] overflow-hidden transition-all duration-300 ease-in-out
+                                        ${reportsOpen && !sidebarCollapsed ? "max-h-60 opacity-100 mt-0.5" : "max-h-0 opacity-0 pointer-events-none"}`}
+                                   >
+                                        {REPORTS_CHILDREN.map((child) => (
+                                             <NavLink
+                                                  key={child.key}
+                                                  to={child.path}
+                                                  className={({ isActive }) =>
+                                                       `px-3 py-2 rounded-lg text-[13px] truncate
               ${isActive
-                                                                 ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
-                                                                 : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
-                                                            }`
-                                                       }
-                                                  >
-                                                       {t(child.labelKey)}
-                                                  </NavLink>
-                                             ))}
-                                        </div>
-                                   )}
+                                                            ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                            : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                       }`
+                                                  }
+                                             >
+                                                  {t(child.labelKey)}
+                                             </NavLink>
+                                        ))}
+                                   </div>
                               </>
                          }
 
@@ -259,7 +293,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                               <>
                                    <button
                                         type="button"
-                                        onClick={() => setRefOpen((p) => !p)}
+                                        onClick={toggleReferences}
                                         title={sidebarCollapsed ? t("ref_menu_title") : undefined}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
                                    ${refActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
@@ -270,30 +304,31 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                              {t("ref_menu_title")}
                                         </span>
                                         {!sidebarCollapsed && (
-                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
+                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-300 ease-in-out text-[#6B7280] dark:text-[#9CA3AF] ${refOpen ? "rotate-180" : ""}`} />
                                         )}
                                    </button>
 
                                    {/* Ichki bo'limlar */}
-                                   {refOpen && !sidebarCollapsed && (
-                                        <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
-                                             {REF_CHILDREN.map((child) => (
-                                                  <NavLink
-                                                       key={child.key}
-                                                       to={`/references/${child.key}`}
-                                                       className={({ isActive }) =>
-                                                            `px-3 py-2 rounded-lg text-[13px] truncate
+                                   <div
+                                        className={`ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E] overflow-hidden transition-all duration-300 ease-in-out
+                                        ${refOpen && !sidebarCollapsed ? "max-h-96 opacity-100 mt-0.5" : "max-h-0 opacity-0 pointer-events-none"}`}
+                                   >
+                                        {REF_CHILDREN.map((child) => (
+                                             <NavLink
+                                                  key={child.key}
+                                                  to={`/references/${child.key}`}
+                                                  className={({ isActive }) =>
+                                                       `px-3 py-2 rounded-lg text-[13px] truncate
                                                   ${isActive
-                                                                 ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
-                                                                 : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
-                                                            }`
-                                                       }
-                                                  >
-                                                       {t(child.labelKey)}
-                                                  </NavLink>
-                                             ))}
-                                        </div>
-                                   )}
+                                                            ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                            : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                       }`
+                                                  }
+                                             >
+                                                  {t(child.labelKey)}
+                                             </NavLink>
+                                        ))}
+                                   </div>
                               </>
                          }
 
@@ -302,7 +337,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                               <>
                                    <button
                                         type="button"
-                                        onClick={() => setHistoryOpen((p) => !p)}
+                                        onClick={toggleHistory}
                                         title={sidebarCollapsed ? t("history_menu_title") : undefined}
                                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden cursor-pointer
           ${historyActive ? "bg-[#F5F5F5] dark:bg-[#2A2A2A] shadow-xs" : "hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"}`}
@@ -313,29 +348,30 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                                              {t("history_menu_title")}
                                         </span>
                                         {!sidebarCollapsed && (
-                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-200 text-[#6B7280] dark:text-[#9CA3AF] ${historyOpen ? "rotate-180" : ""}`} />
+                                             <ChevronDown size={16} className={`flex-shrink-0 transition-transform duration-300 ease-in-out text-[#6B7280] dark:text-[#9CA3AF] ${historyOpen ? "rotate-180" : ""}`} />
                                         )}
                                    </button>
 
                                    {/* Ichki bo'limlar */}
-                                   {historyOpen && !sidebarCollapsed && (
-                                        <div className="ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E]">
-                                             {HISTORY_CHILDREN.map((child) => (
-                                                  <NavLink
-                                                       key={child.key}
-                                                       to={child.path}
-                                                       className={({ isActive }) =>
-                                                            `px-3 py-2 rounded-lg text-[13px] truncate ${isActive
-                                                                 ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
-                                                                 : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
-                                                            }`
-                                                       }
-                                                  >
-                                                       {t(child.labelKey)}
-                                                  </NavLink>
-                                             ))}
-                                        </div>
-                                   )}
+                                   <div
+                                        className={`ml-[22px] pl-3 flex flex-col gap-0.5 border-l border-[#E5E7EB] dark:border-[#2E2E2E] overflow-hidden transition-all duration-300 ease-in-out
+                                        ${historyOpen && !sidebarCollapsed ? "max-h-60 opacity-100 mt-0.5" : "max-h-0 opacity-0 pointer-events-none"}`}
+                                   >
+                                        {HISTORY_CHILDREN.map((child) => (
+                                             <NavLink
+                                                  key={child.key}
+                                                  to={child.path}
+                                                  className={({ isActive }) =>
+                                                       `px-3 py-2 rounded-lg text-[13px] truncate ${isActive
+                                                            ? "text-[#0A0A0A] dark:text-white font-medium bg-[#F5F5F5] dark:bg-[#2A2A2A]"
+                                                            : "text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1A1A1A] dark:hover:text-white hover:bg-[#F5F5F5] dark:hover:bg-[#252525]"
+                                                       }`
+                                                  }
+                                             >
+                                                  {t(child.labelKey)}
+                                             </NavLink>
+                                        ))}
+                                   </div>
                               </>
                          }
                     </nav>
