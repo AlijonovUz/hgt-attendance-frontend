@@ -39,7 +39,10 @@ export const Select = ({
      // Controlled valuelarni sinxronlash
      useEffect(() => {
           if (value !== undefined) {
-               setSelected(options.find((o) => o.value === value) ?? null);
+               const timer = setTimeout(() => {
+                    setSelected(options.find((o) => o.value === value) ?? null);
+               }, 0);
+               return () => clearTimeout(timer);
           }
      }, [value, options]);
 
@@ -57,19 +60,27 @@ export const Select = ({
      // Dropdown holati o'zgarganda mantiq
      useEffect(() => {
           if (open) {
-               setQuery("");
-               userTyped.current = false;  // ← qo'shing
-               scrollTriggeredRef.current = false;
+               const resetTimer = setTimeout(() => {
+                    setQuery("");
+                    userTyped.current = false;
+                    scrollTriggeredRef.current = false;
+               }, 0);
                if (showSearch) {
                     const id = setTimeout(() => searchRef.current?.focus(), 0);
-                    return () => clearTimeout(id);
+                    return () => {
+                         clearTimeout(resetTimer);
+                         clearTimeout(id);
+                    };
                }
+               return () => clearTimeout(resetTimer);
           } else {
-               setQuery("");
-               userTyped.current = false;  // ← qo'shing
+               const timer = setTimeout(() => {
+                    setQuery("");
+                    userTyped.current = false;
+               }, 0);
+               return () => clearTimeout(timer);
           }
      }, [open, showSearch]);
-
      // Foydalanuvchi inputga yozgandagina backendga so'rov yuborish (Debounce mantiq)
      useEffect(() => {
           if (!open) return;
@@ -80,7 +91,7 @@ export const Select = ({
           }, 400);
 
           return () => clearTimeout(timeout);
-     }, [query, open]);
+     }, [query, open, onSearch]);
 
      // ─── Scroll pagination (Cheksiz so'rov xatosi tuzatilgan qismi) ───
      const handleDropdownScroll = useCallback(() => {
@@ -128,9 +139,9 @@ export const Select = ({
      };
 
      return (
-          <div ref={wrapperRef} className={`relative w-full font-sans ${contanierClassName}`}>
+          <div ref={wrapperRef} className={`relative w-full font-sans ${open ? "z-[99999]" : ""} ${contanierClassName}`}>
                {label && (
-                    <label className="block mb-1.5 text-sm text-[#737373] dark:text-[#A3A3A3]">
+                    <label className="block mb-1.5 text-[13px] text-[#737373] dark:text-[#A3A3A3]">
                          {label}
                     </label>
                )}
@@ -184,7 +195,7 @@ export const Select = ({
                          ref={dropdownRef}
                          onScroll={handleDropdownScroll}
                          role="listbox"
-                         className="absolute top-[calc(100%+6px)] left-0 w-full z-50 bg-white dark:bg-[#171717] border border-gray-200 dark:border-[#404040] rounded-xl p-1 shadow-lg max-h-[240px] overflow-y-auto"
+                         className="absolute top-[calc(100%+6px)] left-0 w-full z-[99999] bg-white dark:bg-[#171717] border border-gray-200 dark:border-[#404040] rounded-xl p-1 shadow-lg max-h-[240px] overflow-y-auto"
                          style={{ animation: "fadeSlide 0.15s ease" }}
                     >
                          <style>{`
@@ -255,3 +266,4 @@ export const Select = ({
           </div>
      );
 };
+

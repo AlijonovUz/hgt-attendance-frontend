@@ -1,11 +1,11 @@
 // src/pages/ActionHistory.jsx
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import * as XLSX from "xlsx-js-style"
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 import { ExportMenu } from "@/components/ui/ExportMenu"
 import dayjs from "dayjs"
-import { ArrowLeft, ChevronDownIcon, X } from "lucide-react"
+import { ArrowLeft, X } from "lucide-react"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
@@ -13,17 +13,15 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Modal } from "@/components/ui/modal"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { DatePicker } from "@/components/ui/DatePicker"
 import Toast from "@/components/ui/Toast"
 
-const PAGE_SIZE_FALLBACK = 20
-
 // ─── Detail modal uchun ko'rsatish maydonlari (disabled ko'rinishda) ───
-const DetailField = ({ label, value, className }) => (
+const DetailField = ({ label, value, className, wrap = false }) => (
      <div className={cn("flex flex-col gap-1.5", className)}>
           <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
-          <div title={value} className="h-11 px-3.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] truncate">
+          <div title={typeof value === "string" ? value : undefined} className={cn("min-h-11 px-3.5 py-2.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3]", wrap ? "whitespace-normal break-words leading-5" : "truncate")}>
                {value ?? value === 0 ? value : "—"}
           </div>
      </div>
@@ -34,7 +32,7 @@ const DetailJsonField = ({ label, value }) => (
      <div className="flex flex-col gap-1.5">
           <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
           <pre
-               className="px-4 py-3.5 rounded-lg bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] whitespace-pre-wrap break-all m-0 font-mono [--dash-color:#D4D4D4] dark:[--dash-color:#404040]"
+               className="px-4 py-3.5 rounded-lg bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] whitespace-pre-wrap break-all m-0 font-mono max-h-[260px] overflow-auto [--dash-color:#D4D4D4] dark:[--dash-color:#404040]"
                style={{
                     backgroundImage:
                          "linear-gradient(to right, var(--dash-color) 55%, transparent 0%), " +
@@ -62,7 +60,6 @@ const ActionHistory = () => {
      const { t, language } = useLanguage()
 
      const [logs, setLogs] = useState([])
-     const [count, setCount] = useState(0)
      const [loading, setLoading] = useState(true)     // birinchi yuklash
      const [loadingMore, setLoadingMore] = useState(false) // scroll pagination
      const [hasMore, setHasMore] = useState(true)
@@ -84,8 +81,6 @@ const ActionHistory = () => {
      const [tmpUser, setTmpUser] = useState(null)
      const [tmpAction, setTmpAction] = useState(null)
      const [tmpTable, setTmpTable] = useState(null)
-
-     const [TABLE_OPTIONS_KEYS, setTABLE_OPTIONS_KEYS] = useState([])
 
      // Foydalanuvchi select uchun ro'yxat + pagination
      const [users, setUsers] = useState([])
@@ -132,7 +127,10 @@ const ActionHistory = () => {
      const hasFilter = !!(filterUser || filterAction || filterTable || filterStartDate || filterEndDate)
 
      const ACTION_OPTIONS = ACTION_OPTIONS_KEYS.map((o) => ({ value: o.value, label: t(o.labelKey) }))
-     const TABLE_OPTIONS = TABLE_OPTIONS_KEYS.map((o) => ({ value: o.value, label: t(o.labelKey) }))
+     const TABLE_OPTIONS_KEYS = useMemo(
+          () => [...new Set(logs.map((l) => l.table_name).filter(Boolean))].map((n) => ({ value: n, label: n })),
+          [logs]
+     )
 
      // ─── Foydalanuvchilarni qidiruv bilan yuklash (filter modal uchun) ───
      const fetchUsers = async (pageNum = 1, searchTerm = "") => {
@@ -173,7 +171,6 @@ const ActionHistory = () => {
                     const data = res.data?.data || {}
                     const results = data.results || []
                     setLogs((prev) => (pageNum === 1 ? results : [...prev, ...results]))
-                    setCount(data.count || 0)
                     setHasMore(!!data.next)
                     setPage(pageNum)
                }
@@ -181,7 +178,6 @@ const ActionHistory = () => {
                console.error(err)
                if (pageNum === 1) {
                     setLogs([])
-                    setCount(0)
                     setHasMore(false)
                }
           } finally {
@@ -191,7 +187,8 @@ const ActionHistory = () => {
      }
 
      useEffect(() => {
-          fetchLogs(1)
+          const timer = setTimeout(() => fetchLogs(1), 0)
+          return () => clearTimeout(timer)
           // eslint-disable-next-line react-hooks/exhaustive-deps
      }, [search, filterUser, filterAction, filterTable, filterStartDate, filterEndDate])
 
@@ -254,26 +251,6 @@ const ActionHistory = () => {
           setFilterStartDate("")
           setFilterEndDate("")
      }
-
-     useEffect(() => {
-          const tableNames = [...new Set(logs.map(l => l.table_name))].map(n => ({ value: n, label: n }))
-
-          console.log(tableNames);
-
-
-          setTABLE_OPTIONS_KEYS(tableNames)
-     }, [logs])
-
-
-     const [exportOpen, setExportOpen] = useState(false)
-     const exportRef = useRef(null)
-     useEffect(() => {
-          const fn = (e) => {
-               if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false)
-          }
-          document.addEventListener("mousedown", fn)
-          return () => document.removeEventListener("mousedown", fn)
-     }, [])
 
      const BORDER = { top: { style: "thin", color: { rgb: "D4D4D4" } }, bottom: { style: "thin", color: { rgb: "D4D4D4" } }, left: { style: "thin", color: { rgb: "D4D4D4" } }, right: { style: "thin", color: { rgb: "D4D4D4" } } }
 
@@ -609,7 +586,9 @@ const ActionHistory = () => {
                <Modal
                     isOpen={detailOpen}
                     onClose={closeDetail}
-                    height={650}
+                    width={860}
+                    height="auto"
+                    bodyClassName="overflow-visible"
                     header={
                          <div className="flex items-center gap-1">
                               <span
@@ -622,8 +601,8 @@ const ActionHistory = () => {
                          </div>
                     }
                >
-                    <div className="flex flex-col justify-between h-full pb-2">
-                         <div className="flex flex-col gap-4 max-h-[calc(100%-5%)] overflow-y-auto">
+                    <div className="flex flex-col justify-between pb-2">
+                         <div className="flex flex-col gap-4">
                               {detailLoading ? (
                                    <div className="flex flex-col gap-3">
                                         {Array.from({ length: 4 }).map((_, i) => (
@@ -641,7 +620,7 @@ const ActionHistory = () => {
 
                                         <div className="grid grid-cols-2 gap-3">
                                              <DetailField label={t("record_id") || "Yozuv ID"} value={detail.record_id} />
-                                             <DetailField label={t("object_name_col") || "Obyekt nomi"} value={detail.object_name} />
+                                             <DetailField label={t("object_name_col") || "Obyekt nomi"} value={detail.object_name} wrap />
                                         </div>
 
                                         <DetailJsonField label={t("old_values") || "Eski qiymat"} value={detail.old_values} />

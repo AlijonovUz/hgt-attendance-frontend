@@ -3,19 +3,25 @@ import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 
-export const Modal = ({ className, width, height, isOpen, onClose, children, header }) => {
+export const Modal = ({ className, bodyClassName, width, height, isOpen, onClose, children, header }) => {
      const [shouldRender, setShouldRender] = useState(isOpen)
      const [isAnimating, setIsAnimating] = useState(false)
 
      useEffect(() => {
           if (isOpen) {
-               setShouldRender(true)
+               const renderTimer = setTimeout(() => setShouldRender(true), 0)
                const timer = setTimeout(() => setIsAnimating(true), 10)
-               return () => clearTimeout(timer)
+               return () => {
+                    clearTimeout(renderTimer)
+                    clearTimeout(timer)
+               }
           } else {
-               setIsAnimating(false)
+               const animationTimer = setTimeout(() => setIsAnimating(false), 0)
                const timer = setTimeout(() => setShouldRender(false), 300)
-               return () => clearTimeout(timer)
+               return () => {
+                    clearTimeout(animationTimer)
+                    clearTimeout(timer)
+               }
           }
      }, [isOpen])
 
@@ -28,7 +34,7 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
           <>
                <div
                     className={cn(
-                         "w-full h-screen inset-0 fixed top-0 left-0 bg-black/75 z-40 transition-opacity duration-300 ease-out",
+                         "w-full h-screen inset-0 fixed top-0 left-0 bg-black/75 z-[100000] transition-opacity duration-300 ease-out",
                          isAnimating ? "opacity-100" : "opacity-0"
                     )}
                     onClick={onClose}
@@ -38,7 +44,7 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
                <div
                     style={{ width: width, height: height }}
                     className={cn(
-                         "fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2",
+                         "fixed top-1/2 left-1/2 z-[100001] -translate-x-1/2 -translate-y-1/2",
                          "w-[600px] rounded-[24px] shadow-lg bg-[#FAFAFA] dark:bg-[#171717]",
                          "transition-all duration-300 ease-out transform origin-center",
                          "flex flex-col overflow-hidden",
@@ -54,14 +60,14 @@ export const Modal = ({ className, width, height, isOpen, onClose, children, hea
                     )}
 
                     {/* ── Scrollable content ── */}
-                    <div  id="modal-scroll-body"  className="flex-1 overflow-y-auto px-6 py-4">
+                    <div id="modal-scroll-body" className={cn("flex-1 overflow-y-auto px-6 py-4", bodyClassName)}>
                          {children}
                     </div>
                </div>
 
                <span
                     className={cn(
-                         "flex items-center justify-center rounded-full cursor-pointer p-2 bg-[#FFFFFF29] text-white fixed z-50 top-6 right-5",
+                         "flex items-center justify-center rounded-full cursor-pointer p-2 bg-[#FFFFFF29] text-white fixed z-[100002] top-6 right-5",
                          "transition-opacity duration-300 ease-out",
                          isAnimating ? "opacity-100" : "opacity-0"
                     )}

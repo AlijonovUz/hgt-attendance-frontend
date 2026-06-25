@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import "proj4leaflet"
-import { Layers } from "lucide-react"
+import { Layers, Maximize2, X } from "lucide-react"
 
 // Yandex xaritasi EPSG:3395 (ellipsoidal Mercator) proyeksiyasidan foydalanadi —
 // Leaflet'ning standart EPSG:3857'idan farq qiladi. To'g'ri joylashuv uchun
@@ -66,7 +67,7 @@ const metersPerPixel = (lat, zoom) =>
  * @param {number} radius- metr (doira radiusi)
  * @param {function} [onPick] - (lat, lng) — xaritaga bosilganda chaqiriladi (tahrirlash rejimi)
  */
-export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
+export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "", enableFullscreen = true }) => {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const tileRef = useRef(null)
@@ -77,6 +78,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
   const onPickRef = useRef(onPick)
 
   const [satellite, setSatellite] = useState(true)
+  const [fullscreen, setFullscreen] = useState(false)
 
   // onPick'ning eng so'nggi nusxasini ref'da saqlaymiz (render paytida emas)
   useEffect(() => {
@@ -155,14 +157,14 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
 
   // ── Markaz / radius o'zgarganda doira va markerni yangilash ──
   // Doira radiusini joriy zoom + kenglikka mos pikselga aylantirib chizadi (tile masshtabiga aniq mos keladi)
-  const updateCircleRadius = (center) => {
+  const updateCircleRadius = useCallback((center) => {
     const map = mapRef.current
     if (!map || !circleRef.current) return
     const zoom = map.getZoom()
     const mpp = metersPerPixel(center[0], zoom)
     const pixelRadius = radius / mpp
     circleRef.current.setRadius(pixelRadius)
-  }
+  }, [radius])
 
   useEffect(() => {
     const map = mapRef.current
@@ -198,7 +200,7 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
       map.setView(center, map.getZoom() < 15 ? 16 : map.getZoom())
       setTimeout(() => updateCircleRadius(center), 0)
     }
-  }, [validLat, validLng, radius, hasCoord])
+  }, [validLat, validLng, radius, hasCoord, updateCircleRadius])
 
   // Zoom o'zgarganda doira piksel-radiusini qayta hisoblash (aks holda noto'g'ri kattalashib/kichraytirib qoladi)
   useEffect(() => {
@@ -246,21 +248,58 @@ export const GeoMap = ({ lat, lng, radius = 100, onPick, className = "" }) => {
         </div>
       )}
 
-      {/* Qatlam almashtirish — faqat ikonka (Figma) */}
-      <button
-        type="button"
-        onClick={() => setSatellite((s) => !s)}
-        title={satellite ? "Ko'cha xaritasi" : "Sun'iy yo'ldosh"}
-        className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
-      >
-        <Layers size={16} />
-      </button>
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+        {enableFullscreen && (
+          <button
+            type="button"
+            onClick={() => setFullscreen(true)}
+            title="Kattalashtirish"
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
+          >
+            <Maximize2 size={16} />
+          </button>
+        )}
+
+        {/* Qatlam almashtirish — faqat ikonka (Figma) */}
+        <button
+          type="button"
+          onClick={() => setSatellite((s) => !s)}
+          title={satellite ? "Ko'cha xaritasi" : "Sun'iy yo'ldosh"}
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm hover:bg-[#F5F5F5] dark:hover:bg-[#2E2E2E] transition-colors cursor-pointer"
+        >
+          <Layers size={16} />
+        </button>
+      </div>
 
       {/* Radius badge — o'ng past (Figma) */}
       {hasCoord && (
         <div className="absolute bottom-3 right-3 z-10 rounded-lg bg-[#1A1A1A]/90 text-white px-2.5 py-1 text-[13px] font-medium shadow-sm tabular-nums">
           {radius} metr
         </div>
+      )}
+
+      {fullscreen && createPortal(
+        <div className="fixed inset-0 z-[1000] bg-black/75 p-6 flex items-center justify-center">
+          <div className="relative w-full h-full max-w-[1280px] max-h-[860px] rounded-2xl overflow-hidden bg-white dark:bg-[#0A0A0A]">
+            <button
+              type="button"
+              onClick={() => setFullscreen(false)}
+              className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center rounded-lg bg-white dark:bg-[#262626] border border-[#E5E7EB] dark:border-[#2E2E2E] text-[#0A0A0A] dark:text-white shadow-sm cursor-pointer"
+              aria-label="Yopish"
+            >
+              <X size={18} />
+            </button>
+            <GeoMap
+              lat={lat}
+              lng={lng}
+              radius={radius}
+              onPick={onPick}
+              className="h-full! rounded-2xl border-0"
+              enableFullscreen={false}
+            />
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )

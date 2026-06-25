@@ -3,7 +3,7 @@ import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
-import { MapPin, MapPinned, Trash2, X, AlertTriangle, Search, ArrowLeft, Plus } from "lucide-react"
+import { MapPin, Trash2, X, AlertTriangle, Search, ArrowLeft, Plus } from "lucide-react"
 import { HugeIcon } from "@/components/ui/HugeIcon"
 import { CheckmarkSquare01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { Select } from "@/components/ui/select"
@@ -90,6 +90,8 @@ const Geozones = () => {
   const [geozones, setGeozones] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState(null)
+  const [selectedDetail, setSelectedDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
 
   const [branches, setBranches] = useState([])
 
@@ -146,10 +148,7 @@ const Geozones = () => {
     return found ? t(found.key) : "—"
   }
 
-  const selected = useMemo(
-    () => geozones.find((g) => g.id === selectedId) || null,
-    [geozones, selectedId]
-  )
+  const selected = selectedDetail
 
   const [branchPag, setBranchPag] = useState({ page: 1, hasMore: true, loading: false })
   const [districtPag, setDistrictPag] = useState({ page: 1, hasMore: true, loading: false })
@@ -186,6 +185,31 @@ const Geozones = () => {
     }
   }
 
+  const fetchGeozoneDetail = async (id) => {
+    if (!id) {
+      setSelectedDetail(null)
+      return
+    }
+
+    setDetailLoading(true)
+    try {
+      const res = await axiosAPI.get(`attendance/geozones/${id}/`)
+      if (res.status === 200) {
+        setSelectedDetail(res.data?.data || null)
+      }
+    } catch (err) {
+      console.error(err)
+      setSelectedDetail(null)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
+  const selectGeozone = (id) => {
+    setSelectedId(id)
+    if (id === selectedId) fetchGeozoneDetail(id)
+  }
+
   const fetchRegions = async () => {
     try {
       const res = await axiosAPI.get("users/regions/")
@@ -219,10 +243,10 @@ const Geozones = () => {
     }
   }
 
-  const fetchBranches = async (pageNum = 1, search = "", pag, setPag, setter) => {
+  const fetchBranches = async (pageNum = 1, search = "", pag, setPag, setter, extraParams = {}) => {
     setPag(p => ({ ...p, loading: true }))
     try {
-      const params = { page: pageNum }
+      const params = { page: pageNum, ...extraParams }
       if (search?.trim()) params.search = search
       const res = await axiosAPI.get("users/branches/", { params })
       if (res.status === 200) {
@@ -232,25 +256,37 @@ const Geozones = () => {
         }))
         setter(prev => pageNum === 1 ? results : [...prev, ...results])
         setPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        return results
       }
     } catch (err) {
       console.error(err)
       setPag(p => ({ ...p, loading: false }))
     }
+    return []
   }
 
   // Bir martalik yuklashlar
   useEffect(() => {
-    fetchBranches(1, "", branchPag, setBranchPag, setBranches)
-    fetchBranches(1, "", addBranchPag, setAddBranchPag, setBranches) // ikkalasi bir xil state ishlatadi, lekin pag alohida
-    fetchRegions()
+    const timer = setTimeout(() => {
+      fetchBranches(1, "", branchPag, setBranchPag, setBranches)
+      fetchBranches(1, "", addBranchPag, setAddBranchPag, setBranches) // ikkalasi bir xil state ishlatadi, lekin pag alohida
+      fetchRegions()
+    }, 0)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Qidiruv yoki filtr o'zgarganda ro'yxatni qayta yuklash
   useEffect(() => {
-    fetchGeozones()
+    const timer = setTimeout(() => fetchGeozones(), 0)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, filters])
+
+  useEffect(() => {
+    const timer = setTimeout(() => fetchGeozoneDetail(selectedId), 0)
+    return () => clearTimeout(timer)
+  }, [selectedId])
 
   // Qidiruv debounce
   const handleSearchChange = (e) => {
@@ -261,10 +297,31 @@ const Geozones = () => {
 
   const handleDraftRegion = (opt) => {
     const v = opt?.value ?? null
-    setDraft(d => ({ ...d, region: v, district: null }))
+    setDraft(d => ({ ...d, region: v, district: null, branch: null }))
     setDistricts([])
     setDistrictPag({ page: 1, hasMore: true, loading: false })
     if (v) fetchDistricts(v, 1, "")
+  }
+
+  const handleDraftDistrict = async (opt) => {
+    const districtId = opt?.value ?? null
+    setDraft(d => ({ ...d, district: districtId, branch: null }))
+    setBranches([])
+    setBranchPag({ page: 1, hasMore: true, loading: false })
+
+    if (!districtId) return
+
+    const loadedBranches = await fetchBranches(
+      1,
+      "",
+      branchPag,
+      setBranchPag,
+      setBranches,
+      { district: districtId }
+    )
+    if (loadedBranches.length === 1) {
+      setDraft(d => ({ ...d, branch: loadedBranches[0].value }))
+    }
   }
 
   // ── Filtr modal amallari ──
@@ -311,6 +368,7 @@ const Geozones = () => {
         setGeozones((prev) =>
           prev.map((g) => (g.id === selected.id ? { ...g, radius: detailRadius } : g))
         )
+        setSelectedDetail((prev) => (prev?.id === selected.id ? { ...prev, radius: detailRadius } : prev))
         showToast(t("gz_updated"))
       }
     } catch (err) {
@@ -397,36 +455,36 @@ const Geozones = () => {
     <div className="pb-4 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
 
       {/* Qidiruv + Filter */}
-      <div className="w-full px-4 py-3 bg-white dark:bg-[#0A0A0A] sticky top-0 z-10 flex items-center justify-between">
-        <div className="flex items-center gap-2 w-1/2">
+      <div className="w-full px-4 py-3 bg-white dark:bg-[#0A0A0A] sticky top-0 z-10 grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
             <input
               type="text"
               value={searchInput}
               onChange={handleSearchChange}
               placeholder={t("gz_search_ph")}
-              className="w-full h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] pl-9 pr-3 text-sm text-[#0A0A0A] dark:text-white placeholder:text-[#737373] outline-none focus:border-[#0090FF] transition-colors"
+              className="w-full h-9 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] pl-8 pr-3 text-[13px] text-[#0A0A0A] dark:text-white placeholder:text-[#737373] outline-none focus:border-[#0090FF] transition-colors"
             />
           </div>
           <button
             type="button"
             onClick={openFilters}
-            className="relative inline-flex items-center gap-2 h-11 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors"
+            className="relative inline-flex items-center gap-2 h-9 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] px-3 text-[13px] font-medium text-[#0A0A0A] dark:text-white cursor-pointer hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] transition-colors"
           >
             {hasFilter && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#DC2626] ring-2 ring-white dark:ring-[#0A0A0A]" />}
-            <HugeIcon icon={FilterVerticalIcon} size={16} />
+            <HugeIcon icon={FilterVerticalIcon} size={14} />
             {t("gz_filter")}
           </button>
         </div>
         {addGeo &&
-          <div className="flex items-center">
+          <div className="flex items-center justify-end">
             <button
               type="button"
               onClick={() => setAddModal(true)}
-              className="inline-flex items-center gap-2 h-[38px] rounded-lg border-2 border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-sm font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
+              className="inline-flex items-center gap-2 h-9 rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#F5F5F5] dark:bg-[#262626] px-4 text-[13px] font-medium text-[#0A0A0A] dark:text-white shadow-xs cursor-pointer hover:bg-[#EFEFEF] dark:hover:bg-[#2E2E2E] transition-colors"
             >
-              <Plus size={16} />
+              <Plus size={14} />
 
               {t("add")}
             </button>
@@ -459,7 +517,7 @@ const Geozones = () => {
                 <button
                   key={g.id}
                   type="button"
-                  onClick={() => setSelectedId(g.id)}
+                  onClick={() => selectGeozone(g.id)}
                   className={cn(
                     "group flex items-center gap-3 w-full text-left rounded-2xl border p-3.5 transition-colors flex-shrink-0 cursor-pointer",
                     active
@@ -479,10 +537,10 @@ const Geozones = () => {
 
                   {/* Nom + meta */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
+                    <p className="text-sm font-medium text-[#0A0A0A] dark:text-white truncate">
                       {g.name}
                     </p>
-                    <p className="text-[13px] text-[#737373] truncate">
+                    <p className="text-xs text-[#737373] truncate">
                       {ztLabel(g.zone_type)} - {g.radius} {t("gz_meter_short")}
                     </p>
                   </div>
@@ -505,7 +563,17 @@ const Geozones = () => {
 
         {/* ── O'ng: detail ── */}
         <div className="lg:sticky lg:top-0 h-fit">
-          {!selected ? (
+          {detailLoading ? (
+            <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#2E2E2E] p-5 flex flex-col gap-5 bg-white dark:bg-[#0F0F0F]">
+              <div className="h-7 w-1/2 rounded-md bg-[#F5F5F5] dark:bg-[#171717] animate-pulse" />
+              <div className="h-[300px] rounded-2xl bg-[#F5F5F5] dark:bg-[#171717] animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-12 rounded-md bg-[#F5F5F5] dark:bg-[#171717] animate-pulse" />
+                ))}
+              </div>
+            </div>
+          ) : !selected ? (
             <div className="rounded-2xl border border-[#E5E7EB] dark:border-[#2E2E2E] p-10 flex flex-col items-center justify-center gap-2 text-[#737373] min-h-[400px]">
               <MapPin size={28} strokeWidth={1.5} />
               <span className="text-sm">{t("gz_select_hint")}</span>
@@ -515,7 +583,7 @@ const Geozones = () => {
 
               {/* Header: nom + o'chirish */}
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold text-[#0A0A0A] dark:text-white truncate">
+                <h2 className="text-lg font-semibold text-[#0A0A0A] dark:text-white truncate">
                   {selected.name}
                 </h2>
                 {delGeo &&
@@ -541,26 +609,26 @@ const Geozones = () => {
               {/* Info grid */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                 <div>
-                  <p className="text-[13px] text-[#737373] mb-1">{t("gz_field_name")}</p>
-                  <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
+                  <p className="text-xs text-[#737373] mb-1">{t("gz_field_name")}</p>
+                  <p className="text-sm font-medium text-[#0A0A0A] dark:text-white truncate">
                     {selected.name}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[13px] text-[#737373] mb-1">{t("gz_attached_branch")}</p>
-                  <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white truncate">
-                    {branchMap[selected.branch] || t("gz_no_branch")}
+                  <p className="text-xs text-[#737373] mb-1">{t("gz_attached_branch")}</p>
+                  <p className="text-sm font-medium text-[#0A0A0A] dark:text-white truncate">
+                    {selected.branch_info?.name || selected.branch?.name || branchMap[selected.branch] || t("gz_no_branch")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[13px] text-[#737373] mb-1">{t("gz_center_coord")}</p>
-                  <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white tabular-nums">
+                  <p className="text-xs text-[#737373] mb-1">{t("gz_center_coord")}</p>
+                  <p className="text-sm font-medium text-[#0A0A0A] dark:text-white tabular-nums">
                     {fmtCoord(selected.latitude, selected.longitude)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[13px] text-[#737373] mb-1">{t("gz_attached_workers")}</p>
-                  <p className="text-[15px] font-medium text-[#0A0A0A] dark:text-white">
+                  <p className="text-xs text-[#737373] mb-1">{t("gz_attached_workers")}</p>
+                  <p className="text-sm font-medium text-[#0A0A0A] dark:text-white">
                     {selected.workers_count ?? 0} {t("gz_workers_unit")}
                   </p>
                 </div>
@@ -569,13 +637,13 @@ const Geozones = () => {
               {/* Radius slider */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-medium text-[#0A0A0A] dark:text-white">Radius</span>
-                  <span className="text-[15px] font-semibold text-[#0A0A0A] dark:text-white tabular-nums">
+                  <span className="text-sm font-medium text-[#0A0A0A] dark:text-white">Radius</span>
+                  <span className="text-sm font-semibold text-[#0A0A0A] dark:text-white tabular-nums">
                     {detailRadius} {t("gz_meter")}
                   </span>
                 </div>
                 <RadiusSlider disabled={!editGeo} value={detailRadius} onChange={setDetailRadius} theme={theme} />
-                <div className="flex items-center justify-between text-[13px] text-[#737373]">
+                <div className="flex items-center justify-between text-xs text-[#737373]">
                   <span>{RADIUS_MIN} {t("gz_meter_short")}</span>
                   <span>{RADIUS_MAX} {t("gz_meter_short")}</span>
                 </div>
@@ -588,7 +656,7 @@ const Geozones = () => {
                   onClick={handleSave}
                   disabled={saving || !radiusDirty || !editGeo}
                   className={cn(
-                    "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[15px] font-semibold text-white transition-colors",
+                    "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-colors",
                     saving || !radiusDirty
                       ? "bg-[#7EC0FF] cursor-default"
                       : "bg-[#0090FF] hover:bg-[#007BE0] cursor-pointer"
@@ -781,6 +849,7 @@ const Geozones = () => {
                 options={regions.filter(r => r.label.toLowerCase().includes(searchRegion.toLowerCase()))}
                 value={draft.region}
                 onChange={handleDraftRegion}
+                className="h-10 py-0 text-[13px] rounded-lg"
                 searchable={true}
                 onSearch={(s) => setSearchRegion(s)}
               />
@@ -791,8 +860,9 @@ const Geozones = () => {
                 placeholder={!draft.region ? t("gz_select_region_first") : t("gz_district_ph")}
                 options={districts}
                 value={draft.district}
-                onChange={(opt) => setDraft(d => ({ ...d, district: opt?.value ?? null }))}
+                onChange={handleDraftDistrict}
                 disabled={!draft.region}
+                className="h-10 py-0 text-[13px] rounded-lg"
                 loadingMore={districtPag.loading}
                 onScrollEnd={() => {
                   if (!districtPag.hasMore || districtPag.loading || !draft.region) return
@@ -811,12 +881,19 @@ const Geozones = () => {
                 options={branches}
                 value={draft.branch}
                 onChange={(opt) => setDraft(d => ({ ...d, branch: opt?.value ?? null }))}
+                className="h-10 py-0 text-[13px] rounded-lg"
                 loadingMore={branchPag.loading}
                 onScrollEnd={() => {
                   if (!branchPag.hasMore || branchPag.loading) return
-                  fetchBranches(branchPag.page + 1, "", branchPag, setBranchPag, setBranches)
+                  fetchBranches(branchPag.page + 1, "", branchPag, setBranchPag, setBranches, {
+                    region: draft.region || undefined,
+                    district: draft.district || undefined,
+                  })
                 }}
-                onSearch={(s) => fetchBranches(1, s, branchPag, setBranchPag, setBranches)}
+                onSearch={(s) => fetchBranches(1, s, branchPag, setBranchPag, setBranches, {
+                  region: draft.region || undefined,
+                  district: draft.district || undefined,
+                })}
                 searchable={true}
               />
 
@@ -827,6 +904,7 @@ const Geozones = () => {
                 options={zoneTypeOptions}
                 value={draft.zone_type}
                 onChange={(opt) => setDraft((d) => ({ ...d, zone_type: opt?.value ?? null }))}
+                className="h-10 py-0 text-[13px] rounded-lg"
               />
             </div>
           </div>
