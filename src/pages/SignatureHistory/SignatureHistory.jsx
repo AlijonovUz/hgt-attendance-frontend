@@ -483,7 +483,7 @@ const SignatureHistory = () => {
                                         calendarIcon={
                                              startDate
                                                   ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span>
-                                                  : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />
+                                                  : <HugeIcon icon={Calendar02Icon} size={18} />
                                         }
                                         showTime
                                    />
@@ -502,7 +502,7 @@ const SignatureHistory = () => {
                                         calendarIcon={
                                              endDate
                                                   ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span>
-                                                  : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />
+                                                  : <HugeIcon icon={Calendar02Icon} size={18} />
                                         }
                                         showTime
                                    />

@@ -673,7 +673,7 @@ const LocationHistory = () => {
                     value={startDate}
                     onChange={(d) => setStartDate(d)}
                     labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-                    calendarIcon={startDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={startDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                     showTime
                   />
 
@@ -688,7 +688,7 @@ const LocationHistory = () => {
                     value={endDate}
                     onChange={(d) => setEndDate(d)}
                     labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-                    calendarIcon={endDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={endDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                     showTime
                   />
 
