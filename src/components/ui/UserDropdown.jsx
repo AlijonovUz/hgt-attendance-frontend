@@ -71,7 +71,7 @@ export const UserDropdown = ({ currentUser }) => {
                               </button>
                          </div>
 
-                         <div className="h-px bg-[#E5E7EB] dark:bg-[#2E2E2E] mx-2 my-0.5" />
+                         <div className="h-[0.5px] bg-[#E5E7EB] dark:bg-[#2E2E2E] mx-2 my-0.5" />
 
                          {/* Shaxsiy kabinet (profil modalini ochadi) */}
                          <button

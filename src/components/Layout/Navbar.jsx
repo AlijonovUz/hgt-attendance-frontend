@@ -48,7 +48,7 @@ const Navbar = ({ setSidebarCollapsed }) => {
           }))
 
      return (
-          <header className="sticky top-0 z-[9000] h-14 flex items-center bg-white dark:bg-[#0A0A0A] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
+          <header className="sticky top-0 z-[900] h-14 flex items-center bg-white dark:bg-[#0A0A0A] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
                <div className="flex items-center w-full px-4 gap-3">
 
                     {/* Sidebar toggle */}
