@@ -20,6 +20,7 @@ import {
   FaceIdHistory,
   LocationHistory,
   SignatureHistory,
+  HolidayCalendar,
 } from "./pages";
 import Layout from "./components/Layout/Layout";
 import { EmptySection } from "./components/EmptySection";
@@ -69,6 +70,9 @@ const checkViewEmp = (perms) =>
 
 const checkViewGeo = (perms) =>
   perms?.geozones && perms.geozones.some((e) => e.code === "geozone_view");
+
+const checkViewHoliday = (perms) =>
+  perms?.holidays && perms.holidays.some((e) => e.code === "holiday_view");
 
 const checkViewAULog = (perms) =>
   perms?.logs && perms.logs.some((e) => e.code === "log_view_audit");
@@ -157,6 +161,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute checkFn={checkViewGeo}>
             <Geozones />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "references/holiday-calendar",
+        element: (
+          <ProtectedRoute checkFn={checkViewHoliday}>
+            <HolidayCalendar />
           </ProtectedRoute>
         ),
       },
