@@ -33,7 +33,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
 
      const [reportsOpen, setReportsOpen] = useState(() => location.pathname.startsWith("/reports"))
      const reportsActive = location.pathname.startsWith("/reports")
-     const [helpOpen, setHelpOpen] = useState(false)
+     const [telegramBannerClosed, setTelegramBannerClosed] = useState(false)
 
      const toggleReports = () => {
           setReportsOpen((prev) => {
@@ -66,13 +66,6 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                }
                return next
           })
-     }
-
-     const openHelp = () => {
-          setReportsOpen(false)
-          setRefOpen(false)
-          setHistoryOpen(false)
-          setHelpOpen(true)
      }
 
      const viewAULog = userPermission?.logs &&
@@ -168,7 +161,7 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                id: "help",
                icon: HelpCircle,
                label: t("help"),
-               onClick: openHelp,
+               href: "https://t.me/+jxCs8DUv7hZjMWY6",
           },
      ]
 
@@ -388,8 +381,8 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
 
                {/* ─── BOTTOM ─── */}
                <div className="flex flex-col sticky bottom-0 z-20 bg-[#FAFAFA] dark:bg-[#1C1C1C] gap-1 pb-2" onClick={(e) => e.stopPropagation()}>
-                    {!sidebarCollapsed && (
-                         <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
+                    {!sidebarCollapsed && !currentUser?.telegram_id && !telegramBannerClosed && (
+                         <HelpModal isOpen onClose={() => setTelegramBannerClosed(true)} />
                     )}
 
                     {/* Bottom nav items */}
@@ -407,18 +400,19 @@ const Sidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                               )
 
                               // Tashqi havola (masalan Telegram) — yangi tabda ochiladi
-                              if (item.onClick) {
+                              if (item.href) {
                                    return (
-                                        <button
-                                             type="button"
+                                        <a
                                              key={item.id}
-                                             onClick={item.onClick}
+                                             href={item.href}
+                                             target="_blank"
+                                             rel="noopener noreferrer"
                                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#1A1A1A] dark:text-white overflow-hidden hover:bg-[#F5F5F5] dark:hover:bg-[#252525] cursor-pointer text-left"
                                              title={sidebarCollapsed ? item.label : undefined}
                                         >
                                              <Icon size={18} className="flex-shrink-0" strokeWidth={1.7} />
                                              {label}
-                                        </button>
+                                        </a>
                                    )
                               }
 
