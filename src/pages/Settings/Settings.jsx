@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { Languages, Palette, Settings as SettingsIcon, Sun, Moon, Upload, KeyRound, Lock, Loader2, X } from "lucide-react"
+import { CheckCircle2, Languages, Palette, Send, Settings as SettingsIcon, Sun, Moon, Upload, KeyRound, Lock, Loader2, X } from "lucide-react"
 import { cn, apiErrorMessage } from "@/lib/utils"
 import { useLanguage } from "@/Context/LanguageContext"
 import { useTheme } from "@/Context/ThemeContext"
@@ -55,6 +55,23 @@ const ChangeButton = ({ icon: Icon, label, onClick, disabled, loading }) => (
   </button>
 )
 
+const TelegramButton = ({ href, t }) => (
+  <a
+    href={href || undefined}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={cn(
+      "flex items-center justify-center gap-2 h-11 min-w-[170px] px-5 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer",
+      href
+        ? "bg-[#1A1A1A] dark:bg-white text-white dark:text-[#0A0A0A] hover:opacity-90"
+        : "bg-[#F5F5F5] dark:bg-[#404040] text-[#737373] dark:text-[#D4D4D4] pointer-events-none"
+    )}
+  >
+    <CheckCircle2 size={18} strokeWidth={2} />
+    {t("telegram_connect")}
+  </a>
+)
+
 const Settings = () => {
   const { t, language, setLanguage } = useLanguage()
   const { theme, setTheme } = useTheme()
@@ -71,6 +88,8 @@ const Settings = () => {
   const showToast = (message) => setToast({ open: true, message, seq: Date.now() })
 
   const avatar = currentUser?.face_image
+  const telegramId = currentUser?.telegram_id
+  const telegramUrl = currentUser?.telegram_url
   const name = currentUser?.full_name || ""
   const initials = name
     ? name.split(" ").slice(0, 2).map((n) => n.charAt(0)).join("").toUpperCase()
@@ -107,16 +126,35 @@ const Settings = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 flex flex-col gap-5 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
+    <div className="p-6 sm:p-8 flex flex-col gap-6 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
 
       {/* Header */}
       <div className="flex flex-col">
-        <h1 className="text-2xl font-semibold text-[#0A0A0A] dark:text-white">{t("settings")}</h1>
+        <h1 className="text-3xl font-semibold text-[#0A0A0A] dark:text-white">{t("settings")}</h1>
         <span className="text-[#737373] dark:text-[#A3A3A3] text-sm">{t("settings_subtitle")}</span>
       </div>
 
+      {!telegramId && (
+        <div className="w-full rounded-3xl bg-[#FAFAFA] dark:bg-[#171717] px-7 py-7 flex items-center justify-between gap-5 border-2 border-[#0090FF]">
+          <div className="flex items-center gap-5 min-w-0">
+            <div className="w-14 h-14 rounded-xl bg-[#0090FF] text-white flex items-center justify-center flex-shrink-0">
+              <Send size={25} strokeWidth={1.8} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-[#0A0A0A] dark:text-white">
+                {t("telegram_settings_title")}
+              </h2>
+              <p className="mt-1 text-[15px] leading-6 text-[#737373] dark:text-[#A3A3A3] max-w-[720px]">
+                {t("telegram_settings_subtitle")}
+              </p>
+            </div>
+          </div>
+          <TelegramButton href={telegramUrl} t={t} />
+        </div>
+      )}
+
       {/* ─── Karta 1: Hisob (foto + parol) ─── */}
-      <div className="w-full rounded-2xl bg-[#FAFAFA] dark:bg-[#171717] border border-[#EDEDED] dark:border-[#262626] px-5">
+      <div className="w-full rounded-3xl bg-[#FAFAFA] dark:bg-[#171717] px-7">
 
         {/* Profil fotosurati */}
         <Row
@@ -159,7 +197,7 @@ const Settings = () => {
       </div>
 
       {/* ─── Karta 2: Interfeys sozlamalari ─── */}
-      <div className="w-full rounded-2xl bg-[#FAFAFA] dark:bg-[#171717] border border-[#EDEDED] dark:border-[#262626] px-5">
+      <div className="w-full rounded-3xl bg-[#FAFAFA] dark:bg-[#171717] px-7">
 
         {/* Interfeys tili */}
         <Row

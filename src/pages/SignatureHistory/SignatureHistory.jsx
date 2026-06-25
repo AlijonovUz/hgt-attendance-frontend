@@ -1,7 +1,7 @@
 // src/pages/SignatureHistory.jsx
 import { useEffect, useRef, useState, useCallback } from "react"
 import dayjs from "dayjs"
-import { ArrowLeft, ChevronDownIcon, X, CheckCircle2, XCircle } from "lucide-react"
+import { ArrowLeft, CheckCircle2, X, XCircle } from "lucide-react"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Modal } from "@/components/ui/modal"
 import { HugeIcon } from "@/components/ui/HugeIcon"
-import { Calendar02Icon, Download01Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
+import { Calendar02Icon, FilterVerticalIcon, Search01Icon } from "@hugeicons/core-free-icons"
 import { DatePicker } from "@/components/ui/DatePicker"
 import * as XLSX from "xlsx-js-style"
 import { jsPDF } from "jspdf"
@@ -141,7 +141,8 @@ const SignatureHistory = () => {
      }
 
      useEffect(() => {
-          fetchLogs(1)
+          const timer = setTimeout(() => fetchLogs(1), 0)
+          return () => clearTimeout(timer)
           // eslint-disable-next-line react-hooks/exhaustive-deps
      }, [search, filterRegion, filterDistrict, filterBranch, filterStatus, filterStartDate, filterEndDate])
 
@@ -211,14 +212,6 @@ const SignatureHistory = () => {
      }
 
      // ─── Excel export ───
-
-     const [exportOpen, setExportOpen] = useState(false)
-     const exportRef = useRef(null)
-     useEffect(() => {
-          const fn = (e) => { if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false) }
-          document.addEventListener("mousedown", fn)
-          return () => document.removeEventListener("mousedown", fn)
-     }, [])
 
      const BORDER = { top: { style: "thin", color: { rgb: "D4D4D4" } }, bottom: { style: "thin", color: { rgb: "D4D4D4" } }, left: { style: "thin", color: { rgb: "D4D4D4" } }, right: { style: "thin", color: { rgb: "D4D4D4" } } }
 
@@ -415,7 +408,7 @@ const SignatureHistory = () => {
                                                             {log.user_info?.full_name || "—"}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[160px]">
-                                                            {og.region?.name || ""}
+                                                            {log.region?.name || log?.region || ""}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[160px]">
                                                             {log.district?.name || ""}
@@ -424,7 +417,17 @@ const SignatureHistory = () => {
                                                             {log.branch?.name || ""}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium">
-                                                            {log.message}
+                                                            {log.is_valid ? (
+                                                                 <span className="inline-flex items-center gap-1 text-[#16A34A]">
+                                                                      <CheckCircle2 size={15} />
+                                                                      {log.message || t("status_success") || "Muvaffaqiyatli"}
+                                                                 </span>
+                                                            ) : (
+                                                                 <span className="inline-flex items-center gap-1 text-[#DC2626]">
+                                                                      <XCircle size={15} />
+                                                                      {log.message || t("status_failed") || "Yaroqsiz"}
+                                                                 </span>
+                                                            )}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm text-end font-medium text-[#0A0A0A] dark:text-[#f5f5f5] tabular-nums whitespace-nowrap">
                                                             {log.created_at ? dayjs(log.created_at).format("DD.MM.YYYY HH:mm") : ""}
