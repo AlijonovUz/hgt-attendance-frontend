@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
 import { useLanguage } from "@/Context/LanguageContext"
 import { axiosAPI } from "@/services/axiosAPI"
 import { cn } from "@/lib/utils"
@@ -191,6 +191,8 @@ const errorInputClass = "border-red-500 focus:border-red-500 dark:border-red-500
 
 const ReferencePage = () => {
   const { t, language } = useLanguage()
+  const location = useLocation()
+
   const currentLang = language || "uz"
   const { type } = useParams()
   const config = REF_CONFIGS[type]
@@ -655,6 +657,17 @@ const ReferencePage = () => {
     setEditErrors({})
     setEditModal(true)
   }
+
+  useEffect(() => {
+    const { holidayId } = location.state || {}
+    if (!holidayId || type !== "holidays" || loading) return
+
+    const target = rows.find((r) => r.id === holidayId)
+    if (target) {
+      handleEdit(target)
+      window.history.replaceState({}, "")
+    }
+  }, [rows, location.state, type, loading])
 
   const handleUpdate = async () => {
     const newErrors = {}

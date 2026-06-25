@@ -2201,38 +2201,198 @@ export const translations = {
           ru: "Уход"
      },
 
-     ref_m_holiday_calendar: { uz: "Bayramlar kalendari", cy: "Bayramlar kalendari", en: "Holiday calendar", ru: "Kalendar prazdnikov" },
-     holiday_calendar_title: { uz: "Bayramlar va dam olish kunlari", cy: "Bayramlar va dam olish kunlari", en: "Holidays and days off", ru: "Prazdniki i vyhodnye dni" },
-     holiday_calendar_subtitle: { uz: "O'zbekiston Respublikasi rasmiy bayramlari — kalendarga biriktirilgan (dam olish kunlari)", cy: "O'zbekiston Respublikasi rasmiy bayramlari — kalendarga biriktirilgan (dam olish kunlari)", en: "Official holidays of the Republic of Uzbekistan — attached to the calendar (days off)", ru: "Ofitsialnye prazdniki Respubliki Uzbekistan — otmecheny v kalendare (vyhodnye dni)" },
-     holiday_calendar_month_title: { uz: "Shu oydagi bayramlar", cy: "Shu oydagi bayramlar", en: "Holidays this month", ru: "Prazdniki v etom mesyatse" },
-     holiday_calendar_empty: { uz: "Bu oyda bayramlar yo'q", cy: "Bu oyda bayramlar yo'q", en: "No holidays this month", ru: "V etom mesyatse prazdnikov net" },
-     holiday_calendar_error: { uz: "Bayramlarni yuklab bo'lmadi", cy: "Bayramlarni yuklab bo'lmadi", en: "Failed to load holidays", ru: "Ne udalos zagruzit prazdniki" },
-     year_short: { uz: "yil", cy: "yil", en: "", ru: "god" },
-     select_year: { uz: "Yil tanlash", cy: "Yil tanlash", en: "Select year", ru: "Vybrat god" },
-     previous_month: { uz: "Oldingi oy", cy: "Oldingi oy", en: "Previous month", ru: "Predydushchiy mesyats" },
-     next_month: { uz: "Keyingi oy", cy: "Keyingi oy", en: "Next month", ru: "Sleduyushchiy mesyats" },
-     telegram_settings_title: { uz: "Telegram bildirishnomalari", cy: "Telegram bildirishnomalari", en: "Telegram notifications", ru: "Telegram uvedomleniya" },
-     telegram_settings_subtitle: { uz: "Botni ulang - kelish, kechikish, ketish va shunga o'xshash muhim xabarlarni Telegram orqali oling.", cy: "Botni ulang - kelish, kechikish, ketish va shunga o'xshash muhim xabarlarni Telegram orqali oling.", en: "Connect the bot and receive important check-in, late, check-out and similar alerts in Telegram.", ru: "Podklyuchite bota i poluchayte vazhnye uvedomleniya v Telegram." },
-     telegram_connect: { uz: "Ulash", cy: "Ulash", en: "Connect", ru: "Podklyuchit" },
-     telegram_connected: { uz: "Ulangan", cy: "Ulangan", en: "Connected", ru: "Podklyucheno" },
-     telegram_not_connected: { uz: "Hali ulanmagan", cy: "Hali ulanmagan", en: "Not connected yet", ru: "Eshe ne podklyucheno" },
-     telegram_modal_title: { uz: "Telegram bildirishnomalarini ulash", cy: "Telegram bildirishnomalarini ulash", en: "Connect Telegram notifications", ru: "Podklyuchit Telegram uvedomleniya" },
-     telegram_modal_desc: { uz: "Telegram bot orqali davomat bo'yicha muhim xabarlarni tez qabul qilishingiz mumkin.", cy: "Telegram bot orqali davomat bo'yicha muhim xabarlarni tez qabul qilishingiz mumkin.", en: "Use the Telegram bot to receive important attendance alerts quickly.", ru: "Telegram bot pomozhet bystro poluchat vazhnye uvedomleniya po posesheniyu." },
-     telegram_step_1: { uz: "Telegram botni oching.", cy: "Telegram botni oching.", en: "Open the Telegram bot.", ru: "Otkroyte Telegram bota." },
-     telegram_step_2: { uz: "Start tugmasini bosing va tizimdagi profilingiz bilan ulaning.", cy: "Start tugmasini bosing va tizimdagi profilingiz bilan ulaning.", en: "Press Start and link it with your system profile.", ru: "Nazhmite Start i svyazhite bota s profilem." },
-     telegram_step_3: { uz: "Ulangandan keyin muhim bildirishnomalar Telegramga keladi.", cy: "Ulangandan keyin muhim bildirishnomalar Telegramga keladi.", en: "After linking, important notifications will arrive in Telegram.", ru: "Posle podklyucheniya uvedomleniya budut prihodit v Telegram." },
-     telegram_open_bot: { uz: "Botni ochish", cy: "Botni ochish", en: "Open bot", ru: "Otkryt bota" },
-     telegram_link_copied: { uz: "Telegram bot havolasi nusxalandi", cy: "Telegram bot havolasi nusxalandi", en: "Telegram bot link copied", ru: "Ssylka na bota skopirovana" },
-     copy: { uz: "Nusxalash", cy: "Nusxalash", en: "Copy", ru: "Kopirovat" },
-     help_modal_title: { uz: "Yordam markazi", cy: "Yordam markazi", en: "Help center", ru: "Tsentr pomoshchi" },
-     help_modal_desc: { uz: "Davomat tizimidan foydalanishda kerakli yo'nalishni tanlang yoki support bilan bog'laning.", cy: "Davomat tizimidan foydalanishda kerakli yo'nalishni tanlang yoki support bilan bog'laning.", en: "Choose a help topic or contact support for the attendance system.", ru: "Vyberite temu pomoshchi ili svyazhites s podderzhkoy." },
-     help_topic_telegram: { uz: "Telegram bildirishnomalari", cy: "Telegram bildirishnomalari", en: "Telegram notifications", ru: "Telegram uvedomleniya" },
-     help_topic_telegram_desc: { uz: "Botni ulash, xabarlarni olish va qayta ulash bo'yicha yordam.", cy: "Botni ulash, xabarlarni olish va qayta ulash bo'yicha yordam.", en: "Help with linking the bot, receiving alerts, and reconnecting.", ru: "Pomoshch s podklyucheniem bota i polucheniem uvedomleniy." },
-     help_topic_security: { uz: "Xavfsizlik", cy: "Xavfsizlik", en: "Security", ru: "Bezopasnost" },
-     help_topic_security_desc: { uz: "Parol, profil rasmi va hisob xavfsizligi bo'yicha tavsiyalar.", cy: "Parol, profil rasmi va hisob xavfsizligi bo'yicha tavsiyalar.", en: "Guidance for passwords, profile photo, and account security.", ru: "Rekomendatsii po parolyu, foto profilya i bezopasnosti." },
-     help_topic_support: { uz: "Texnik yordam", cy: "Texnik yordam", en: "Technical support", ru: "Tekhnicheskaya podderzhka" },
-     help_topic_support_desc: { uz: "Savol yoki muammo bo'lsa, Telegram support kanaliga murojaat qiling.", cy: "Savol yoki muammo bo'lsa, Telegram support kanaliga murojaat qiling.", en: "If you have a question or issue, contact the Telegram support channel.", ru: "Esli est vopros ili problema, obratites v Telegram kanal podderzhki." },
-     help_open_support: { uz: "Supportga yozish", cy: "Supportga yozish", en: "Contact support", ru: "Napisat v support" },
+     ref_m_holiday_calendar: {
+          uz: "Bayramlar kalendari",
+          cy: "Байрамлар календари",
+          en: "Holiday calendar",
+          ru: "Календарь праздников"
+     },
+     holiday_calendar_title: {
+          uz: "Bayramlar va dam olish kunlari",
+          cy: "Байрамлар ва дам олиш кунлари",
+          en: "Holidays and days off",
+          ru: "Праздники и выходные дни"
+     },
+     holiday_calendar_subtitle: {
+          uz: "O'zbekiston Respublikasi rasmiy bayramlari — kalendarga biriktirilgan (dam olish kunlari)",
+          cy: "Ўзбекистон Республикаси расмий байрамлари — календарьга бириктирилган (дам олиш кунлари)",
+          en: "Official holidays of the Republic of Uzbekistan — attached to the calendar (days off)",
+          ru: "Официальные праздники Республики Узбекистан — отмечены в календаре (выходные дни)"
+     },
+     holiday_calendar_month_title: {
+          uz: "Shu oydagi bayramlar",
+          cy: "Шу ойдаги байрамлар",
+          en: "Holidays this month",
+          ru: "Праздники в этом месяце"
+     },
+     holiday_calendar_empty: {
+          uz: "Bu oyda bayramlar yo'q",
+          cy: "Бу ойда байрамлар йўқ",
+          en: "No holidays this month",
+          ru: "В этом месяце праздников нет"
+     },
+     holiday_calendar_error: {
+          uz: "Bayramlarni yuklab bo'lmadi",
+          cy: "Байрамларни юклаб бўлмади",
+          en: "Failed to load holidays",
+          ru: "Не удалось загрузить праздники"
+     },
+     year_short: {
+          uz: "yil",
+          cy: "йил",
+          en: "year",
+          ru: "год"
+     },
+     select_year: {
+          uz: "Yil tanlash",
+          cy: "Йил танлаш",
+          en: "Select year",
+          ru: "Выбрать год"
+     },
+     previous_month: {
+          uz: "Oldingi oy",
+          cy: "Олдинги ой",
+          en: "Previous month",
+          ru: "Предыдущий месяц"
+     },
+     next_month: {
+          uz: "Keyingi oy",
+          cy: "Кейинги ой",
+          en: "Next month",
+          ru: "Следующий месяц"
+     },
+     telegram_settings_title: {
+          uz: "Telegram bildirishnomalari",
+          cy: "Telegram билдиришномалари",
+          en: "Telegram notifications",
+          ru: "Telegram уведомления"
+     },
+     telegram_settings_subtitle: {
+          uz: "Botni ulang - kelish, kechikish, ketish va shunga o'xshash muhim xabarlarni Telegram orqali oling.",
+          cy: "Ботни уланг - келиш, кечикиш, кетиш ва шунга ўхшаш муҳим хабарларни Telegram орқали олинг.",
+          en: "Connect the bot and receive important check-in, late, check-out and similar alerts in Telegram.",
+          ru: "Подключите бота и получайте важные уведомления в Telegram."
+     },
+     telegram_connect: {
+          uz: "Ulash",
+          cy: "Улаш",
+          en: "Connect",
+          ru: "Подключить"
+     },
+     telegram_connected: {
+          uz: "Ulangan",
+          cy: "Уланган",
+          en: "Connected",
+          ru: "Подключено"
+     },
+     telegram_not_connected: {
+          uz: "Hali ulanmagan",
+          cy: "Ҳали уланмаган",
+          en: "Not connected yet",
+          ru: "Еще не подключено"
+     },
+     telegram_modal_title: {
+          uz: "Telegram bildirishnomalarini ulash",
+          cy: "Telegram билдиришномаларини улаш",
+          en: "Connect Telegram notifications",
+          ru: "Подключить Telegram уведомления"
+     },
+     telegram_modal_desc: {
+          uz: "Telegram bot orqali davomat bo'yicha muhim xabarlarni tez qabul qilishingiz mumkin.",
+          cy: "Telegram бот орқали давомат бўйича муҳим хабарларни тез қабул қилишингиз мумкин.",
+          en: "Use the Telegram bot to receive important attendance alerts quickly.",
+          ru: "Telegram бот поможет быстро получать важные уведомления по посещению."
+     },
+     telegram_step_1: {
+          uz: "Telegram botni oching.",
+          cy: "Telegram ботни очинг.",
+          en: "Open the Telegram bot.",
+          ru: "Открыть Telegram бота."
+     },
+     telegram_step_2: {
+          uz: "Start tugmasini bosing va tizimdagi profilingiz bilan ulaning.",
+          cy: "Старт тугмасини босинг ва тизимдаги профилингиз билан уланинг.",
+          en: "Press Start and link it with your system profile.",
+          ru: "Нажмите Старт и свяжите бота с профилем."
+     },
+     telegram_step_3: {
+          uz: "Ulangandan keyin muhim bildirishnomalar Telegramga keladi.",
+          cy: "Улангандан кейин муҳим билдиришномалар Telegramга келади.",
+          en: "After linking, important notifications will arrive in Telegram.",
+          ru: "После подключения уведомления будут приходить в Telegram."
+     },
+     telegram_open_bot: {
+          uz: "Botni ochish",
+          cy: "Ботни очиш",
+          en: "Open bot",
+          ru: "Открыть бота"
+     },
+     telegram_link_copied: {
+          uz: "Telegram bot havolasi nusxalandi",
+          cy: "Telegram бот ҳаволаси нусхаланди",
+          en: "Telegram bot link copied",
+          ru: "Ссылка на бота скопирована"
+     },
+     copy: {
+          uz: "Nusxalash",
+          cy: "Нусхалаш",
+          en: "Copy",
+          ru: "Копировать"
+     },
+     help_modal_title: {
+          uz: "Yordam markazi",
+          cy: "Ёрдам маркази",
+          en: "Help center",
+          ru: "Центр помощи"
+     },
+     help_modal_desc: {
+          uz: "Davomat tizimidan foydalanishda kerakli yo'nalishni tanlang yoki support bilan bog'laning.",
+          cy: "Давомат тизимидан фойдаланишда керакли йўналишни танланг ёки support билан боғланинг.",
+          en: "Choose a help topic or contact support for the attendance system.",
+          ru: "Выберите тему помощи или свяжитесь с поддержкой."
+     },
+     help_topic_telegram: {
+          uz: "Telegram bildirishnomalari",
+          cy: "Telegram билдиришномалари",
+          en: "Telegram notifications",
+          ru: "Telegram уведомления"
+     },
+     help_topic_telegram_desc: {
+          uz: "Botni ulash, xabarlarni olish va qayta ulash bo'yicha yordam.",
+          cy: "Ботни улаш, хабарларни олиш ва қайта улаш бўйича ёрдам.",
+          en: "Help with linking the bot, receiving alerts, and reconnecting.",
+          ru: "Помощь с подключением бота и получением уведомлений."
+     },
+     help_topic_security: {
+          uz: "Xavfsizlik",
+          cy: "Хавфсизлик",
+          en: "Security",
+          ru: "Безопасность"
+     },
+     help_topic_security_desc: {
+          uz: "Parol, profil rasmi va hisob xavfsizligi bo'yicha tavsiyalar.",
+          cy: "Пароль, профиль расми ва ҳисоб хавфсизлиги бўйича тавсиялар.",
+          en: "Guidance for passwords, profile photo, and account security.",
+          ru: "Рекомендации по паролю, фото профиля и безопасности."
+     },
+     help_topic_support: {
+          uz: "Texnik yordam",
+          cy: "Техник ёрдам",
+          en: "Technical support",
+          ru: "Техническая поддержка"
+     },
+     help_topic_support_desc: {
+          uz: "Savol yoki muammo bo'lsa, Telegram support kanaliga murojaat qiling.",
+          cy: "Савол ёки муаммо бўлса, Telegram support каналига мурожаат қилинг.",
+          en: "If you have a question or issue, contact the Telegram support channel.",
+          ru: "Если есть вопрос или проблема, обратитесь в Telegram канал поддержки."
+     },
+     help_open_support: {
+          uz: "Supportga yozish",
+          cy: "Supportга ёзиш",
+          en: "Contact support",
+          ru: "Написать в support"
+     },
 }
 
 export function LanguageProvider({ children }) {
