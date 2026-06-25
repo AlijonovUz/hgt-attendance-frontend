@@ -34,7 +34,7 @@ export const Modal = ({ className, bodyClassName, width, height, isOpen, onClose
           <>
                <div
                     className={cn(
-                         "w-full h-screen inset-0 fixed top-0 left-0 bg-black/75 z-[100000] transition-opacity duration-300 ease-out",
+                         "w-full h-screen inset-0 fixed top-0 left-0 bg-black/75 z-[10000] transition-opacity duration-300 ease-out",
                          isAnimating ? "opacity-100" : "opacity-0"
                     )}
                     onClick={onClose}
@@ -44,7 +44,7 @@ export const Modal = ({ className, bodyClassName, width, height, isOpen, onClose
                <div
                     style={{ width: width, height: height }}
                     className={cn(
-                         "fixed top-1/2 left-1/2 z-[100001] -translate-x-1/2 -translate-y-1/2",
+                         "fixed top-1/2 left-1/2 z-[10001] -translate-x-1/2 -translate-y-1/2",
                          "w-[600px] rounded-[24px] shadow-lg bg-[#FAFAFA] dark:bg-[#171717]",
                          "transition-all duration-300 ease-out transform origin-center",
                          "flex flex-col overflow-hidden",
@@ -67,7 +67,7 @@ export const Modal = ({ className, bodyClassName, width, height, isOpen, onClose
 
                <span
                     className={cn(
-                         "flex items-center justify-center rounded-full cursor-pointer p-2 bg-[#FFFFFF29] text-white fixed z-[100002] top-6 right-5",
+                         "flex items-center justify-center rounded-full cursor-pointer p-2 bg-[#FFFFFF29] text-white fixed z-[10002] top-6 right-5",
                          "transition-opacity duration-300 ease-out",
                          isAnimating ? "opacity-100" : "opacity-0"
                     )}

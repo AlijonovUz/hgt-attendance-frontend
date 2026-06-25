@@ -17,6 +17,7 @@ import { AddButton } from "@/components/ui/customAddButton";
 import { useSelector } from "react-redux";
 import { AlertModal } from "@/components/ui/ComfirmAlert";
 import Toast from "@/components/ui/Toast";
+import { createPortal } from "react-dom";
 
 const PAGE_SIZE = 20;
 
@@ -61,6 +62,7 @@ const EmployeeRegister = () => {
   const [positions, setPositions] = useState([])
   const [roles, setRoles] = useState([])
 
+
   const [districts, setDistricts] = useState([])
   // Top filter row districts (separate from modal filter districts)
   const [filterDistricts, setFilterDistricts] = useState([])
@@ -71,6 +73,8 @@ const EmployeeRegister = () => {
   const [modalLoading, setModalLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const listContainerRef = useRef(null)
+
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false)
 
   // Filter states for each modal type
   const [filters, setFilters] = useState({
@@ -1509,7 +1513,8 @@ const EmployeeRegister = () => {
                   <img
                     src={detailEmployee.face_image}
                     alt={detailEmployee.full_name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0"
+                    onClick={() => setPhotoPreviewOpen(true)}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB] dark:border-[#2E2E2E] flex-shrink-0 cursor-zoom-in hover:opacity-80 transition-opacity"
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0090FF] to-[#6C47FF] flex items-center justify-center flex-shrink-0">
@@ -2330,6 +2335,29 @@ const EmployeeRegister = () => {
         message={toast.message}
         onClose={() => setToast((prev) => ({ ...prev, open: false }))}
       />
+
+      {photoPreviewOpen && detailEmployee?.face_image && createPortal(
+        <div
+          style={{ zIndex: 2147483647 }}
+          className="fixed inset-0 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPhotoPreviewOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoPreviewOpen(false)}
+            className="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+          >
+            <X size={20} strokeWidth={2} />
+          </button>
+          <img
+            src={detailEmployee.face_image}
+            alt={detailEmployee.full_name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+          />
+        </div>,
+        document.body
+      )}
 
     </>
   );

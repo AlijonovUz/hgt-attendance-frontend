@@ -45,7 +45,7 @@ const ChangeButton = ({ icon: Icon, label, onClick, disabled, loading }) => (
     onClick={onClick}
     disabled={disabled || loading}
     className={cn(
-      "flex items-center gap-2 h-10 px-4 rounded-xl text-[15px] font-medium transition-colors",
+      "flex items-center gap-2 h-10 px-4 rounded-xl text-[15px] font-medium",
       "bg-white dark:bg-[#262626] border border-[#EDEDED] dark:border-[#333] text-[#0A0A0A] dark:text-white",
       "hover:bg-[#F4F4F5] dark:hover:bg-[#333] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
     )}
@@ -61,7 +61,7 @@ const TelegramButton = ({ href, t }) => (
     target="_blank"
     rel="noopener noreferrer"
     className={cn(
-      "flex items-center justify-center gap-2 h-11 min-w-[170px] px-5 rounded-xl text-[15px] font-semibold transition-colors cursor-pointer",
+      "flex items-center justify-center gap-2 h-11 min-w-[170px] px-5 rounded-xl text-[15px] font-semibold cursor-pointer",
       href
         ? "bg-[#1A1A1A] dark:bg-white text-white dark:text-[#0A0A0A] hover:opacity-90"
         : "bg-[#F5F5F5] dark:bg-[#404040] text-[#737373] dark:text-[#D4D4D4] pointer-events-none"
@@ -212,7 +212,7 @@ const Settings = () => {
                   type="button"
                   onClick={() => setLanguage(opt.value)}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
+                    "w-[65px]! py-1.5 rounded-md text-sm font-medium cursor-pointer",
                     language === opt.value
                       ? "bg-white dark:bg-[#262626] text-[#0A0A0A] dark:text-white shadow-sm"
                       : "text-[#737373] dark:text-[#A3A3A3] hover:text-[#0A0A0A] dark:hover:text-white"
@@ -236,7 +236,7 @@ const Settings = () => {
                 type="button"
                 onClick={() => setTheme("light")}
                 className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
+                  "flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium w-[97px]! cursor-pointer",
                   theme === "light"
                     ? "bg-white text-[#0A0A0A] shadow-sm"
                     : "text-[#737373] dark:text-[#A3A3A3] hover:text-[#0A0A0A] dark:hover:text-white"
@@ -249,7 +249,7 @@ const Settings = () => {
                 type="button"
                 onClick={() => setTheme("dark")}
                 className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
+                  "flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium w-[97px]! cursor-pointer",
                   theme === "dark"
                     ? "bg-[#262626] text-white shadow-sm"
                     : "text-[#737373] dark:text-[#A3A3A3] hover:text-[#0A0A0A] dark:hover:text-white"
