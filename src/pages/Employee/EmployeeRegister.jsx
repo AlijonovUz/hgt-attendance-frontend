@@ -2162,7 +2162,7 @@ const EmployeeRegister = () => {
               onClick={applyFilter}
             >
               <HugeIcon size={14} icon={Search01Icon} />
-              {t("apply") || "Qo'llash"}
+              {t("search") || "Qo'llash"}
             </button>
           </div>
         </div>
