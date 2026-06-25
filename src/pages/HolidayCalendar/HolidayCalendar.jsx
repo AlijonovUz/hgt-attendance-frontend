@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react"
-import { CalendarDays, ChevronLeft, ChevronRight, PartyPopper } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, PartyPopper } from "lucide-react"
 import { axiosAPI } from "@/services/axiosAPI"
 import { useLanguage } from "@/Context/LanguageContext"
 import { cn } from "@/lib/utils"
+import { HugeIcon } from "@/components/ui/HugeIcon"
+import { Calendar02Icon, PartyIcon } from "@hugeicons/core-free-icons"
+import { useNavigate } from "react-router-dom"
 
 const WEEKDAYS = {
   uz: ["Ya", "Du", "Se", "Ch", "Pa", "Ju", "Sh"],
@@ -22,17 +25,17 @@ const COLOR_CLASSES = [
   {
     day: "bg-[#E92429] text-white hover:bg-[#E92429]",
     icon: "bg-[#E92429] text-white",
-    soft: "bg-[#F7F7F7] dark:bg-[#262626]",
+    soft: "bg-[#F5F5F5] dark:bg-[#262626]",
   },
   {
     day: "bg-[#55B6F2] text-white hover:bg-[#55B6F2]",
     icon: "bg-[#55B6F2] text-white",
-    soft: "bg-[#F7F7F7] dark:bg-[#262626]",
+    soft: "bg-[#F5F5F5] dark:bg-[#262626]",
   },
   {
     day: "bg-[#22C55E] text-white hover:bg-[#22C55E]",
     icon: "bg-[#22C55E] text-white",
-    soft: "bg-[#F7F7F7] dark:bg-[#262626]",
+    soft: "bg-[#F5F5F5] dark:bg-[#262626]",
   },
 ]
 
@@ -96,6 +99,8 @@ const normalizeHoliday = (holiday) => ({
 const HolidayCalendar = () => {
   const { t, language } = useLanguage()
 
+  const navigate = useNavigate()
+
   const [visibleDate, setVisibleDate] = useState(() => {
     const today = new Date()
     return new Date(today.getFullYear(), today.getMonth(), 1)
@@ -110,7 +115,7 @@ const HolidayCalendar = () => {
   const weekdays = WEEKDAYS[language] || WEEKDAYS.uz
 
   const yearOptions = useMemo(() => {
-    return Array.from({ length: 15 }, (_, index) => INITIAL_YEAR - 5 + index)
+    return Array.from({ length: 35 }, (_, index) => INITIAL_YEAR - 10 + index)
   }, [])
 
   useEffect(() => {
@@ -185,6 +190,32 @@ const HolidayCalendar = () => {
       })
   }, [currentMonth, currentYear, holidays])
 
+  const [yearOpen, setYearOpen] = useState(false)
+  const yearRef = useRef(null)
+
+  const [monthOpen, setMonthOpen] = useState(false)
+  const monthRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (yearRef.current && !yearRef.current.contains(e.target)) {
+        setYearOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (monthRef.current && !monthRef.current.contains(e.target)) {
+        setMonthOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   const calendarDays = useMemo(
     () => buildCalendarDays(currentYear, currentMonth),
     [currentMonth, currentYear]
@@ -199,49 +230,112 @@ const HolidayCalendar = () => {
   }
 
   return (
-    <div className="p-6 md:p-10 flex flex-col gap-7 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white min-h-[calc(100vh-3.5rem)]">
+    <div className="p-6 pb-0 flex flex-col gap-4 w-full bg-white dark:bg-[#0A0A0A] text-[#0A0A0A] dark:text-white">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl md:text-[34px] font-semibold tracking-tight">
+          <h1 className="text-2xl font-semibold">
             {t("holiday_calendar_title") || "Bayramlar va dam olish kunlari"}
           </h1>
-          <p className="mt-3 text-lg text-[#737373] dark:text-[#A3A3A3]">
+          <p className="text-sm text-[#737373] dark:text-[#A3A3A3]">
             {t("holiday_calendar_subtitle") || "O'zbekiston Respublikasi rasmiy bayramlari — kalendarga biriktirilgan (dam olish kunlari)"}
           </p>
         </div>
 
-        <label className="h-[42px] px-3.5 rounded-xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] flex items-center gap-2 text-lg font-medium">
-          <select
-            value={currentYear}
-            onChange={(e) => changeYear(e.target.value)}
-            className="bg-transparent outline-none cursor-pointer"
-            aria-label={t("select_year") || "Yil tanlash"}
+        <div ref={yearRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setYearOpen((prev) => !prev)}
+            className="h-9 px-3 cursor-pointer rounded-xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] flex items-center gap-2 text-sm font-medium shadow-sm hover:border-[#D1D5DB] dark:hover:border-[#525252]"
           >
-            {yearOptions.map((year) => (
-              <option key={year} value={year}>
-                {year} {t("year_short") || "yil"}
-              </option>
-            ))}
-          </select>
-          <CalendarDays size={20} className="text-[#737373] dark:text-[#A3A3A3]" />
-        </label>
+            <span className="text-[#0A0A0A] dark:text-[#FAFAFA]">
+              {currentYear} {t("year_short") || "yil"}
+            </span>
+            <HugeIcon icon={Calendar02Icon} size={16} className="text-[#0a0a0a] dark:text-[#fafafa]" />
+          </button>
+
+          {yearOpen && (
+            <div className="absolute right-0 z-50 mt-2 w-36 rounded-xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] shadow-lg overflow-hidden">
+              <div className="max-h-56 overflow-y-auto pl-1 py-1 scrollbar-thin scrollbar-thumb-[#E5E7EB] dark:scrollbar-thumb-[#404040]">
+                {yearOptions.map((year) => (
+                  <button
+                    key={year}
+                    type="button"
+                    onClick={() => {
+                      changeYear(year)
+                      setYearOpen(false)
+                    }}
+                    className={cn(
+                      "w-full rounded-sm px-4 py-2 text-left text-sm transition-colors",
+                      year === currentYear
+                        ? "bg-[#0A0A0A] dark:bg-[#FAFAFA] text-white dark:text-[#0A0A0A] font-medium"
+                        : "text-[#0A0A0A] dark:text-[#FAFAFA] hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A]"
+                    )}
+                  >
+                    {year} {t("year_short") || "yil"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-7">
-        <section className="rounded-2xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] shadow-sm p-6 md:p-8">
-          <div className="flex items-center justify-between mb-9">
+      <div className="flex gap-4 min-w-0">
+        <section className="w-[450px] shrink-0 h-[485px] rounded-2xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] shadow-sm py-4 px-4">
+
+          <div className="flex items-center justify-between mb-6">
             <button
               type="button"
               onClick={() => changeMonth(-1)}
               className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] cursor-pointer"
               aria-label={t("previous_month") || "Oldingi oy"}
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={16} />
             </button>
 
-            <h2 className="text-xl font-semibold">
-              {months[currentMonth]} {currentYear}
-            </h2>
+            <div ref={monthRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMonthOpen((prev) => !prev)}
+                className="h-8 px-3 rounded-md border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] flex items-center gap-1.5 text-sm font-medium hover:border-[#D1D5DB] dark:hover:border-[#525252] cursor-pointer"
+              >
+                <span className="text-[#0A0A0A] dark:text-[#FAFAFA]">
+                  {months[currentMonth]} {currentYear}
+                </span>
+                <ChevronDown
+                  size={13}
+                  className={cn(
+                    "text-[#737373] dark:text-[#A3A3A3] transition-transform duration-200",
+                    monthOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {monthOpen && (
+                <div className="absolute left-1/2 -translate-x-1/2 z-50 mt-2 w-40 rounded-xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#0A0A0A] shadow-lg overflow-hidden">
+                  <div className="max-h-56 overflow-y-auto pl-1 py-1">
+                    {months.map((monthName, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setVisibleDate(new Date(currentYear, index, 1))
+                          setMonthOpen(false)
+                        }}
+                        className={cn(
+                          "w-full rounded-sm px-4 py-2 text-left text-sm",
+                          index === currentMonth
+                            ? "bg-[#0A0A0A] dark:bg-[#FAFAFA] text-white dark:text-[#0A0A0A] font-medium"
+                            : "text-[#0A0A0A] dark:text-[#FAFAFA] hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A]"
+                        )}
+                      >
+                        {monthName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               type="button"
@@ -249,13 +343,13 @@ const HolidayCalendar = () => {
               className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A] cursor-pointer"
               aria-label={t("next_month") || "Keyingi oy"}
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={16} />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-y-6 text-center">
+          <div className="grid grid-cols-7 text-center">
             {weekdays.map((weekday) => (
-              <div key={weekday} className="text-base font-medium text-[#8A8A8A]">
+              <div key={weekday} className="text-sm mb-1 text-[#737373] dark:text-[#A3A3A3]">
                 {weekday}
               </div>
             ))}
@@ -268,13 +362,21 @@ const HolidayCalendar = () => {
                   key={toDateKey(date)}
                   type="button"
                   title={match?.holiday?.title || undefined}
+                  onClick={() => {
+                    if (match?.holiday) {
+                      navigate("/references/holidays", {
+                        state: { holidayId: match.holiday.id },
+                      })
+                    }
+                  }}
                   className={cn(
-                    "mx-auto w-16 h-16 rounded-lg text-xl font-medium flex items-center justify-center transition-colors",
+                    "mx-auto w-12 h-12 my-1.5 rounded-md text-sm font-medium flex items-center justify-center",
                     outside
-                      ? "text-[#A3A3A3] dark:text-[#737373]"
-                      : "text-[#1A1A1A] dark:text-[#F5F5F5]",
+                      ? "text-[#A3A3A3]"
+                      : "text-[#0A0A0A] dark:text-[#FAFAFA]",
                     match?.color?.day,
-                    !match && !outside && "hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A]"
+                    !match && !outside && "hover:bg-[#F5F5F5] dark:hover:bg-[#1A1A1A]",
+                    match && "cursor-pointer"
                   )}
                 >
                   {date.getDate()}
@@ -284,10 +386,11 @@ const HolidayCalendar = () => {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#E5E7EB] dark:border-[#404040] bg-white dark:bg-[#171717] p-6 md:p-8 min-h-[300px]">
-          <h2 className="text-2xl font-semibold mb-10">
+        <section className="flex-1 min-w-0 rounded-2xl border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#171717] p-5 pb-0">
+          <h2 className="text-base font-semibold mb-5">
             {t("holiday_calendar_month_title") || "Shu oydagi bayramlar"}
           </h2>
+
 
           {loading ? (
             <div className="flex flex-col gap-5">
@@ -298,18 +401,26 @@ const HolidayCalendar = () => {
           ) : error ? (
             <div className="text-sm text-[#DC2626]">{error}</div>
           ) : monthHolidays.length ? (
-            <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 max-h-[calc(100vh-240px)] overflow-y-auto gap-5">
               {monthHolidays.map(({ holiday, color }) => (
                 <div
                   key={holiday.id || `${holiday.title}-${holiday.start_date}`}
-                  className={cn("rounded-3xl px-6 py-5 flex items-center gap-5", color.soft)}
+                  onClick={() =>
+                    navigate("/references/holidays", {
+                      state: { holidayId: holiday.id },
+                    })
+                  }
+                  className={cn(
+                    "rounded-3xl h-19 p-4 flex items-center gap-4 cursor-pointer",
+                    color.soft
+                  )}
                 >
-                  <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0", color.icon)}>
-                    <PartyPopper size={25} />
+                  <div className={cn("w-9 h-9 rounded-md flex items-center justify-center shrink-0", color.icon)}>
+                    <HugeIcon icon={PartyIcon} size={16} />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xl font-semibold truncate">{holiday.title || "—"}</h3>
-                    <p className="text-lg text-[#737373] dark:text-[#A3A3A3] mt-1">
+                    <h3 className="text-sm font-medium truncate">{holiday.title || ""}</h3>
+                    <p className="text-sm text-[#737373] dark:text-[#A3A3A3] mt-1">
                       {formatHolidayDate(holiday, language)}
                     </p>
                   </div>
