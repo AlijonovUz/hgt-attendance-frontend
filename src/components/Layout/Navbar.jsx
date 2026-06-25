@@ -22,6 +22,7 @@ const routeMap = {
      "positions": "ref_m_position",
      "roles": "ref_m_role",
      "holidays": "ref_m_holiday",
+     "holiday-calendar": "ref_m_holiday_calendar",
      "schedule": "ref_m_schedule",
      "history": "history_menu_title",
      "actions": "history_m_actions",

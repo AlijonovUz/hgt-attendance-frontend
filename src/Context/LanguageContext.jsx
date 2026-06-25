@@ -2201,6 +2201,16 @@ export const translations = {
           ru: "Уход"
      },
 
+     ref_m_holiday_calendar: { uz: "Bayramlar kalendari", cy: "Bayramlar kalendari", en: "Holiday calendar", ru: "Kalendar prazdnikov" },
+     holiday_calendar_title: { uz: "Bayramlar va dam olish kunlari", cy: "Bayramlar va dam olish kunlari", en: "Holidays and days off", ru: "Prazdniki i vyhodnye dni" },
+     holiday_calendar_subtitle: { uz: "O'zbekiston Respublikasi rasmiy bayramlari — kalendarga biriktirilgan (dam olish kunlari)", cy: "O'zbekiston Respublikasi rasmiy bayramlari — kalendarga biriktirilgan (dam olish kunlari)", en: "Official holidays of the Republic of Uzbekistan — attached to the calendar (days off)", ru: "Ofitsialnye prazdniki Respubliki Uzbekistan — otmecheny v kalendare (vyhodnye dni)" },
+     holiday_calendar_month_title: { uz: "Shu oydagi bayramlar", cy: "Shu oydagi bayramlar", en: "Holidays this month", ru: "Prazdniki v etom mesyatse" },
+     holiday_calendar_empty: { uz: "Bu oyda bayramlar yo'q", cy: "Bu oyda bayramlar yo'q", en: "No holidays this month", ru: "V etom mesyatse prazdnikov net" },
+     holiday_calendar_error: { uz: "Bayramlarni yuklab bo'lmadi", cy: "Bayramlarni yuklab bo'lmadi", en: "Failed to load holidays", ru: "Ne udalos zagruzit prazdniki" },
+     year_short: { uz: "yil", cy: "yil", en: "", ru: "god" },
+     select_year: { uz: "Yil tanlash", cy: "Yil tanlash", en: "Select year", ru: "Vybrat god" },
+     previous_month: { uz: "Oldingi oy", cy: "Oldingi oy", en: "Previous month", ru: "Predydushchiy mesyats" },
+     next_month: { uz: "Keyingi oy", cy: "Keyingi oy", en: "Next month", ru: "Sleduyushchiy mesyats" },
 }
 
 export function LanguageProvider({ children }) {
