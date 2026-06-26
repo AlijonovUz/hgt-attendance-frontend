@@ -22,7 +22,7 @@ const DetailField = ({ label, value, className, wrap = false }) => (
      <div className={cn("flex flex-col gap-1.5", className)}>
           <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
           <div title={typeof value === "string" ? value : undefined} className={cn("min-h-11 px-3.5 py-2.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3]", wrap ? "whitespace-normal break-words leading-5" : "truncate")}>
-               {value ?? value === 0 ? value : "—"}
+               {value ?? value === 0 ? value : ""}
           </div>
      </div>
 )
@@ -44,7 +44,7 @@ const DetailJsonField = ({ label, value }) => (
                     backgroundRepeat: "repeat-x, repeat-x, repeat-y, repeat-y",
                }}
           >
-               {value ? JSON.stringify(value, null, 2) : "—"}
+               {value ? JSON.stringify(value, null, 2) : ""}
           </pre>
      </div>
 )
@@ -268,7 +268,7 @@ const ActionHistory = () => {
           ]
           const body = logs.map((r, i) => [
                i + 1,
-               r.user_full_name || "—",
+               r.user_full_name || "",
                r.region?.name || r?.region || "",
                r.district?.name || r?.district || "",
                r.branch?.name || r?.branch || "",

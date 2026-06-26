@@ -627,7 +627,7 @@ const ReportsEvents = () => {
                       {eventLabel(r.event_type)}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#1A1A1A] dark:text-white whitespace-nowrap tabular-nums">
-                      {r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : "—"}
+                      {r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : ""}
                     </td>
                   </tr>
                 ))}

@@ -544,7 +544,7 @@ export const NotificationBell = () => {
                                   : "font-semibold text-[#0A0A0A] dark:text-white"
                               )}
                             >
-                              {title || "—"}
+                              {title || ""}
                             </h3>
                             {!n.is_read && (
                               <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-[#0090FF] flex-shrink-0" />

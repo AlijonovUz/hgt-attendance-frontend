@@ -11,12 +11,12 @@ export const ProfileModal = ({ isOpen, onClose }) => {
   const currentUser = useSelector((state) => state.references.currentUser)
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false)
 
-  const name = currentUser?.full_name || "—"
+  const name = currentUser?.full_name || ""
   const role = currentUser?.role_info?.name || ""
   const avatar = currentUser?.face_image
   const branch = currentUser?.branch_info
 
-  const initials = name && name !== "—"
+  const initials = name && name !== ""
     ? name.split(" ").slice(0, 2).map((n) => n.charAt(0)).join("").toUpperCase()
     : "?"
 

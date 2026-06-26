@@ -723,7 +723,7 @@ const EmployeeRegister = () => {
     return [...set].sort((a, b) => a - b);
   };
 
-  // First work day of a schedule (so time fields show real data instead of "—")
+  // First work day of a schedule (so time fields show real data instead of "")
   const getScheduleFirstWorkDay = (scheduleId) => {
     const days = getScheduleWorkDays(scheduleId);
     return days.length ? days[0] : 0;
@@ -1835,7 +1835,7 @@ const EmployeeRegister = () => {
                   const isMandatory = selectedSchedule.mandatory_days_info?.some(d => d.day_number === selectedDay);
                   const isOptional = selectedSchedule.optional_days_info?.some(d => d.day_number === selectedDay);
                   const isActiveDay = isMandatory || isOptional;
-                  const formatTime = (t) => t ? t.slice(0, 5) : "—";
+                  const formatTime = (t) => t ? t.slice(0, 5) : "";
 
                   const weekDays = [
                     { label: "Du", day_number: 0 },
@@ -1852,19 +1852,19 @@ const EmployeeRegister = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_start_time") || "Ish boshlanishi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_end_time") || "Ish tugashi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("lunch_start_time") || "Tushlik boshlanishi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("lunch_end_time") || "Tushlik tugashi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                       </div>
 
