@@ -942,14 +942,14 @@ export const translations = {
           ru: "График работы"
      },
      work_schedule_subtitle: {
-          uz: "Ish grafigini tanlash",
-          cy: "Иш графигини танлаш",
+          uz: "Ish jadvali tanlash",
+          cy: "Иш жадвали танлаш",
           en: "Select work schedule",
           ru: "Выберите график работы"
      },
      select_work_schedule: {
-          uz: "Ish grafigini tanlash",
-          cy: "Иш графигини танлаш",
+          uz: "Ish jadvali tanlash",
+          cy: "Иш жадвали танлаш",
           en: "Select work schedule",
           ru: "Выберите график работы"
      },
@@ -2027,12 +2027,6 @@ export const translations = {
           cy: "Рухсат",
           en: "Permission",
           ru: "Разрешение"
-     },
-     work_schedule: {
-          uz: "Ish grafigi",
-          cy: "Иш графиги",
-          en: "Work schedule",
-          ru: "График работы"
      },
      geofence: {
           uz: "Geozona",

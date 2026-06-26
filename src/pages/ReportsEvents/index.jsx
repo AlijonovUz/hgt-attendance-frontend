@@ -558,18 +558,7 @@ const ReportsEvents = () => {
         ref={tableWrapRef}
         className="w-full h-[calc(100vh-130px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-y-auto"
       >
-        <table className="w-full border-collapse text-left table-fixed">
-          <colgroup>
-            <col className="w-[5%]" />
-            <col className="w-[18%]" />
-            <col className="w-[13%]" />
-            <col className="w-[13%]" />
-            <col className="w-[12%]" />
-            <col className="w-[12%]" />
-            <col className="w-[12%]" />
-            <col className="w-[15%]" />
-          </colgroup>
-
+        <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 z-10">
             <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
               {[

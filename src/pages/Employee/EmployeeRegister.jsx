@@ -1872,9 +1872,7 @@ const EmployeeRegister = () => {
                         <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_days") || "Ish kunlari"}</label>
                         <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-md w-full">
                           {weekDays.map((day) => {
-                            const isWorkDay =
-                              selectedSchedule.mandatory_days_info?.some(d => d.day_number === day.day_number) ||
-                              selectedSchedule.optional_days_info?.some(d => d.day_number === day.day_number);
+                            const isWorkDay = selectedSchedule.mandatory_days_info?.some(d => d.day_number === day.day_number)
                             const isViewing = selectedDay === day.day_number;
                             return (
                               <button
