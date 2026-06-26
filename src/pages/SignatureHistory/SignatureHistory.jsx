@@ -227,7 +227,7 @@ const SignatureHistory = () => {
           ]
           const body = logs.map((r, i) => [
                i + 1,
-               r.user_info?.full_name || "—",
+               r.user_info?.full_name || "",
                r.region?.name || "",
                r.district?.name || "",
                r.branch?.name || "",
@@ -405,7 +405,7 @@ const SignatureHistory = () => {
                                                             {i + 1}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[200px]">
-                                                            {log.user_info?.full_name || "—"}
+                                                            {log.user_info?.full_name || ""}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[160px]">
                                                             {log.region?.name || log?.region || ""}

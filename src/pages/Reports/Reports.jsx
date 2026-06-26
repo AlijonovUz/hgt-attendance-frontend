@@ -280,7 +280,7 @@ const Reports = () => {
       : dayjs(selectedDate).format("DD.MM.YYYY")
     : t("byDate")
 
-  const nameOf = (r) => (isBranch === "branch" ? r.branch : r.full_name) || "—"
+  const nameOf = (r) => (isBranch === "branch" ? r.branch : r.full_name) || ""
 
   const buildExport = () => {
     const headers = [
@@ -298,14 +298,14 @@ const Reports = () => {
     const body = results.map((r, i) => [
       i + 1,
       nameOf(r),
-      r.region || "—",
-      r.district || "—",
+      r.region || "",
+      r.district || "",
       r.total_expected ?? 0,
       r.present ?? 0,
       r.late ?? 0,
       r.absent ?? 0,
       r.left_early ?? 0,
-      r.discipline_kpi ?? "—",
+      r.discipline_kpi ?? "",
     ])
     const totalRow = summary
       ? ["", t("total_row"), "", "",
@@ -314,7 +314,7 @@ const Reports = () => {
         summary.late ?? 0,
         summary.absent ?? 0,
         summary.left_early ?? 0,
-        summary.discipline_kpi ?? "—"]
+        summary.discipline_kpi ?? ""]
       : null
     return { headers, body, totalRow }
   }
@@ -790,7 +790,7 @@ const Reports = () => {
                     {fmt(summary.left_early)}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#0066FF] dark:text-[#5EB1EF]">
-                    {summary.discipline_kpi ?? "—"}
+                    {summary.discipline_kpi ?? ""}
                   </td>
                 </tr>
               </tbody>

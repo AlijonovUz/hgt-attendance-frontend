@@ -19,7 +19,7 @@ import { AlertModal } from "@/components/ui/ComfirmAlert"
 
 // "yyyy-mm-dd" (API'dan kelgan) -> "dd.mm.yyyy" (jadvalda ko'rsatish uchun)
 const formatDate = (value) => {
-  if (!value) return "—"
+  if (!value) return ""
   const [y, m, d] = String(value).split("-")
   if (!y || !m || !d) return value
   return `${d}.${m}.${y}`
@@ -27,7 +27,7 @@ const formatDate = (value) => {
 
 // "HH:MM:SS" yoki "HH:MM" -> "HH:MM" (jadvalda ko'rsatish uchun)
 const formatTime = (value) => {
-  if (!value) return "—"
+  if (!value) return ""
   return String(value).slice(0, 5)
 }
 
@@ -65,7 +65,7 @@ const REF_CONFIGS = {
     subKey: "ref_sub_district",
     columns: [
       { headerKey: "gz_district", accessor: (r) => r.name },
-      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "—" },
+      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_district", phKey: "ref_ph_district", required: true },
@@ -84,8 +84,8 @@ const REF_CONFIGS = {
     subKey: "ref_sub_branch",
     columns: [
       { headerKey: "gz_filial", accessor: (r) => r.name },
-      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "—" },
-      { headerKey: "gz_district", accessor: (r) => r.district_info?.name || "—" },
+      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "" },
+      { headerKey: "gz_district", accessor: (r) => r.district_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_branch", phKey: "ref_ph_branch", required: true },
@@ -106,7 +106,7 @@ const REF_CONFIGS = {
     permPrefix: "department",
     columns: [
       { headerKey: "ref_col_dept", accessor: (r) => r.name },
-      { headerKey: "gz_filial", accessor: (r) => r.branch_info?.name || "—" },
+      { headerKey: "gz_filial", accessor: (r) => r.branch_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_dept", phKey: "ref_ph_dept", required: true },
@@ -127,7 +127,7 @@ const REF_CONFIGS = {
     subKey: "ref_sub_position",
     columns: [
       { headerKey: "ref_col_position", accessor: (r) => r.name },
-      { headerKey: "ref_col_dept", accessor: (r) => r.department_info?.name || "—" },
+      { headerKey: "ref_col_dept", accessor: (r) => r.department_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_position", phKey: "ref_ph_position", required: true },
@@ -146,7 +146,7 @@ const REF_CONFIGS = {
     permPrefix: "holiday",
     subKey: "ref_sub_holiday",
     columns: [
-      { headerKey: "ref_col_holiday_name", accessor: (r) => r.title || "—" },
+      { headerKey: "ref_col_holiday_name", accessor: (r) => r.title || "" },
       { headerKey: "ref_col_holiday_start", accessor: (r) => formatDate(r.start_date) },
       { headerKey: "ref_col_holiday_end", accessor: (r) => formatDate(r.end_date) },
     ],

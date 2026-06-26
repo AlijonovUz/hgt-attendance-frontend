@@ -49,7 +49,7 @@ const getErrMsg = (err, fallback) => {
 const fmtCoord = (lat, lng) => {
   const a = Number(lat)
   const b = Number(lng)
-  if (Number.isNaN(a) || Number.isNaN(b)) return "—"
+  if (Number.isNaN(a) || Number.isNaN(b)) return ""
   return `${a.toFixed(4)}, ${b.toFixed(4)}`
 }
 
@@ -145,7 +145,7 @@ const Geozones = () => {
   )
   const ztLabel = (val) => {
     const found = ZONE_TYPES.find((z) => z.value === val)
-    return found ? t(found.key) : "—"
+    return found ? t(found.key) : ""
   }
 
   const selected = selectedDetail

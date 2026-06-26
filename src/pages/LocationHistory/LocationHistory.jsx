@@ -408,7 +408,7 @@ const LocationHistory = () => {
     ]
     const body = logs.map((r, i) => [
       i + 1,
-      r.user_info?.full_name || "—",
+      r.user_info?.full_name || "",
       r.region?.name || "",
       r.district?.name || "",
       r.branch?.name || "",
