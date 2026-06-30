@@ -158,7 +158,12 @@ const Reports = () => {
 
   // 4. Modal ochilganda region'larni yuklash
   useEffect(() => {
-    if (openFilterModal) { fetchRegions(); fetchPositions(1, ""); }
+    if (openFilterModal) {
+      fetchRegions(); 
+      if (reportType === "employee") {
+        fetchPositions(1, "");
+      }
+    }
   }, [openFilterModal])
 
   // 5. Region o'zgarganda district'larni yuklash
@@ -233,7 +238,7 @@ const Reports = () => {
 
   // 8. Tozalash
   const handleFilterClear = () => {
-    activeFiltersRef.current = {} 
+    activeFiltersRef.current = {}
     setFilterRegion(null)
     setFilterDistrict(null)
     setFilterStatus(null)
@@ -410,7 +415,7 @@ const Reports = () => {
       showToast(t("export_error"))
     }
   }
-  
+
   const exportPDF = () => {
     if (!results.length) return showToast(t("export_empty_warning"))
     try {
