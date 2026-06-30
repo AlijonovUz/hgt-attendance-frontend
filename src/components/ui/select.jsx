@@ -81,17 +81,22 @@ export const Select = ({
                return () => clearTimeout(timer);
           }
      }, [open, showSearch]);
+     const onSearchRef = useRef(onSearch);
+     useEffect(() => {
+          onSearchRef.current = onSearch;
+     }, [onSearch]);
+
      // Foydalanuvchi inputga yozgandagina backendga so'rov yuborish (Debounce mantiq)
      useEffect(() => {
           if (!open) return;
           if (!userTyped.current) return;  // ← qo'shing (avtomatik reset'ni bloklaydi)
 
           const timeout = setTimeout(() => {
-               onSearch?.(query);
+               onSearchRef.current?.(query);
           }, 400);
 
           return () => clearTimeout(timeout);
-     }, [query, open, onSearch]);
+     }, [query, open]);
 
      // ─── Scroll pagination (Cheksiz so'rov xatosi tuzatilgan qismi) ───
      const handleDropdownScroll = useCallback(() => {

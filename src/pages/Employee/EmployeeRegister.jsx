@@ -529,10 +529,9 @@ const EmployeeRegister = () => {
       }
     }))
 
-    // Reset page and fetch with new filters
+    // Reset page
     setModalPage(1)
     setHasMore(true)
-    fetchModalList(filterKey, 1, filterSearch)
 
     // Close filter modal and reopen selection modal
     setOpenFilterModal(false)
@@ -560,7 +559,6 @@ const EmployeeRegister = () => {
     // Reset data
     setModalPage(1)
     setHasMore(true)
-    fetchModalList(currentFilterModal, 1, filterSearch)
   }
 
   // Open filter modal with saved filters
@@ -603,14 +601,14 @@ const EmployeeRegister = () => {
     }
   }, [handleScroll])
 
-  // Reset pagination when modal opens or search changes
+  // Reset pagination when modal opens or search changes or filters change
   useEffect(() => {
     if (openModal && openModal !== "roles") {
       setModalPage(1)
       setHasMore(true)
       fetchModalList(openModal, 1, filterSearch)
     }
-  }, [openModal, filterSearch])
+  }, [openModal, filterSearch, filters])
 
   useEffect(() => {
     fetchRoles();
@@ -1951,9 +1949,6 @@ const EmployeeRegister = () => {
               value={filterSearch}
               onChange={(e) => {
                 setFilterSearch(e.target.value)
-                setModalPage(1)
-                setHasMore(true)
-                fetchModalList(openModal, 1, e.target.value)
               }}
               placeholder={t("search") || "Qidirish ..."}
               className="flex-1 rounded-sm! bg-transparent dark:bg-[#0a0a0a] h-8.5 shadow-sm"
