@@ -52,8 +52,6 @@ const ReportsEvents = () => {
 
   const [searchRegion, setSearchRegion] = useState("")
 
-  const searchTimer = useRef(null)
-
   // ── Filter modal ──
   const [openFilterModal, setOpenFilterModal] = useState(false)
 
@@ -185,11 +183,18 @@ const ReportsEvents = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
 
-  // ── Qidiruv (debounce) ──
   const handleSearchChange = (e) => {
-    setSearchInput(e.target.value)
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setSearch(e.target.value), 400)
+    const val = e.target.value
+    setSearchInput(val)
+    if (val === "") {
+      setSearch("")
+    }
+  }
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput)
+    }
   }
 
   // ── Load filter options when modal opens ──
@@ -533,6 +538,7 @@ const ReportsEvents = () => {
             type="text"
             value={searchInput}
             onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
             placeholder={t("search") || "Qidirish..."}
             className="w-[384px]"
           />

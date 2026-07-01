@@ -42,7 +42,6 @@ const EmployeeRegister = () => {
 
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const searchTimer = useRef(null);
 
   // Committed list filters ({ value, label } | null) — drive the employee fetch
   const [regionFilter, setRegionFilter] = useState(null);
@@ -237,50 +236,6 @@ const EmployeeRegister = () => {
     }
   };
 
-  const fetchBranches = async (params = {}) => {
-    try {
-      const res = await axiosAPI.get("users/branches/", { params });
-      if (res.status === 200) {
-        setBranches(res.data?.data?.results || [])
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchPositions = async (params = {}) => {
-    try {
-      const res = await axiosAPI.get("users/positions/", { params });
-      if (res.status === 200) {
-        setPositions(res.data?.data?.results || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const res = await axiosAPI.get("users/roles/");
-      if (res.status === 200) {
-        setRoles(res.data?.data?.results || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchDepartments = async (params = {}) => {
-    try {
-      const res = await axiosAPI.get("users/departments/", { params });
-      if (res.status === 200) {
-        setDepartments(res.data?.data?.results || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const fetchSchedules = async () => {
     try {
       const res = await axiosAPI.get("users/schedules/");
@@ -292,12 +247,11 @@ const EmployeeRegister = () => {
     }
   };
 
-  // Fetch modal list with pagination
   const fetchModalList = async (type, pageNum = 1, searchTerm = "") => {
     setModalLoading(true)
     try {
       let res
-      const params = { page: pageNum, page_size: PAGE_SIZE }
+      const params = { page: pageNum }
 
       if (searchTerm.trim()) {
         params.search = searchTerm
@@ -315,6 +269,18 @@ const EmployeeRegister = () => {
             setBranches(newData)
           } else {
             setBranches(prev => [...prev, ...newData])
+          }
+          setModalTotalCount(res.data?.data?.count || 0)
+          setHasMore(newData.length === PAGE_SIZE)
+        }
+      } else if (type === "roles") {
+        res = await axiosAPI.get("users/roles/", { params })
+        if (res.status === 200) {
+          const newData = res.data?.data?.results || []
+          if (pageNum === 1) {
+            setRoles(newData)
+          } else {
+            setRoles(prev => [...prev, ...newData])
           }
           setModalTotalCount(res.data?.data?.count || 0)
           setHasMore(newData.length === PAGE_SIZE)
@@ -603,7 +569,7 @@ const EmployeeRegister = () => {
 
   // Reset pagination when modal opens or search changes or filters change
   useEffect(() => {
-    if (openModal && openModal !== "roles") {
+    if (openModal) {
       setModalPage(1)
       setHasMore(true)
       fetchModalList(openModal, 1, filterSearch)
@@ -611,10 +577,6 @@ const EmployeeRegister = () => {
   }, [openModal, filterSearch, filters])
 
   useEffect(() => {
-    fetchRoles();
-    fetchBranches();
-    fetchPositions();
-    fetchDepartments();
     fetchSchedules();
   }, []);
 
@@ -958,12 +920,20 @@ const EmployeeRegister = () => {
   }, [openModal]);
 
   const handleSearchChange = (e) => {
-    setSearchInput(e.target.value);
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      setSearch(e.target.value);
+    const val = e.target.value;
+    setSearchInput(val);
+    // Input to'liq tozalansa — searchsiz ma'lumotlarni yuklash
+    if (val === "") {
+      setSearch("");
       setPage(1);
-    }, 400);
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput);
+      setPage(1);
+    }
   };
 
   // Excel / PDF / CSV uchun umumiy sarlavha + qatorlar
@@ -1219,6 +1189,7 @@ const EmployeeRegister = () => {
               type="text"
               value={searchInput}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               placeholder={t("search_employee") || "Qidirish ... (ism-familya, yoki tabel)"}
               className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
             />

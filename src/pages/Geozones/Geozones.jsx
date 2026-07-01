@@ -115,7 +115,6 @@ const Geozones = () => {
   // ── Qidiruv + filtrlar ──
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
-  const searchTimer = useRef(null)
 
   const [searchRegion, setSearchRegion] = useState("")
 
@@ -290,9 +289,17 @@ const Geozones = () => {
 
   // Qidiruv debounce
   const handleSearchChange = (e) => {
-    setSearchInput(e.target.value)
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setSearch(e.target.value.trim()), 400)
+    const val = e.target.value
+    setSearchInput(val)
+    if (val === "") {
+      setSearch("")
+    }
+  }
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput.trim())
+    }
   }
 
   const handleDraftRegion = (opt) => {
@@ -463,6 +470,7 @@ const Geozones = () => {
               type="text"
               value={searchInput}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               placeholder={t("gz_search_ph")}
               className="w-full h-9 rounded-lg border border-[#E5E7EB] dark:border-[#2E2E2E] bg-white dark:bg-[#0F0F0F] pl-8 pr-3 text-[13px] text-[#0A0A0A] dark:text-white placeholder:text-[#737373] outline-none focus:border-[#0090FF] transition-colors"
             />

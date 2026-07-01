@@ -65,6 +65,7 @@ const DailyAttendance = () => {
 
   // ── Search ──
   const [search, setSearch] = useState("")
+  const [searchInput, setSearchInput] = useState("")
 
   const [searchRegion, setSearchRegion] = useState("")
 
@@ -556,8 +557,19 @@ const DailyAttendance = () => {
         <div className="flex items-center gap-3">
           <Input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchInput(val);
+              if (val === "") {
+                setSearch("");
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setSearch(searchInput);
+              }
+            }}
             placeholder={t("search") || "Qidirish..."}
             className="w-[384px]"
           />

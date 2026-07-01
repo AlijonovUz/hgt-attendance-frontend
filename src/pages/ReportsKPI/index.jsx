@@ -440,7 +440,12 @@ const index = () => {
             type="text"
             placeholder={t("search")}
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              if (e.target.value === "") {
+                setSearch("");
+              }
+            }}
             onKeyDown={(e) => { if (e.key === "Enter") setSearch(searchInput) }}
             className="flex-1 w-[384px] rounded-md! shadow-xs"
           />
