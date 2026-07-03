@@ -40,7 +40,7 @@ const PERIODS = [
 const fmt = (n) =>
   Number(n ?? 0)
     .toLocaleString("ru-RU")
-    .replace(/ /g, " ")
+    .replace(/ /g, " ")
     .replace(/,/g, " ")
 
 const Reports = () => {
@@ -97,6 +97,10 @@ const Reports = () => {
 
   const [positionPag, setPositionPag] = useState({ page: 1, hasMore: true, loading: false })
 
+  // Filter variantlari faqat tegishli dropdown bosilganda (lazy) yuklanadi.
+  const regionsLoadedRef = useRef(false)
+  const positionsLoadedRef = useRef(false)
+
   // 2. Region'larni yuklash
   const fetchRegions = async () => {
     setRegionsLoading(true)
@@ -106,6 +110,7 @@ const Reports = () => {
         setRegions(
           (res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
         )
+        regionsLoadedRef.current = true
       }
     } catch (err) {
       console.error(err)
@@ -127,6 +132,7 @@ const Reports = () => {
         const results = (res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
         setPositions(prev => pageNum === 1 ? results : [...prev, ...results])
         setPositionPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        positionsLoadedRef.current = true
       }
     } catch (err) {
       console.error(err)
@@ -148,7 +154,7 @@ const Reports = () => {
       if (res.status === 200) {
         const results = (res.data?.data?.results || []).map(d => ({ value: d.id, label: d.name }))
         setDistricts(prev => pageNum === 1 ? results : [...prev, ...results])
-        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedRegion: regionId })
       }
     } catch (err) {
       console.error(err)
@@ -156,23 +162,38 @@ const Reports = () => {
     }
   }
 
-  // 4. Modal ochilganda region'larni yuklash
+  // 4. Filter modali ochilganda — cache'ni reset qilish, lekin
+  //    har bir dropdown bosilganda (onOpen) lazy yuklash qiladi
   useEffect(() => {
     if (openFilterModal) {
-      fetchRegions(); 
-      if (reportType === "employee") {
-        fetchPositions(1, "");
-      }
+      // Cache'ni reset — dropdown bosilganda yangi yuklash
+      regionsLoadedRef.current = false
+      positionsLoadedRef.current = false
     }
   }, [openFilterModal])
 
-  // 5. Region o'zgarganda district'larni yuklash
+  // 5. Region o'zgarganda district tanlovi/cache'i bekor qilinadi (yuklash — dropdown ochilganda)
   const handleRegionChange = (opt) => {
     setFilterRegion(opt)
     setDistricts([])
     setFilterDistrict(null)
     setDistrictPag({ page: 1, hasMore: true, loading: false })
-    if (opt?.value) fetchDistricts(opt.value, 1, "")
+  }
+
+  // ── Dropdown bosilganda (lazy) yuklash — cache bo'lsa so'rov yubormaydi ──
+  const handleRegionOpen = () => {
+    if (regionsLoadedRef.current || regionsLoading) return
+    fetchRegions()
+  }
+  const handlePositionOpen = () => {
+    if (positionsLoadedRef.current || positionPag.loading) return
+    fetchPositions(1, "")
+  }
+  const handleDistrictOpen = () => {
+    const regionId = filterRegion?.value
+    if (!regionId || districtPag.loading) return
+    if (districtPag.loadedRegion === regionId) return
+    fetchDistricts(regionId, 1, "")
   }
 
   // 6. fetchReports — filter param'larini qo'shish
@@ -845,6 +866,7 @@ const Reports = () => {
                 options={regions}
                 value={filterRegion?.value ?? null}
                 onChange={handleRegionChange}
+                onOpen={handleRegionOpen}
               />
 
               {/* District — region tanlanmasa disabled */}
@@ -855,6 +877,7 @@ const Reports = () => {
                 value={filterDistrict?.value ?? null}
                 onChange={(opt) => setFilterDistrict(opt)}
                 disabled={!filterRegion}
+                onOpen={handleDistrictOpen}
                 loadingMore={districtPag.loading}
                 onScrollEnd={() => {
                   if (!districtPag.hasMore || districtPag.loading || !filterRegion?.value) return
@@ -882,6 +905,7 @@ const Reports = () => {
                   options={positions}
                   value={filterPosition?.value ?? null}
                   onChange={(opt) => setFilterPosition(opt)}
+                  onOpen={handlePositionOpen}
                   loadingMore={positionPag.loading}
                   onScrollEnd={() => {
                     if (!positionPag.hasMore || positionPag.loading) return

@@ -59,6 +59,11 @@ const index = () => {
   const [deptPag, setDeptPag] = useState({ page: 1, hasMore: true, loading: false })
   const [employeePag, setEmployeePag] = useState({ page: 1, hasMore: true, loading: false })
 
+  // Filter variantlari faqat tegishli dropdown bosilganda (lazy) yuklanadi.
+  // Bu reflar/kalitlar allaqachon yuklanganini belgilaydi — takroriy so'rovni oldini oladi.
+  const regionsLoadedRef = useRef(false)
+  const employeesLoadedRef = useRef(false)
+
   const hasFilter = !!(
     applied.user || applied.region || applied.district ||
     applied.branch || applied.department || applied.rating_category ||
@@ -266,8 +271,10 @@ const index = () => {
   const fetchRegions = async () => {
     try {
       const res = await axiosAPI.get("users/regions/")
-      if (res.status === 200)
+      if (res.status === 200) {
         setRegions((res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name })))
+        regionsLoadedRef.current = true
+      }
     } catch (err) { console.error(err) }
   }
 
@@ -281,7 +288,7 @@ const index = () => {
       if (res.status === 200) {
         const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
         setDistricts((prev) => (pageNum === 1 ? list : [...prev, ...list]))
-        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedRegion: regionId })
       }
     } catch (err) { console.error(err); setDistrictPag((p) => ({ ...p, loading: false })) }
   }
@@ -298,7 +305,7 @@ const index = () => {
       if (res.status === 200) {
         const list = (res.data?.data?.results || []).map((b) => ({ value: b.id, label: b.name }))
         setBranches((prev) => (pageNum === 1 ? list : [...prev, ...list]))
-        setBranchPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setBranchPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedKey: `${regionId || ""}|${districtId || ""}` })
       }
     } catch (err) { console.error(err); setBranchPag((p) => ({ ...p, loading: false })) }
   }
@@ -314,7 +321,7 @@ const index = () => {
       if (res.status === 200) {
         const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
         setDepartments((prev) => (pageNum === 1 ? list : [...prev, ...list]))
-        setDeptPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setDeptPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedBranch: branchId || "" })
       }
     } catch (err) { console.error(err); setDeptPag((p) => ({ ...p, loading: false })) }
   }
@@ -328,6 +335,7 @@ const index = () => {
         const list = (res.data?.data?.results || []).map((e) => ({ value: e.id, label: e.full_name }))
         setEmployees((prev) => (pageNum === 1 ? list : [...prev, ...list]))
         setEmployeePag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        employeesLoadedRef.current = true
       }
     } catch (err) { console.error(err); setEmployeePag((p) => ({ ...p, loading: false })) }
   }
@@ -338,60 +346,67 @@ const index = () => {
     fetchData(1, activeFiltersRef.current, search)
   }, [search])
 
-  useEffect(() => {
-    if (filterOpen) {
-      fetchRegions()
-      fetchBranches(1, "", null, null)   // filial — hech narsa tanlanmagan
-      fetchDepartments(1, "", null)       // bo'lim — hech narsa tanlanmagan
-      fetchEmployees(1, "")
-    }
-  }, [filterOpen])
+  // Eslatma: filter modali ochilganda variantlar EAGER yuklanmaydi.
+  // Har bir dropdown bosilganda (onOpen) kerakli variant yuklanadi.
 
-  // ── Kaskad handler'lar ──
+  // ── Kaskad handler'lar (faqat reset — yuklash dropdown ochilganda) ──
 
-  // 1. Viloyat o'zgarganda → tuman reset, filial qayta load (region bo'yicha)
+  // 1. Viloyat o'zgarganda → tuman/filial/bo'lim tanlovlari va cache'i bekor qilinadi
   const handleRegionChange = (opt) => {
     setDraft((p) => ({ ...p, region: opt, district: null, branch: null, department: null }))
     setDistricts([])
     setDistrictPag({ page: 1, hasMore: true, loading: false })
     setBranches([])
+    setBranchPag({ page: 1, hasMore: true, loading: false })
     setDepartments([])
-
-    if (opt?.value) {
-      fetchDistricts(opt.value, 1, "")
-      fetchBranches(1, "", opt.value, null)
-    } else {
-      // Viloyat tozalandi — filiallarni hammasi ko'rsin
-      fetchBranches(1, "", null, null)
-      fetchDepartments(1, "", null)
-    }
+    setDeptPag({ page: 1, hasMore: true, loading: false })
   }
 
-  // 2. Tuman o'zgarganda → filial qayta load (region + district bo'yicha)
+  // 2. Tuman o'zgarganda → filial/bo'lim tanlovlari va cache'i bekor qilinadi
   const handleDistrictChange = (opt) => {
     setDraft((p) => ({ ...p, district: opt, branch: null, department: null }))
     setBranches([])
+    setBranchPag({ page: 1, hasMore: true, loading: false })
     setDepartments([])
-
-    const regionId = draft.region?.value || null
-    if (opt?.value) {
-      fetchBranches(1, "", regionId, opt.value)
-    } else {
-      // Tuman tozalandi — faqat region bo'yicha filter
-      fetchBranches(1, "", regionId, null)
-    }
+    setDeptPag({ page: 1, hasMore: true, loading: false })
   }
 
-  // 3. Filial o'zgarganda → bo'lim qayta load (branch bo'yicha)
+  // 3. Filial o'zgarganda → bo'lim tanlovi va cache'i bekor qilinadi
   const handleBranchChange = (opt) => {
     setDraft((p) => ({ ...p, branch: opt, department: null }))
     setDepartments([])
+    setDeptPag({ page: 1, hasMore: true, loading: false })
+  }
 
-    if (opt?.value) {
-      fetchDepartments(1, "", opt.value)
-    } else {
-      fetchDepartments(1, "", null)
-    }
+  // ── Dropdown bosilganda (lazy) yuklash — cache bo'lsa so'rov yubormaydi ──
+  const handleEmployeeOpen = () => {
+    if (employeesLoadedRef.current || employeePag.loading) return
+    fetchEmployees(1, "")
+  }
+  const handleRegionOpen = () => {
+    if (regionsLoadedRef.current) return
+    fetchRegions()
+  }
+  const handleDistrictOpen = () => {
+    const regionId = draft.region?.value
+    if (!regionId || districtPag.loading) return
+    if (districtPag.loadedRegion === regionId) return
+    fetchDistricts(regionId, 1, "")
+  }
+  const handleBranchOpen = () => {
+    if (branchPag.loading) return
+    const regionId = draft.region?.value || null
+    const districtId = draft.district?.value || null
+    const key = `${regionId || ""}|${districtId || ""}`
+    if (branchPag.loadedKey === key) return
+    fetchBranches(1, "", regionId, districtId)
+  }
+  const handleDepartmentOpen = () => {
+    if (deptPag.loading) return
+    const branchId = draft.branch?.value || null
+    const key = branchId || ""
+    if (deptPag.loadedBranch === key) return
+    fetchDepartments(1, "", branchId)
   }
 
   // ── Filter apply / clear ──
@@ -423,9 +438,7 @@ const index = () => {
     setDistrictPag({ page: 1, hasMore: true, loading: false })
     setBranchPag({ page: 1, hasMore: true, loading: false })
     setDeptPag({ page: 1, hasMore: true, loading: false })
-    // Hammasini qayta load qilamiz
-    fetchBranches(1, "", null, null)
-    fetchDepartments(1, "", null)
+    // Variantlar qayta yuklanmaydi — dropdown ochilganda (onOpen) yuklanadi.
   }
 
   const colCount = 11
@@ -588,6 +601,7 @@ const index = () => {
                 value={draft.user?.value ?? null}
                 onChange={(opt) => setDraft((p) => ({ ...p, user: opt }))}
                 searchable
+                onOpen={handleEmployeeOpen}
                 loadingMore={employeePag.loading}
                 onScrollEnd={() => {
                   if (!employeePag.hasMore || employeePag.loading) return
@@ -618,6 +632,7 @@ const index = () => {
                 value={draft.region?.value ?? null}
                 onChange={handleRegionChange}
                 searchable={true}
+                onOpen={handleRegionOpen}
                 onSearch={(s) => setSearchRegion(s)}
               />
 
@@ -630,6 +645,7 @@ const index = () => {
                 onChange={handleDistrictChange}
                 disabled={!draft.region}
                 searchable
+                onOpen={handleDistrictOpen}
                 loadingMore={districtPag.loading}
                 onScrollEnd={() => {
                   if (!districtPag.hasMore || districtPag.loading || !draft.region?.value) return
@@ -648,6 +664,7 @@ const index = () => {
                 value={draft.branch?.value ?? null}
                 onChange={handleBranchChange}
                 searchable
+                onOpen={handleBranchOpen}
                 loadingMore={branchPag.loading}
                 onScrollEnd={() => {
                   if (!branchPag.hasMore || branchPag.loading) return
@@ -670,6 +687,7 @@ const index = () => {
                 value={draft.department?.value ?? null}
                 onChange={(opt) => setDraft((p) => ({ ...p, department: opt }))}
                 searchable
+                onOpen={handleDepartmentOpen}
                 loadingMore={deptPag.loading}
                 onScrollEnd={() => {
                   if (!deptPag.hasMore || deptPag.loading) return

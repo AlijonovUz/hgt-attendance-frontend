@@ -17,6 +17,7 @@ export const Select = ({
      onScrollEnd,
      loadingMore = false,
      onSearch,
+     onOpen,
 }) => {
      const { t } = useLanguage();
 
@@ -81,6 +82,15 @@ export const Select = ({
                return () => clearTimeout(timer);
           }
      }, [open, showSearch]);
+
+     // Dropdown ochilgandagina (foydalanuvchi bosganda) onOpen chaqiriladi —
+     // shu orqali variantlar faqat kerak bo'lganda (lazy) yuklanadi.
+     useEffect(() => {
+          if (open) onOpen?.();
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+     }, [open]);
+
+     // onSearch callbackni ref sifatida saqlash (stale closure muammonisini oldini olish)
      const onSearchRef = useRef(onSearch);
      useEffect(() => {
           onSearchRef.current = onSearch;
@@ -271,4 +281,3 @@ export const Select = ({
           </div>
      );
 };
-

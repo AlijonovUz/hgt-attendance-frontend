@@ -236,6 +236,17 @@ const EmployeeRegister = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const res = await axiosAPI.get("users/roles/");
+      if (res.status === 200) {
+        setRoles(res.data?.data?.results || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchSchedules = async () => {
     try {
       const res = await axiosAPI.get("users/schedules/");
@@ -333,7 +344,7 @@ const EmployeeRegister = () => {
       const { results, hasMore } = await fetchPaginated("users/districts/", { region: regionId }, pageNum, search)
       const mapped = results.map(d => ({ value: d.id, label: d.name }))
       setDistricts(prev => pageNum === 1 || !append ? mapped : [...prev, ...mapped])
-      setFilterDistrictPag({ page: pageNum, hasMore, loading: false })
+      setFilterDistrictPag({ page: pageNum, hasMore, loading: false, loadedRegion: regionId })
     } catch { setFilterDistrictPag(p => ({ ...p, loading: false })) }
   }
 
@@ -345,7 +356,7 @@ const EmployeeRegister = () => {
       if (districtId) params.district = districtId
       const { results, hasMore } = await fetchPaginated("users/branches/", params, pageNum, search)
       setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
-      setFilterBranchPag({ page: pageNum, hasMore, loading: false })
+      setFilterBranchPag({ page: pageNum, hasMore, loading: false, loadedKey: `${regionId || ""}|${districtId || ""}` })
     } catch { setFilterBranchPag(p => ({ ...p, loading: false })) }
   }
 
@@ -357,7 +368,7 @@ const EmployeeRegister = () => {
       const { results, hasMore } = await fetchPaginated("users/districts/", { region: regionId }, pageNum, search)
       const mapped = results.map(d => ({ value: d.id, label: d.name }))
       setFilterDistricts(prev => pageNum === 1 ? mapped : [...prev, ...mapped])
-      setListDistrictPag({ page: pageNum, hasMore, loading: false })
+      setListDistrictPag({ page: pageNum, hasMore, loading: false, loadedRegion: regionId })
     } catch { setListDistrictPag(p => ({ ...p, loading: false })) }
   }
 
@@ -370,7 +381,7 @@ const EmployeeRegister = () => {
       if (districtId) params.district = districtId
       const { results, hasMore } = await fetchPaginated("users/branches/", params, pageNum, search)
       setBranches(prev => pageNum === 1 ? results : [...prev, ...results])
-      setListBranchPag({ page: pageNum, hasMore, loading: false })
+      setListBranchPag({ page: pageNum, hasMore, loading: false, loadedKey: `${regionId || ""}|${districtId || ""}` })
     } catch { setListBranchPag(p => ({ ...p, loading: false })) }
   }
 
@@ -382,7 +393,7 @@ const EmployeeRegister = () => {
       if (branchId) params.branch = branchId
       const { results, hasMore } = await fetchPaginated("users/departments/", params, pageNum, search)
       setDepartments(prev => pageNum === 1 ? results : [...prev, ...results])
-      setListDepartmentPag({ page: pageNum, hasMore, loading: false })
+      setListDepartmentPag({ page: pageNum, hasMore, loading: false, loadedBranch: branchId || "" })
     } catch { setListDepartmentPag(p => ({ ...p, loading: false })) }
   }
 
@@ -400,6 +411,8 @@ const EmployeeRegister = () => {
     return { results: [], hasMore: false }
   }
 
+  // Viloyat o'zgarsa — tuman/filial tanlovi va cache'i bekor qilinadi.
+  // Yuklash EAGER emas — tegishli dropdown bosilganda (onOpen) yuklanadi.
   const handleRegionChange = (opt) => {
     setTempFilterRegion(opt)
     setDistricts([])
@@ -407,8 +420,22 @@ const EmployeeRegister = () => {
     setTempFilterBranch(null)
     setFilterDistrictPag({ page: 1, hasMore: true, loading: false })
     setFilterBranchPag({ page: 1, hasMore: true, loading: false })
-    if (opt?.value) loadDistricts(opt.value, 1, "")
-    loadFilterBranches(1, "", opt?.value, null)
+  }
+
+  // ── Selection-filter dropdownlari bosilganda (lazy) yuklash ──
+  const handleFilterDistrictOpen = () => {
+    const regionId = tempFilterRegion?.value
+    if (!regionId || filterDistrictPag.loading) return
+    if (filterDistrictPag.loadedRegion === regionId) return
+    loadDistricts(regionId, 1, "")
+  }
+  const handleFilterBranchOpen = () => {
+    if (filterBranchPag.loading) return
+    const regionId = tempFilterRegion?.value || null
+    const districtId = tempFilterDistrict?.value || null
+    const key = `${regionId || ""}|${districtId || ""}`
+    if (filterBranchPag.loadedKey === key) return
+    loadFilterBranches(1, "", regionId, districtId)
   }
 
   const handleBlockEmployee = async () => {
@@ -531,8 +558,8 @@ const EmployeeRegister = () => {
   const handleFilterDistrictChange = (opt) => {
     setTempFilterDistrict(opt)
     setTempFilterBranch(null)
+    // Filial cache'i bekor qilinadi — filial dropdowni bosilganda qayta yuklanadi.
     setFilterBranchPag({ page: 1, hasMore: true, loading: false })
-    loadFilterBranches(1, "", tempFilterRegion?.value, opt?.value)
   }
 
   const openFilterModalWithFilters = (modalType) => {
@@ -541,8 +568,10 @@ const EmployeeRegister = () => {
     setTempFilterRegion(savedFilters.region)
     setTempFilterDistrict(savedFilters.district)
     setTempFilterBranch(savedFilters.branch)
-    if (savedFilters.region?.value) loadDistricts(savedFilters.region.value, 1, "")
-    loadFilterBranches(1, "", savedFilters.region?.value, savedFilters.district?.value)
+    // Variantlar bu yerda YUKLANMAYDI — dropdown bosilganda (onOpen) yuklanadi.
+    // Ulashilgan state tufayli cache belgilarini tozalab, birinchi ochilishda yangi yuklaymiz.
+    setFilterDistrictPag({ page: 1, hasMore: true, loading: false })
+    setFilterBranchPag({ page: 1, hasMore: true, loading: false })
     setOpenFilterModal(modalType)
     setTimeout(() => setOpenModal(null), 100)
   }
@@ -576,9 +605,18 @@ const EmployeeRegister = () => {
     }
   }, [openModal, filterSearch, filters])
 
+  // Bu ro'yxatlar asosiy jadval uchun KERAK EMAS — faqat qo'shish/tahrirlash modalida.
+  // Shuning uchun mount'da emas, modal birinchi marta ochilganda (bir marta) yuklanadi.
+  // branches/departments/positions esa modal ichidagi tanlov (fetchModalList) va filter
+  // modallari orqali baribir qayta yuklanadi — mount'da yuklash ortiqcha so'rov edi.
+  const formListsLoadedRef = useRef(false)
   useEffect(() => {
-    fetchSchedules();
-  }, []);
+    if (addEmployeeModal && !formListsLoadedRef.current) {
+      formListsLoadedRef.current = true
+      fetchRoles();
+      fetchSchedules();
+    }
+  }, [addEmployeeModal]);
 
   useEffect(() => {
     fetchEmployees();
@@ -606,13 +644,15 @@ const EmployeeRegister = () => {
     setTmpDistrict(districtFilter)
     setTmpBranch(branchFilter)
     setTmpDepartment(departmentFilter)
-    if (regionFilter?.value) loadListDistricts(regionFilter.value, 1, "")
-    loadListBranches(1, "", regionFilter?.value, districtFilter?.value)
-    loadListDepartments(1, "", branchFilter?.value)
+    // Variantlar bu yerda YUKLANMAYDI — dropdown bosilganda (onOpen) yuklanadi.
+    // Ulashilgan state tufayli cache belgilarini tozalab, birinchi ochilishda yangi yuklaymiz.
+    setListDistrictPag({ page: 1, hasMore: true, loading: false })
+    setListBranchPag({ page: 1, hasMore: true, loading: false })
+    setListDepartmentPag({ page: 1, hasMore: true, loading: false })
     setOpenListFilter(true)
   }
 
-  // Region o'zgarsa — district, branch, department reset bo'ladi va branch region bo'yicha qayta yuklanadi
+  // Region o'zgarsa — district/branch/department tanlovi va cache'i bekor qilinadi
   const handleListRegionChange = (opt) => {
     setTmpRegion(opt)
     setFilterDistricts([])
@@ -623,11 +663,9 @@ const EmployeeRegister = () => {
     setListDistrictPag({ page: 1, hasMore: true, loading: false })
     setListBranchPag({ page: 1, hasMore: true, loading: false })
     setListDepartmentPag({ page: 1, hasMore: true, loading: false })
-    if (opt?.value) loadListDistricts(opt.value, 1, "")
-    loadListBranches(1, "", opt?.value, null)
   }
 
-  // Tuman o'zgarsa — branch va department reset, branch tuman bo'yicha qayta yuklanadi
+  // Tuman o'zgarsa — branch/department tanlovi va cache'i bekor qilinadi
   const handleListDistrictChange = (opt) => {
     setTmpDistrict(opt)
     setTmpBranch(null)
@@ -635,15 +673,36 @@ const EmployeeRegister = () => {
     setDepartments([])
     setListBranchPag({ page: 1, hasMore: true, loading: false })
     setListDepartmentPag({ page: 1, hasMore: true, loading: false })
-    loadListBranches(1, "", tmpRegion?.value, opt?.value)
   }
 
-  // Filial o'zgarsa — department branch bo'yicha qayta yuklanadi
+  // Filial o'zgarsa — department tanlovi va cache'i bekor qilinadi
   const handleListBranchChange = (opt) => {
     setTmpBranch(opt)
     setTmpDepartment(null)
     setListDepartmentPag({ page: 1, hasMore: true, loading: false })
-    loadListDepartments(1, "", opt?.value)
+  }
+
+  // ── List-filter dropdownlari bosilganda (lazy) yuklash ──
+  const handleListDistrictOpen = () => {
+    const regionId = tmpRegion?.value
+    if (!regionId || listDistrictPag.loading) return
+    if (listDistrictPag.loadedRegion === regionId) return
+    loadListDistricts(regionId, 1, "")
+  }
+  const handleListBranchOpen = () => {
+    if (listBranchPag.loading) return
+    const regionId = tmpRegion?.value || null
+    const districtId = tmpDistrict?.value || null
+    const key = `${regionId || ""}|${districtId || ""}`
+    if (listBranchPag.loadedKey === key) return
+    loadListBranches(1, "", regionId, districtId)
+  }
+  const handleListDepartmentOpen = () => {
+    if (listDepartmentPag.loading) return
+    const branchId = tmpBranch?.value || null
+    const key = branchId || ""
+    if (listDepartmentPag.loadedBranch === key) return
+    loadListDepartments(1, "", branchId)
   }
 
   // Apply: commit temp selections (triggers the employee fetch via deps)
@@ -2074,6 +2133,7 @@ const EmployeeRegister = () => {
                   onChange={(opt) => setTempFilterBranch(opt)}
                   contanierClassName="col-span-2"
                   searchable={true}
+                  onOpen={handleFilterBranchOpen}
                   loadingMore={filterBranchPag.loading}
                   onScrollEnd={() => {
                     if (!filterBranchPag.hasMore || filterBranchPag.loading) return
@@ -2102,6 +2162,7 @@ const EmployeeRegister = () => {
                 value={tempFilterDistrict?.value ?? null}
                 onChange={handleFilterDistrictChange}
                 disabled={!tempFilterRegion}
+                onOpen={handleFilterDistrictOpen}
                 loadingMore={filterDistrictPag.loading}
                 onScrollEnd={() => {
                   if (!filterDistrictPag.hasMore || filterDistrictPag.loading || !tempFilterRegion?.value) return
@@ -2180,6 +2241,7 @@ const EmployeeRegister = () => {
                 value={tmpDistrict?.value ?? null}
                 onChange={handleListDistrictChange}
                 disabled={!tmpRegion}
+                onOpen={handleListDistrictOpen}
                 loadingMore={listDistrictPag.loading}
                 onScrollEnd={() => {
                   if (!listDistrictPag.hasMore || listDistrictPag.loading || !tmpRegion?.value) return
@@ -2195,6 +2257,7 @@ const EmployeeRegister = () => {
                 options={branches.map((b) => ({ value: b.id, label: b.name }))}
                 value={tmpBranch?.value ?? null}
                 onChange={handleListBranchChange}
+                onOpen={handleListBranchOpen}
                 loadingMore={listBranchPag.loading}
                 onScrollEnd={() => {
                   if (!listBranchPag.hasMore || listBranchPag.loading) return
@@ -2210,6 +2273,7 @@ const EmployeeRegister = () => {
                 options={departments.map((d) => ({ value: d.id, label: d.name }))}
                 value={tmpDepartment?.value ?? null}
                 onChange={(opt) => setTmpDepartment(opt)}
+                onOpen={handleListDepartmentOpen}
                 loadingMore={listDepartmentPag.loading}
                 onScrollEnd={() => {
                   if (!listDepartmentPag.hasMore || listDepartmentPag.loading) return
