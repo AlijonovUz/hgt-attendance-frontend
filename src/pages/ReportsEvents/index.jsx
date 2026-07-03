@@ -78,6 +78,10 @@ const ReportsEvents = () => {
   const [branchPag, setBranchPag] = useState({ page: 1, hasMore: true, loading: false })
   const [deptPag, setDeptPag] = useState({ page: 1, hasMore: true, loading: false })
 
+  // Filter variantlari faqat tegishli dropdown bosilganda (lazy) yuklanadi.
+  const usersLoadedRef = useRef(false)
+  const regionsLoadedRef = useRef(false)
+
   // ── Active filters ref (survives re-renders) ──
   const activeFiltersRef = useRef({})
 
@@ -197,15 +201,8 @@ const ReportsEvents = () => {
     }
   }
 
-  // ── Load filter options when modal opens ──
-  useEffect(() => {
-    if (!openFilterModal) return
-    fetchUsers(1, "")
-    fetchRegions()
-    fetchBranches(1, "", null, null)
-    fetchDepartments(1, "", null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openFilterModal])
+  // Eslatma: filter modali ochilganda variantlar EAGER yuklanmaydi.
+  // Har bir dropdown bosilganda (onOpen) kerakli variant lazy yuklanadi.
 
   // ── Option loaders (sahifalanadigan) ──
   const fetchUsers = async (pageNum = 1, q = "") => {
@@ -217,6 +214,7 @@ const ReportsEvents = () => {
         const list = (res.data?.data?.results || []).map((u) => ({ value: u.id, label: u.full_name }))
         setUsers((prev) => (pageNum === 1 ? list : [...prev, ...list]))
         setUserPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        usersLoadedRef.current = true
       }
     } catch (err) {
       console.error(err)
@@ -227,8 +225,10 @@ const ReportsEvents = () => {
   const fetchRegions = async () => {
     try {
       const res = await axiosAPI.get("users/regions/")
-      if (res.status === 200)
+      if (res.status === 200) {
         setRegions((res.data?.data?.results || []).map((r) => ({ value: r.id, label: r.name })))
+        regionsLoadedRef.current = true
+      }
     } catch (err) { console.error(err) }
   }
 
@@ -242,7 +242,7 @@ const ReportsEvents = () => {
       if (res.status === 200) {
         const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
         setDistricts((prev) => (pageNum === 1 ? list : [...prev, ...list]))
-        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedRegion: regionId })
       }
     } catch (err) {
       console.error(err)
@@ -262,7 +262,7 @@ const ReportsEvents = () => {
       if (res.status === 200) {
         const list = (res.data?.data?.results || []).map((b) => ({ value: b.id, label: b.name }))
         setBranches((prev) => (pageNum === 1 ? list : [...prev, ...list]))
-        setBranchPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setBranchPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedKey: `${regionId || ""}|${districtId || ""}` })
       }
     } catch (err) {
       console.error(err)
@@ -281,7 +281,7 @@ const ReportsEvents = () => {
       if (res.status === 200) {
         const list = (res.data?.data?.results || []).map((d) => ({ value: d.id, label: d.name }))
         setDepartments((prev) => (pageNum === 1 ? list : [...prev, ...list]))
-        setDeptPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setDeptPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedBranch: branchId || "" })
       }
     } catch (err) {
       console.error(err)
@@ -289,9 +289,9 @@ const ReportsEvents = () => {
     }
   }
 
-  // ── Kaskad handler'lar ──
+  // ── Kaskad handler'lar (faqat reset — yuklash dropdown ochilganda) ──
 
-  // 1. Viloyat o'zgarganda → tuman reset, filial qayta load (region bo'yicha)
+  // 1. Viloyat o'zgarganda → tuman/filial/bo'lim tanlovlari va cache'i bekor qilinadi
   const handleRegionChange = (opt) => {
     setFilterRegion(opt)
     setFilterDistrict(null)
@@ -300,35 +300,59 @@ const ReportsEvents = () => {
     setDistricts([])
     setDistrictPag({ page: 1, hasMore: true, loading: false })
     setBranches([])
+    setBranchPag({ page: 1, hasMore: true, loading: false })
     setDepartments([])
-
-    if (opt?.value) {
-      fetchDistricts(opt.value, 1, "")
-      fetchBranches(1, "", opt.value, null)
-    } else {
-      fetchBranches(1, "", null, null)
-      fetchDepartments(1, "", null)
-    }
+    setDeptPag({ page: 1, hasMore: true, loading: false })
   }
 
-  // 2. Tuman o'zgarganda → filial qayta load (region + district bo'yicha)
+  // 2. Tuman o'zgarganda → filial/bo'lim tanlovlari va cache'i bekor qilinadi
   const handleDistrictChange = (opt) => {
     setFilterDistrict(opt)
     setFilterBranch(null)
     setFilterDepartment(null)
     setBranches([])
+    setBranchPag({ page: 1, hasMore: true, loading: false })
     setDepartments([])
-
-    const regionId = filterRegion?.value || null
-    fetchBranches(1, "", regionId, opt?.value || null)
+    setDeptPag({ page: 1, hasMore: true, loading: false })
   }
 
-  // 3. Filial o'zgarganda → bo'lim qayta load (branch bo'yicha)
+  // 3. Filial o'zgarganda → bo'lim tanlovi va cache'i bekor qilinadi
   const handleBranchChange = (opt) => {
     setFilterBranch(opt)
     setFilterDepartment(null)
     setDepartments([])
-    fetchDepartments(1, "", opt?.value || null)
+    setDeptPag({ page: 1, hasMore: true, loading: false })
+  }
+
+  // ── Dropdown bosilganda (lazy) yuklash — cache bo'lsa so'rov yubormaydi ──
+  const handleUserOpen = () => {
+    if (usersLoadedRef.current || userPag.loading) return
+    fetchUsers(1, "")
+  }
+  const handleRegionOpen = () => {
+    if (regionsLoadedRef.current) return
+    fetchRegions()
+  }
+  const handleDistrictOpen = () => {
+    const regionId = filterRegion?.value
+    if (!regionId || districtPag.loading) return
+    if (districtPag.loadedRegion === regionId) return
+    fetchDistricts(regionId, 1, "")
+  }
+  const handleBranchOpen = () => {
+    if (branchPag.loading) return
+    const regionId = filterRegion?.value || null
+    const districtId = filterDistrict?.value || null
+    const key = `${regionId || ""}|${districtId || ""}`
+    if (branchPag.loadedKey === key) return
+    fetchBranches(1, "", regionId, districtId)
+  }
+  const handleDepartmentOpen = () => {
+    if (deptPag.loading) return
+    const branchId = filterBranch?.value || null
+    const key = branchId || ""
+    if (deptPag.loadedBranch === key) return
+    fetchDepartments(1, "", branchId)
   }
 
   // ── Filter handlers ──
@@ -363,8 +387,7 @@ const ReportsEvents = () => {
     setBranchPag({ page: 1, hasMore: true, loading: false })
     setDeptPag({ page: 1, hasMore: true, loading: false })
     activeFiltersRef.current = {}
-    fetchBranches(1, "", null, null)
-    fetchDepartments(1, "", null)
+    // Variantlar qayta yuklanmaydi — dropdown ochilganda (onOpen) yuklanadi.
   }
 
   const hasActiveFilter =
@@ -698,6 +721,7 @@ const ReportsEvents = () => {
                 value={filterUser?.value ?? null}
                 onChange={(opt) => setFilterUser(opt)}
                 searchable
+                onOpen={handleUserOpen}
                 loadingMore={userPag.loading}
                 onScrollEnd={() => {
                   if (!userPag.hasMore || userPag.loading) return
@@ -723,6 +747,7 @@ const ReportsEvents = () => {
                 value={filterRegion?.value ?? null}
                 onChange={handleRegionChange}
                 searchable={true}
+                onOpen={handleRegionOpen}
                 onSearch={(s) => setSearchRegion(s)}
               />
 
@@ -739,6 +764,7 @@ const ReportsEvents = () => {
                 onChange={handleDistrictChange}
                 disabled={!filterRegion}
                 searchable
+                onOpen={handleDistrictOpen}
                 loadingMore={districtPag.loading}
                 onScrollEnd={() => {
                   if (!districtPag.hasMore || districtPag.loading || !filterRegion?.value) return
@@ -757,6 +783,7 @@ const ReportsEvents = () => {
                 value={filterBranch?.value ?? null}
                 onChange={handleBranchChange}
                 searchable
+                onOpen={handleBranchOpen}
                 loadingMore={branchPag.loading}
                 onScrollEnd={() => {
                   if (!branchPag.hasMore || branchPag.loading) return
@@ -779,6 +806,7 @@ const ReportsEvents = () => {
                 value={filterDepartment?.value ?? null}
                 onChange={(opt) => setFilterDepartment(opt)}
                 searchable
+                onOpen={handleDepartmentOpen}
                 loadingMore={deptPag.loading}
                 onScrollEnd={() => {
                   if (!deptPag.hasMore || deptPag.loading) return

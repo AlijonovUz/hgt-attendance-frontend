@@ -196,8 +196,9 @@ export const RegionDistrictFilter = ({
     setSelectedRegion(opt);
     setSelectedDistrict(null);
     setDistricts([]);
+    // Faqat onRegionChange chaqiriladi — u districtni ham tozalaydi (ikkinchi argument null).
+    // Alohida onDistrictChange(null) chaqirsak, ota bitta viloyat tanlashda 2 marta so'rov yuborardi.
     onRegionChange?.(opt?.value ?? null);
-    onDistrictChange?.(null);
     if (opt?.value) fetchDistricts(opt.value);
   };
 
