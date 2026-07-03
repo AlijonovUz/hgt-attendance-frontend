@@ -183,24 +183,22 @@ const HomePage = () => {
     fetchDateFilteredData({})
   };
 
+  // Fetch setState updater ICHIDA chaqirilmaydi (updater sof bo'lishi kerak —
+  // StrictMode'da ikki marta ishlab, duplikat so'rov yuborardi).
   const handleWeeklyFilter = (regionId, districtId) => {
-    setWeeklyParams(prev => {
-      const params = { ...prev }
-      if (regionId !== undefined) params.region = regionId || undefined
-      if (districtId !== undefined) params.district = districtId || undefined
-      fetchWeeklyDynamics(params)
-      return params
-    })
+    const params = { ...weeklyParams }
+    if (regionId !== undefined) params.region = regionId || undefined
+    if (districtId !== undefined) params.district = districtId || undefined
+    setWeeklyParams(params)
+    fetchWeeklyDynamics(params)
   }
 
   const handleStatusFilter = (regionId, districtId) => {
-    setStatusParams(prev => {
-      const params = { ...prev }
-      if (regionId !== undefined) params.region = regionId || undefined
-      if (districtId !== undefined) params.district = districtId || undefined
-      fetchTodayStatus(params)
-      return params
-    })
+    const params = { ...statusParams }
+    if (regionId !== undefined) params.region = regionId || undefined
+    if (districtId !== undefined) params.district = districtId || undefined
+    setStatusParams(params)
+    fetchTodayStatus(params)
   }
 
   if (loadingData && isInitialLoad.current) {

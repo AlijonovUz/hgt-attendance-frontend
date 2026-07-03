@@ -17,6 +17,7 @@ export const Select = ({
      onScrollEnd,
      loadingMore = false,
      onSearch,
+     onOpen,
 }) => {
      const { t } = useLanguage();
 
@@ -81,6 +82,14 @@ export const Select = ({
                return () => clearTimeout(timer);
           }
      }, [open, showSearch]);
+
+     // Dropdown ochilgandagina (foydalanuvchi bosganda) onOpen chaqiriladi —
+     // shu orqali variantlar faqat kerak bo'lganda (lazy) yuklanadi.
+     useEffect(() => {
+          if (open) onOpen?.();
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+     }, [open]);
+
      // Foydalanuvchi inputga yozgandagina backendga so'rov yuborish (Debounce mantiq)
      useEffect(() => {
           if (!open) return;

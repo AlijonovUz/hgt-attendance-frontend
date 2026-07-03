@@ -120,6 +120,7 @@ const Geozones = () => {
   const [searchRegion, setSearchRegion] = useState("")
 
   const [regions, setRegions] = useState([])
+  const regionsLoadedRef = useRef(false) // regionlar bir marta yuklansin (lazy)
   const [districts, setDistricts] = useState([])
 
   const [openFilterModal, setOpenFilterModal] = useState(false)
@@ -217,6 +218,7 @@ const Geozones = () => {
         setRegions(
           (res.data?.data?.results || res.data?.results || []).map((r) => ({ value: r.id, label: r.name }))
         )
+        regionsLoadedRef.current = true
       }
     } catch (err) {
       console.error(err)
@@ -235,7 +237,7 @@ const Geozones = () => {
           label: d.name,
         }))
         setDistricts(prev => pageNum === 1 ? results : [...prev, ...results])
-        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false })
+        setDistrictPag({ page: pageNum, hasMore: !!res.data?.data?.next, loading: false, loadedRegion: regionId })
       }
     } catch (err) {
       console.error(err)
@@ -265,12 +267,11 @@ const Geozones = () => {
     return []
   }
 
-  // Bir martalik yuklashlar
+  // Bir martalik yuklash: filiallar (detail paneldagi branchMap + add/filter modallari uchun).
+  // Regionlar/districtlar mount'da EMAS — faqat tegishli dropdown bosilganda (lazy) yuklanadi.
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchBranches(1, "", branchPag, setBranchPag, setBranches)
-      fetchBranches(1, "", addBranchPag, setAddBranchPag, setBranches) // ikkalasi bir xil state ishlatadi, lekin pag alohida
-      fetchRegions()
     }, 0)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -298,9 +299,22 @@ const Geozones = () => {
   const handleDraftRegion = (opt) => {
     const v = opt?.value ?? null
     setDraft(d => ({ ...d, region: v, district: null, branch: null }))
+    // Districtlar shu yerda YUKLANMAYDI — tuman dropdowni bosilganda (handleDistrictOpen) yuklanadi.
     setDistricts([])
-    setDistrictPag({ page: 1, hasMore: true, loading: false })
-    if (v) fetchDistricts(v, 1, "")
+    setDistrictPag({ page: 1, hasMore: true, loading: false, loadedRegion: null })
+  }
+
+  // ── Filter dropdownlari bosilganda (lazy) yuklash ──
+  const handleRegionOpen = () => {
+    if (regionsLoadedRef.current) return // allaqachon yuklangan — so'rov shart emas
+    fetchRegions()
+  }
+
+  const handleDistrictOpen = () => {
+    if (!draft.region) return
+    if (districtPag.loading) return
+    if (districtPag.loadedRegion === draft.region) return // shu region uchun cache mavjud
+    fetchDistricts(draft.region, 1, "")
   }
 
   const handleDraftDistrict = async (opt) => {
@@ -325,11 +339,10 @@ const Geozones = () => {
   }
 
   // ── Filtr modal amallari ──
+  // Modal ochilganda variantlar YUKLANMAYDI — har bir dropdown bosilganda yuklanadi.
+  // Filiallar mount'da bir marta yuklangan; districtlar tuman dropdowni ochilganda keladi.
   const openFilters = () => {
     setDraft(filters)
-    if (filters.region) fetchDistricts(filters.region, 1, "")
-    // Branchlarni qayta yuklash (filter modal ochilganda)
-    fetchBranches(1, "", branchPag, setBranchPag, setBranches)
     setOpenFilterModal(true)
   }
 
@@ -343,6 +356,7 @@ const Geozones = () => {
     setDraft(empty)
     setFilters(empty)
     setDistricts([])
+    setDistrictPag({ page: 1, hasMore: true, loading: false, loadedRegion: null })
   }
 
   const hasFilter = filters.region || filters.district || filters.branch || filters.zone_type
@@ -851,6 +865,7 @@ const Geozones = () => {
                 onChange={handleDraftRegion}
                 className="h-10 py-0 text-[13px] rounded-lg"
                 searchable={true}
+                onOpen={handleRegionOpen}
                 onSearch={(s) => setSearchRegion(s)}
               />
 
@@ -864,6 +879,7 @@ const Geozones = () => {
                 disabled={!draft.region}
                 className="h-10 py-0 text-[13px] rounded-lg"
                 loadingMore={districtPag.loading}
+                onOpen={handleDistrictOpen}
                 onScrollEnd={() => {
                   if (!districtPag.hasMore || districtPag.loading || !draft.region) return
                   fetchDistricts(draft.region, districtPag.page + 1, "")

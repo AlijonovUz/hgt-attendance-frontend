@@ -214,6 +214,7 @@ const ReferencePage = () => {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const loadingMoreRef = useRef(false) // scroll'da takroriy so'rovni sinxron bloklash uchun
   const scrollRef = useRef(null)
 
   const [addModal, setAddModal] = useState(false)
@@ -314,6 +315,8 @@ const ReferencePage = () => {
               hasMore: hasMorePage,
               loading: false,
               options: merged,
+              loaded: true,
+              parentValue: parentValue ?? null,
             },
           }
         })
@@ -338,7 +341,18 @@ const ReferencePage = () => {
       pag.page + 1,
       filterSearch[filter.name] || ""
     )
-  }, [filterPagination, tmpFilters])
+  }, [filterPagination, tmpFilters, filterSearch])
+
+  // Filter dropdown ochilganda (foydalanuvchi bosganda) variantlarni lazy yuklash.
+  // Allaqachon shu ota-qiymat uchun yuklangan bo'lsa — qayta so'rov yubormaydi.
+  const handleFilterOpen = (filter) => {
+    const parentValue = filter.dependsOn ? (tmpFilters[filter.dependsOn]?.value ?? null) : null
+    if (filter.dependsOn && !parentValue) return // bog'liq filter ota tanlanmagan bo'lsa — o'chirilgan
+    const pag = filterPagination[filter.name]
+    if (pag?.loading) return
+    if (pag?.loaded && pag.parentValue === parentValue) return // cache mavjud — so'rov shart emas
+    loadFilterOptions(filter, parentValue, 1, filterSearch[filter.name] || "")
+  }
 
   // ─── Qolgan funksiyalar ───
   const buildFilterParams = (searchVal, filtersVal) => {
@@ -352,7 +366,7 @@ const ReferencePage = () => {
 
   const fetchList = async (cfg, pageNum = 1, extraParams = activeParamsRef.current) => {
     if (pageNum === 1) setLoading(true)
-    else setLoadingMore(true)
+    else { setLoadingMore(true); loadingMoreRef.current = true }
     try {
       const res = await axiosAPI.get(cfg.endpoint, { params: { page: pageNum, ...(extraParams || {}) } })
       if (res.status === 200) {
@@ -368,6 +382,7 @@ const ReferencePage = () => {
     } finally {
       setLoading(false)
       setLoadingMore(false)
+      loadingMoreRef.current = false
     }
   }
 
@@ -382,19 +397,17 @@ const ReferencePage = () => {
   }
 
   // 3. Cheksiz scroll (Infinite scroll)
+  // fetchList setState updater ICHIDA chaqirilmaydi (bu StrictMode'da ikki marta
+  // yuklanishga sabab bo'lardi). loadingMoreRef sinxron guard takroriy so'rovni bloklaydi.
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
-    if (!el || loading || loadingMore || !hasMore) return;
+    if (!el || loading || loadingMoreRef.current || !hasMore) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
 
     if (scrollTop + clientHeight >= scrollHeight - 80) {
-      setPage((prevPage) => {
-        const nextPage = prevPage + 1;
-        fetchList(config, nextPage, activeParamsRef.current);
-        return nextPage;
-      });
+      fetchList(config, page + 1, activeParamsRef.current);
     }
-  }, [loading, loadingMore, hasMore, config]); // page va search bu yerga yozilmaydi!
+  }, [loading, hasMore, config, page]);
 
 
   const loadOptions = async (field, parentValue, pageNum = 1, search = "") => {
@@ -436,17 +449,11 @@ const ReferencePage = () => {
     }, 400)
   }
 
-  // Filter modalini pagination bilan ochish
+  // Filter modalini ochish — variantlar bu yerda YUKLANMAYDI.
+  // Har bir filter variantlari faqat o'sha dropdown bosilganda (handleFilterOpen) yuklanadi.
+  // Cache (filterPagination) saqlanadi, shuning uchun qayta ochilganda takroriy so'rov ketmaydi.
   const openFilters = () => {
     setTmpFilters(filterValues)
-    setFilterPagination({})
-      ; (config.filters || []).forEach((f) => {
-        if (!f.dependsOn) {
-          loadFilterOptions(f, null, 1)
-        } else if (filterValues[f.dependsOn]?.value) {
-          loadFilterOptions(f, filterValues[f.dependsOn].value, 1)
-        }
-      })
     setOpenFilterModal(true)
   }
 
@@ -456,9 +463,11 @@ const ReferencePage = () => {
         ; (config.filters || [])
           .filter((f) => f.dependsOn === filter.name)
           .forEach((dep) => {
+            // Ota o'zgardi — bog'liq filter tanlovi va cache'i bekor qilinadi.
+            // Yangi variantlar dropdown ochilganda (handleFilterOpen) yuklanadi.
             next[dep.name] = null
-            setFilterPagination((p) => ({ ...p, [dep.name]: { page: 1, hasMore: true, loading: false, options: [] } }))
-            if (opt?.value) loadFilterOptions(dep, opt.value, 1)
+            setFilterPagination((p) => ({ ...p, [dep.name]: { page: 1, hasMore: true, loading: false, options: [], loaded: false, parentValue: null } }))
+            setFilterSearch((s) => ({ ...s, [dep.name]: "" }))
           })
       return next
     })
@@ -1021,6 +1030,7 @@ const ReferencePage = () => {
                     disabled={isDisabled}
                     loadingMore={loading}
                     searchable={true}
+                    onOpen={() => handleFilterOpen(f)}
                     onScrollEnd={() => handleFilterScrollEnd(f)}
                     onSearch={(searchText) => {
                       setFilterSearch(prev => ({
