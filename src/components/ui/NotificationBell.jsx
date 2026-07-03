@@ -445,7 +445,7 @@ export const NotificationBell = () => {
             {/* Overlay */}
             <div
               className={cn(
-                "fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ease-out",
+                "fixed inset-0 z-[9999] bg-black/30 transition-opacity duration-300 ease-out",
                 isAnimating ? "opacity-100" : "opacity-0"
               )}
               onClick={() => setOpen(false)}
@@ -454,7 +454,7 @@ export const NotificationBell = () => {
             {/* Panel */}
             <aside
               className={cn(
-                "fixed top-0 right-0 z-50 h-screen w-full max-w-[400px] flex flex-col",
+                "fixed top-0 right-0 z-[10000] h-screen w-full max-w-[400px] flex flex-col",
                 "bg-white dark:bg-[#0A0A0A] border-l border-[#E5E7EB] dark:border-[#2E2E2E] shadow-2xl",
                 "transition-transform duration-300 ease-out",
                 isAnimating ? "translate-x-0" : "translate-x-full"
@@ -544,7 +544,7 @@ export const NotificationBell = () => {
                                   : "font-semibold text-[#0A0A0A] dark:text-white"
                               )}
                             >
-                              {title || "—"}
+                              {title || ""}
                             </h3>
                             {!n.is_read && (
                               <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-[#0090FF] flex-shrink-0" />

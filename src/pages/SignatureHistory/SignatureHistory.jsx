@@ -42,7 +42,6 @@ const SignatureHistory = () => {
      // ─── Search ───
      const [search, setSearch] = useState("")
      const [searchInput, setSearchInput] = useState("")
-     const searchTimer = useRef(null)
 
      const tableContainerRef = useRef(null)
 
@@ -141,8 +140,7 @@ const SignatureHistory = () => {
      }
 
      useEffect(() => {
-          const timer = setTimeout(() => fetchLogs(1), 0)
-          return () => clearTimeout(timer)
+          fetchLogs(1)
           // eslint-disable-next-line react-hooks/exhaustive-deps
      }, [search, filterRegion, filterDistrict, filterBranch, filterStatus, filterStartDate, filterEndDate])
 
@@ -162,11 +160,19 @@ const SignatureHistory = () => {
           return () => el.removeEventListener("scroll", handleScroll)
      }, [handleScroll])
 
-     // ─── Search debounce ───
+     // ─── Search input handling ───
      const handleSearchChange = (e) => {
-          setSearchInput(e.target.value)
-          clearTimeout(searchTimer.current)
-          searchTimer.current = setTimeout(() => setSearch(e.target.value), 400)
+          const val = e.target.value
+          setSearchInput(val)
+          if (val === "") {
+               setSearch("")
+          }
+     }
+
+     const handleSearchKeyDown = (e) => {
+          if (e.key === "Enter") {
+               setSearch(searchInput)
+          }
      }
 
      // ─── Filter modal ───
@@ -227,7 +233,7 @@ const SignatureHistory = () => {
           ]
           const body = logs.map((r, i) => [
                i + 1,
-               r.user_info?.full_name || "—",
+               r.user_info?.full_name || "",
                r.region?.name || "",
                r.district?.name || "",
                r.branch?.name || "",
@@ -323,6 +329,7 @@ const SignatureHistory = () => {
                               type="text"
                               value={searchInput}
                               onChange={handleSearchChange}
+                              onKeyDown={handleSearchKeyDown}
                               placeholder={t("search") || "Qidirish..."}
                               className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
                          />
@@ -405,7 +412,7 @@ const SignatureHistory = () => {
                                                             {i + 1}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[200px]">
-                                                            {log.user_info?.full_name || "—"}
+                                                            {log.user_info?.full_name || ""}
                                                        </td>
                                                        <td className="px-4 py-3.5 text-sm font-medium text-[#0A0A0A] dark:text-white truncate max-w-[160px]">
                                                             {log.region?.name || log?.region || ""}
@@ -483,7 +490,7 @@ const SignatureHistory = () => {
                                         calendarIcon={
                                              startDate
                                                   ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span>
-                                                  : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />
+                                                  : <HugeIcon icon={Calendar02Icon} size={18} />
                                         }
                                         showTime
                                    />
@@ -502,7 +509,7 @@ const SignatureHistory = () => {
                                         calendarIcon={
                                              endDate
                                                   ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span>
-                                                  : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />
+                                                  : <HugeIcon icon={Calendar02Icon} size={18} />
                                         }
                                         showTime
                                    />

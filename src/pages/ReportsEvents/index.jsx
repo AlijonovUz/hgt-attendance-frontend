@@ -52,8 +52,6 @@ const ReportsEvents = () => {
 
   const [searchRegion, setSearchRegion] = useState("")
 
-  const searchTimer = useRef(null)
-
   // ── Filter modal ──
   const [openFilterModal, setOpenFilterModal] = useState(false)
 
@@ -189,11 +187,18 @@ const ReportsEvents = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
 
-  // ── Qidiruv (debounce) ──
   const handleSearchChange = (e) => {
-    setSearchInput(e.target.value)
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setSearch(e.target.value), 400)
+    const val = e.target.value
+    setSearchInput(val)
+    if (val === "") {
+      setSearch("")
+    }
+  }
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput)
+    }
   }
 
   // Eslatma: filter modali ochilganda variantlar EAGER yuklanmaydi.
@@ -556,6 +561,7 @@ const ReportsEvents = () => {
             type="text"
             value={searchInput}
             onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
             placeholder={t("search") || "Qidirish..."}
             className="w-[384px]"
           />
@@ -581,18 +587,7 @@ const ReportsEvents = () => {
         ref={tableWrapRef}
         className="w-full h-[calc(100vh-130px)] bg-white dark:bg-[#0A0A0A] flex flex-col overflow-y-auto"
       >
-        <table className="w-full border-collapse text-left table-fixed">
-          <colgroup>
-            <col className="w-[5%]" />
-            <col className="w-[18%]" />
-            <col className="w-[13%]" />
-            <col className="w-[13%]" />
-            <col className="w-[12%]" />
-            <col className="w-[12%]" />
-            <col className="w-[12%]" />
-            <col className="w-[15%]" />
-          </colgroup>
-
+        <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 z-10">
             <tr className="bg-[#FAFAFA] dark:bg-[#171717] border-b border-[#E5E7EB] dark:border-[#2E2E2E]">
               {[
@@ -661,7 +656,7 @@ const ReportsEvents = () => {
                       {eventLabel(r.event_type)}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#1A1A1A] dark:text-white whitespace-nowrap tabular-nums">
-                      {r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : "—"}
+                      {r.created_at ? dayjs(r.created_at).format("DD.MM.YYYY HH:mm") : ""}
                     </td>
                   </tr>
                 ))}
@@ -836,7 +831,7 @@ const ReportsEvents = () => {
                     value={filterStartDate}
                     onChange={(d) => setFilterStartDate(d)}
                     labelClassName="hidden"
-                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                   <DatePicker
                     currentLang={language}
@@ -848,7 +843,7 @@ const ReportsEvents = () => {
                     value={filterEndDate}
                     onChange={(d) => setFilterEndDate(d)}
                     labelClassName="hidden"
-                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                 </div>
               </div>

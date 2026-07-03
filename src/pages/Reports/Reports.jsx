@@ -40,7 +40,7 @@ const PERIODS = [
 const fmt = (n) =>
   Number(n ?? 0)
     .toLocaleString("ru-RU")
-    .replace(/ /g, " ")
+    .replace(/ /g, " ")
     .replace(/,/g, " ")
 
 const Reports = () => {
@@ -162,8 +162,15 @@ const Reports = () => {
     }
   }
 
-  // 4. Filter modali ochilganda variantlar EAGER yuklanmaydi —
-  //    har bir dropdown bosilganda (onOpen) lazy yuklanadi.
+  // 4. Filter modali ochilganda — cache'ni reset qilish, lekin
+  //    har bir dropdown bosilganda (onOpen) lazy yuklash qiladi
+  useEffect(() => {
+    if (openFilterModal) {
+      // Cache'ni reset — dropdown bosilganda yangi yuklash
+      regionsLoadedRef.current = false
+      positionsLoadedRef.current = false
+    }
+  }, [openFilterModal])
 
   // 5. Region o'zgarganda district tanlovi/cache'i bekor qilinadi (yuklash — dropdown ochilganda)
   const handleRegionChange = (opt) => {
@@ -252,7 +259,7 @@ const Reports = () => {
 
   // 8. Tozalash
   const handleFilterClear = () => {
-    activeFiltersRef.current = {} 
+    activeFiltersRef.current = {}
     setFilterRegion(null)
     setFilterDistrict(null)
     setFilterStatus(null)
@@ -299,7 +306,7 @@ const Reports = () => {
       : dayjs(selectedDate).format("DD.MM.YYYY")
     : t("byDate")
 
-  const nameOf = (r) => (isBranch === "branch" ? r.branch : r.full_name) || "—"
+  const nameOf = (r) => (isBranch === "branch" ? r.branch : r.full_name) || ""
 
   const buildExport = () => {
     const headers = [
@@ -317,14 +324,14 @@ const Reports = () => {
     const body = results.map((r, i) => [
       i + 1,
       nameOf(r),
-      r.region || "—",
-      r.district || "—",
+      r.region || "",
+      r.district || "",
       r.total_expected ?? 0,
       r.present ?? 0,
       r.late ?? 0,
       r.absent ?? 0,
       r.left_early ?? 0,
-      r.discipline_kpi ?? "—",
+      r.discipline_kpi ?? "",
     ])
     const totalRow = summary
       ? ["", t("total_row"), "", "",
@@ -333,7 +340,7 @@ const Reports = () => {
         summary.late ?? 0,
         summary.absent ?? 0,
         summary.left_early ?? 0,
-        summary.discipline_kpi ?? "—"]
+        summary.discipline_kpi ?? ""]
       : null
     return { headers, body, totalRow }
   }
@@ -429,7 +436,7 @@ const Reports = () => {
       showToast(t("export_error"))
     }
   }
-  
+
   const exportPDF = () => {
     if (!results.length) return showToast(t("export_empty_warning"))
     try {
@@ -809,7 +816,7 @@ const Reports = () => {
                     {fmt(summary.left_early)}
                   </td>
                   <td className="px-4 py-3.5 text-sm font-medium text-[#0066FF] dark:text-[#5EB1EF]">
-                    {summary.discipline_kpi ?? "—"}
+                    {summary.discipline_kpi ?? ""}
                   </td>
                 </tr>
               </tbody>

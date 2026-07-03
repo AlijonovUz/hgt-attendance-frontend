@@ -65,6 +65,7 @@ const DailyAttendance = () => {
 
   // ── Search ──
   const [search, setSearch] = useState("")
+  const [searchInput, setSearchInput] = useState("")
 
   const [searchRegion, setSearchRegion] = useState("")
 
@@ -583,8 +584,19 @@ const DailyAttendance = () => {
         <div className="flex items-center gap-3">
           <Input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchInput(val);
+              if (val === "") {
+                setSearch("");
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setSearch(searchInput);
+              }
+            }}
             placeholder={t("search") || "Qidirish..."}
             className="w-[384px]"
           />
@@ -680,7 +692,7 @@ const DailyAttendance = () => {
                       {r.department?.name || ""}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#1A1A1A] dark:text-white whitespace-nowrap">
-                      {r.date ? dayjs(r.date).format("DD.MM.YYYY") : "—"}
+                      {r.date ? dayjs(r.date).format("DD.MM.YYYY") : ""}
                     </td>
                     <td
                       className="px-4 py-3 text-sm truncate text-[#1A1A1A] dark:text-white"
@@ -890,7 +902,7 @@ const DailyAttendance = () => {
                     value={filterStartDate}
                     onChange={(d) => setFilterStartDate(d)}
                     labelClassName="hidden"
-                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={filterStartDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterStartDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                   <DatePicker
                     currentLang={language}
@@ -902,7 +914,7 @@ const DailyAttendance = () => {
                     value={filterEndDate}
                     onChange={(d) => setFilterEndDate(d)}
                     labelClassName="hidden"
-                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={filterEndDate ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setFilterEndDate(null) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                 </div>
               </div>

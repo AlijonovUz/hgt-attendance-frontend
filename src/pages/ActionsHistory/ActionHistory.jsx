@@ -22,7 +22,7 @@ const DetailField = ({ label, value, className, wrap = false }) => (
      <div className={cn("flex flex-col gap-1.5", className)}>
           <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
           <div title={typeof value === "string" ? value : undefined} className={cn("min-h-11 px-3.5 py-2.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3]", wrap ? "whitespace-normal break-words leading-5" : "truncate")}>
-               {value ?? value === 0 ? value : "—"}
+               {value ?? value === 0 ? value : ""}
           </div>
      </div>
 )
@@ -44,7 +44,7 @@ const DetailJsonField = ({ label, value }) => (
                     backgroundRepeat: "repeat-x, repeat-x, repeat-y, repeat-y",
                }}
           >
-               {value ? JSON.stringify(value, null, 2) : "—"}
+               {value ? JSON.stringify(value, null, 2) : ""}
           </pre>
      </div>
 )
@@ -67,7 +67,6 @@ const ActionHistory = () => {
 
      const [search, setSearch] = useState("")
      const [searchInput, setSearchInput] = useState("")
-     const searchTimer = useRef(null)
 
      const tableContainerRef = useRef(null)
 
@@ -187,8 +186,7 @@ const ActionHistory = () => {
      }
 
      useEffect(() => {
-          const timer = setTimeout(() => fetchLogs(1), 0)
-          return () => clearTimeout(timer)
+          fetchLogs(1)
           // eslint-disable-next-line react-hooks/exhaustive-deps
      }, [search, filterUser, filterAction, filterTable, filterStartDate, filterEndDate])
 
@@ -210,13 +208,19 @@ const ActionHistory = () => {
           return () => el.removeEventListener("scroll", handleScroll)
      }, [handleScroll])
 
-     // ─── Qidiruv (debounce) ───
+     // ─── Qidiruv ───
      const handleSearchChange = (e) => {
-          setSearchInput(e.target.value)
-          clearTimeout(searchTimer.current)
-          searchTimer.current = setTimeout(() => {
-               setSearch(e.target.value)
-          }, 400)
+          const val = e.target.value
+          setSearchInput(val)
+          if (val === "") {
+               setSearch("")
+          }
+     }
+
+     const handleSearchKeyDown = (e) => {
+          if (e.key === "Enter") {
+               setSearch(searchInput)
+          }
      }
 
      // ─── Filter modal ───
@@ -268,7 +272,7 @@ const ActionHistory = () => {
           ]
           const body = logs.map((r, i) => [
                i + 1,
-               r.user_full_name || "—",
+               r.user_full_name || "",
                r.region?.name || r?.region || "",
                r.district?.name || r?.district || "",
                r.branch?.name || r?.branch || "",
@@ -353,6 +357,7 @@ const ActionHistory = () => {
                               type="text"
                               value={searchInput}
                               onChange={handleSearchChange}
+                              onKeyDown={handleSearchKeyDown}
                               placeholder={t("search_action_history") || "Qidirish..."}
                               className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
                          />
@@ -506,7 +511,7 @@ const ActionHistory = () => {
                                         value={startDate}
                                         onChange={(d) => setStartDate(d)}
                                         labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-                                        calendarIcon={startDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                                        calendarIcon={startDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setStartDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18}  />}
                                         showTime
                                    />
 
@@ -521,7 +526,7 @@ const ActionHistory = () => {
                                         value={endDate}
                                         onChange={(d) => setEndDate(d)}
                                         labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-                                        calendarIcon={endDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                                        calendarIcon={endDate ? <span className=" cursor-pointer" onClick={(e) => { e.stopPropagation(); setEndDate("") }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                                         showTime
                                    />
 

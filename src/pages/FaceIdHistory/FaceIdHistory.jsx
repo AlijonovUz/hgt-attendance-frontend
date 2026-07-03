@@ -37,7 +37,7 @@ const DetailField = ({ label, value, className, inputClassName }) => (
   <div className={cn("flex flex-col gap-1.5", className)}>
     <span className="text-sm text-[#0A0A0A] dark:text-white">{label}</span>
     <div title={value} className={`h-11 px-3.5 flex items-center rounded-lg border border-[#E5E5E5] dark:border-[#404040] bg-[#FAFAFA] dark:bg-[#1A1A1A] text-sm text-[#737373] dark:text-[#A3A3A3] truncate ${inputClassName}`}>
-      {value ?? "—"}
+      {value ?? ""}
     </div>
   </div>
 )
@@ -54,7 +54,6 @@ const FaceIdHistory = () => {
 
   const [search, setSearch] = useState("")
   const [searchInput, setSearchInput] = useState("")
-  const searchTimer = useRef(null)
 
   const tableContainerRef = useRef(null)
 
@@ -219,11 +218,17 @@ const FaceIdHistory = () => {
 
   // ─── Qidiruv (debounce) ───
   const handleSearchChange = (e) => {
-    setSearchInput(e.target.value)
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => {
-      setSearch(e.target.value)
-    }, 400)
+    const val = e.target.value
+    setSearchInput(val)
+    if (val === "") {
+      setSearch("")
+    }
+  }
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput)
+    }
   }
 
   // ─── Filter modal ───
@@ -306,7 +311,7 @@ const FaceIdHistory = () => {
     ]
     const body = logs.map((r, i) => [
       i + 1,
-      r.user_info?.full_name || "—",
+      r.user_info?.full_name || "",
       r.region?.name || r?.region || "",
       r.district?.name || r?.district || "",
       r.branch?.name || r?.branch || "",
@@ -403,6 +408,7 @@ const FaceIdHistory = () => {
             type="text"
             value={searchInput}
             onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
             placeholder={t("search") || "Qidirish..."}
             className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
           />

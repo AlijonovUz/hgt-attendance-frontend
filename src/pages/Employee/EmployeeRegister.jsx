@@ -42,7 +42,6 @@ const EmployeeRegister = () => {
 
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const searchTimer = useRef(null);
 
   // Committed list filters ({ value, label } | null) — drive the employee fetch
   const [regionFilter, setRegionFilter] = useState(null);
@@ -259,12 +258,11 @@ const EmployeeRegister = () => {
     }
   };
 
-  // Fetch modal list with pagination
   const fetchModalList = async (type, pageNum = 1, searchTerm = "") => {
     setModalLoading(true)
     try {
       let res
-      const params = { page: pageNum, page_size: PAGE_SIZE }
+      const params = { page: pageNum }
 
       if (searchTerm.trim()) {
         params.search = searchTerm
@@ -282,6 +280,18 @@ const EmployeeRegister = () => {
             setBranches(newData)
           } else {
             setBranches(prev => [...prev, ...newData])
+          }
+          setModalTotalCount(res.data?.data?.count || 0)
+          setHasMore(newData.length === PAGE_SIZE)
+        }
+      } else if (type === "roles") {
+        res = await axiosAPI.get("users/roles/", { params })
+        if (res.status === 200) {
+          const newData = res.data?.data?.results || []
+          if (pageNum === 1) {
+            setRoles(newData)
+          } else {
+            setRoles(prev => [...prev, ...newData])
           }
           setModalTotalCount(res.data?.data?.count || 0)
           setHasMore(newData.length === PAGE_SIZE)
@@ -512,10 +522,9 @@ const EmployeeRegister = () => {
       }
     }))
 
-    // Reset page and fetch with new filters
+    // Reset page
     setModalPage(1)
     setHasMore(true)
-    fetchModalList(filterKey, 1, filterSearch)
 
     // Close filter modal and reopen selection modal
     setOpenFilterModal(false)
@@ -543,7 +552,6 @@ const EmployeeRegister = () => {
     // Reset data
     setModalPage(1)
     setHasMore(true)
-    fetchModalList(currentFilterModal, 1, filterSearch)
   }
 
   // Open filter modal with saved filters
@@ -588,14 +596,14 @@ const EmployeeRegister = () => {
     }
   }, [handleScroll])
 
-  // Reset pagination when modal opens or search changes
+  // Reset pagination when modal opens or search changes or filters change
   useEffect(() => {
-    if (openModal && openModal !== "roles") {
+    if (openModal) {
       setModalPage(1)
       setHasMore(true)
       fetchModalList(openModal, 1, filterSearch)
     }
-  }, [openModal, filterSearch])
+  }, [openModal, filterSearch, filters])
 
   // Bu ro'yxatlar asosiy jadval uchun KERAK EMAS — faqat qo'shish/tahrirlash modalida.
   // Shuning uchun mount'da emas, modal birinchi marta ochilganda (bir marta) yuklanadi.
@@ -734,7 +742,7 @@ const EmployeeRegister = () => {
     return [...set].sort((a, b) => a - b);
   };
 
-  // First work day of a schedule (so time fields show real data instead of "—")
+  // First work day of a schedule (so time fields show real data instead of "")
   const getScheduleFirstWorkDay = (scheduleId) => {
     const days = getScheduleWorkDays(scheduleId);
     return days.length ? days[0] : 0;
@@ -971,12 +979,20 @@ const EmployeeRegister = () => {
   }, [openModal]);
 
   const handleSearchChange = (e) => {
-    setSearchInput(e.target.value);
-    clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      setSearch(e.target.value);
+    const val = e.target.value;
+    setSearchInput(val);
+    // Input to'liq tozalansa — searchsiz ma'lumotlarni yuklash
+    if (val === "") {
+      setSearch("");
       setPage(1);
-    }, 400);
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput);
+      setPage(1);
+    }
   };
 
   // Excel / PDF / CSV uchun umumiy sarlavha + qatorlar
@@ -1232,6 +1248,7 @@ const EmployeeRegister = () => {
               type="text"
               value={searchInput}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               placeholder={t("search_employee") || "Qidirish ... (ism-familya, yoki tabel)"}
               className="h-8.5! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
             />
@@ -1846,7 +1863,7 @@ const EmployeeRegister = () => {
                   const isMandatory = selectedSchedule.mandatory_days_info?.some(d => d.day_number === selectedDay);
                   const isOptional = selectedSchedule.optional_days_info?.some(d => d.day_number === selectedDay);
                   const isActiveDay = isMandatory || isOptional;
-                  const formatTime = (t) => t ? t.slice(0, 5) : "—";
+                  const formatTime = (t) => t ? t.slice(0, 5) : "";
 
                   const weekDays = [
                     { label: "Du", day_number: 0 },
@@ -1863,19 +1880,19 @@ const EmployeeRegister = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_start_time") || "Ish boshlanishi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_start_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_end_time") || "Ish tugashi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.work_end_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("lunch_start_time") || "Tushlik boshlanishi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_start_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("lunch_end_time") || "Tushlik tugashi"}</label>
-                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : "—"} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
+                          <Input type="text" readOnly value={isActiveDay ? formatTime(selectedSchedule.lunch_end_time) : ""} className="w-full h-11 rounded-lg bg-[#F9F9F9] dark:bg-[#1C1C1C] border-[#E5E7EB] dark:border-[#2E2E2E] px-3.5 text-[#0A0A0A] dark:text-white" />
                         </div>
                       </div>
 
@@ -1883,9 +1900,7 @@ const EmployeeRegister = () => {
                         <label className="text-[13px] text-[#737373] dark:text-[#A3A3A3]">{t("work_days") || "Ish kunlari"}</label>
                         <div className="flex items-center justify-between bg-[#F0F0F0] dark:bg-[#404040] p-1 rounded-md w-full">
                           {weekDays.map((day) => {
-                            const isWorkDay =
-                              selectedSchedule.mandatory_days_info?.some(d => d.day_number === day.day_number) ||
-                              selectedSchedule.optional_days_info?.some(d => d.day_number === day.day_number);
+                            const isWorkDay = selectedSchedule.mandatory_days_info?.some(d => d.day_number === day.day_number)
                             const isViewing = selectedDay === day.day_number;
                             return (
                               <button
@@ -1964,9 +1979,6 @@ const EmployeeRegister = () => {
               value={filterSearch}
               onChange={(e) => {
                 setFilterSearch(e.target.value)
-                setModalPage(1)
-                setHasMore(true)
-                fetchModalList(openModal, 1, e.target.value)
               }}
               placeholder={t("search") || "Qidirish ..."}
               className="flex-1 rounded-sm! bg-transparent dark:bg-[#0a0a0a] h-8.5 shadow-sm"

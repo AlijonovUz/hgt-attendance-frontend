@@ -411,7 +411,7 @@ const HomePage = () => {
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2 text-[13px] font-semibold shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]",
+                    "inline-flex items-center gap-1.5 rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#171717] px-4 py-2.5 text-[13px] font-semibold shadow-sm cursor-pointer hover:bg-[#f4f4f4] dark:hover:bg-[#262626]",
                     timeRange === "sana" ? "bg-[#F5F5F5] dark:bg-[#2E2E2E] text-[#0A0A0A] dark:text-white" : ""
                   )}
                 >

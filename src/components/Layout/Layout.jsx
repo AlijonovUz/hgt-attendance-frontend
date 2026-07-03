@@ -34,11 +34,12 @@ const Layout = () => {
           }
      };
 
-     const getRoles = async () => {
+     const getRoles = async (roleId) => {
+          if (!roleId) return;
           try {
-               const res = await axiosAPI.get("users/roles/");
+               const res = await axiosAPI.get(`users/roles/${roleId}/`);
                if (res.status === 200) {
-                    setRoles(res.data?.data?.results);
+                    setRoles(res.data?.data?.permissions_info);
                }
           } catch (err) {
                console.error(err);
@@ -50,7 +51,10 @@ const Layout = () => {
           try {
                const res = await axiosAPI.get("users/auth/profile/");
                if (res.status === 200) {
-                    dispatch(setCurrentUser(res.data?.data));
+                    const userData = res.data?.data;
+                    dispatch(setCurrentUser(userData));
+                    // getRoles ni currentUser tayyor bo'lgandan keyin chaqiramiz
+                    await getRoles(userData?.role_info?.id);
                }
           } catch (err) {
                console.error(err);
@@ -66,22 +70,21 @@ const Layout = () => {
      useEffect(() => {
           if (accessToken) {
                getCurrentUser();
-               getRoles();
                getRegions();
           }
      }, [accessToken]);
 
-     const findRole = useMemo(() => {
-          if (!roles.length || !currentUser?.role_info?.id) return null;
-          return roles.find(r => r.id === currentUser.role_info.id);
-     }, [roles, currentUser]);
+     // const findRole = useMemo(() => {
+     //      if (!roles.length || !currentUser?.role_info?.id) return null;
+     //      return roles.find(r => r.id === currentUser.role_info.id);
+     // }, [roles, currentUser]);
 
      useEffect(() => {
-          if (findRole) {
-               const permissions = findRole?.permissions_info;
+          if (roles) {
+               const permissions = roles;
                dispatch(setUserPermission(permissions));
           }
-     }, [findRole, dispatch, navigate]);
+     }, [currentUser, roles, dispatch, navigate]);
 
      if (loading) {
           return (

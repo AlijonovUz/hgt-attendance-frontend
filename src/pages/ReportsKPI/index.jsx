@@ -453,7 +453,12 @@ const index = () => {
             type="text"
             placeholder={t("search")}
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              if (e.target.value === "") {
+                setSearch("");
+              }
+            }}
             onKeyDown={(e) => { if (e.key === "Enter") setSearch(searchInput) }}
             className="flex-1 w-[384px] rounded-md! shadow-xs"
           />
@@ -706,7 +711,7 @@ const index = () => {
                     value={draft.start_date}
                     onChange={(d) => setDraft((p) => ({ ...p, start_date: d }))}
                     labelClassName="hidden"
-                    calendarIcon={draft.start_date ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setDraft((p) => ({ ...p, start_date: "" })) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={draft.start_date ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setDraft((p) => ({ ...p, start_date: "" })) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                   <DatePicker
                     currentLang={language}
@@ -718,7 +723,7 @@ const index = () => {
                     value={draft.end_date}
                     onChange={(d) => setDraft((p) => ({ ...p, end_date: d }))}
                     labelClassName="hidden"
-                    calendarIcon={draft.end_date ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setDraft((p) => ({ ...p, end_date: "" })) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+                    calendarIcon={draft.end_date ? <span className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setDraft((p) => ({ ...p, end_date: "" })) }}><X size={18} /></span> : <HugeIcon icon={Calendar02Icon} size={18} />}
                   />
                 </div>
               </div>

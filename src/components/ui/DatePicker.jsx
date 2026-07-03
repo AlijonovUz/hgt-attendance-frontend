@@ -20,7 +20,6 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import {
      InputGroup,
      InputGroupAddon,
-     InputGroupButton,
      InputGroupInput,
 } from "@/components/ui/input-group"
 import {
@@ -178,10 +177,14 @@ export const DatePicker = ({
                          <Popover open={open} onOpenChange={setOpen}>
                               <PopoverTrigger
                                    render={
-                                        <InputGroupButton id={`${fieldId}-trigger`} className="cursor-pointer" variant="ghost" size="icon-xs" aria-label="Select date">
-                                             {calendarIcon || <LuCalendar />}
-                                             <span className="sr-only">{displaySrText}</span>
-                                        </InputGroupButton>
+                                        <button
+                                             id={`${fieldId}-trigger`}
+                                             type="button"
+                                             className="cursor-pointer flex items-center justify-center size-6 rounded-md hover:bg-muted hover:text-foreground"
+                                             aria-label="Select date"
+                                        >
+                                             {calendarIcon || <LuCalendar className="size-3.5" />}
+                                        </button>
                                    }
                               />
 

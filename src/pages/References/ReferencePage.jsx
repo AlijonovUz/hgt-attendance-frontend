@@ -19,7 +19,7 @@ import { AlertModal } from "@/components/ui/ComfirmAlert"
 
 // "yyyy-mm-dd" (API'dan kelgan) -> "dd.mm.yyyy" (jadvalda ko'rsatish uchun)
 const formatDate = (value) => {
-  if (!value) return "—"
+  if (!value) return ""
   const [y, m, d] = String(value).split("-")
   if (!y || !m || !d) return value
   return `${d}.${m}.${y}`
@@ -27,7 +27,7 @@ const formatDate = (value) => {
 
 // "HH:MM:SS" yoki "HH:MM" -> "HH:MM" (jadvalda ko'rsatish uchun)
 const formatTime = (value) => {
-  if (!value) return "—"
+  if (!value) return ""
   return String(value).slice(0, 5)
 }
 
@@ -65,7 +65,7 @@ const REF_CONFIGS = {
     subKey: "ref_sub_district",
     columns: [
       { headerKey: "gz_district", accessor: (r) => r.name },
-      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "—" },
+      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_district", phKey: "ref_ph_district", required: true },
@@ -84,8 +84,8 @@ const REF_CONFIGS = {
     subKey: "ref_sub_branch",
     columns: [
       { headerKey: "gz_filial", accessor: (r) => r.name },
-      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "—" },
-      { headerKey: "gz_district", accessor: (r) => r.district_info?.name || "—" },
+      { headerKey: "gz_region", accessor: (r) => r.region_info?.name || "" },
+      { headerKey: "gz_district", accessor: (r) => r.district_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_branch", phKey: "ref_ph_branch", required: true },
@@ -106,7 +106,7 @@ const REF_CONFIGS = {
     permPrefix: "department",
     columns: [
       { headerKey: "ref_col_dept", accessor: (r) => r.name },
-      { headerKey: "gz_filial", accessor: (r) => r.branch_info?.name || "—" },
+      { headerKey: "gz_filial", accessor: (r) => r.branch_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_dept", phKey: "ref_ph_dept", required: true },
@@ -127,7 +127,7 @@ const REF_CONFIGS = {
     subKey: "ref_sub_position",
     columns: [
       { headerKey: "ref_col_position", accessor: (r) => r.name },
-      { headerKey: "ref_col_dept", accessor: (r) => r.department_info?.name || "—" },
+      { headerKey: "ref_col_dept", accessor: (r) => r.department_info?.name || "" },
     ],
     fields: [
       { type: "text", name: "name", labelKey: "ref_name_position", phKey: "ref_ph_position", required: true },
@@ -146,7 +146,7 @@ const REF_CONFIGS = {
     permPrefix: "holiday",
     subKey: "ref_sub_holiday",
     columns: [
-      { headerKey: "ref_col_holiday_name", accessor: (r) => r.title || "—" },
+      { headerKey: "ref_col_holiday_name", accessor: (r) => r.title || "" },
       { headerKey: "ref_col_holiday_start", accessor: (r) => formatDate(r.start_date) },
       { headerKey: "ref_col_holiday_end", accessor: (r) => formatDate(r.end_date) },
     ],
@@ -231,7 +231,6 @@ const ReferencePage = () => {
   // ─── Qidiruv va filtrlar ───
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
-  const searchTimer = useRef(null)
 
   const [openFilterModal, setOpenFilterModal] = useState(false)
   const [filterValues, setFilterValues] = useState({})
@@ -442,11 +441,17 @@ const ReferencePage = () => {
   const handleSearchChange = (e) => {
     const val = e.target.value
     setSearchInput(val)
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => {
-      setSearch(val)
-      applyQuery(val, filterValues)
-    }, 400)
+    if (val === "") {
+      setSearch("")
+      applyQuery("", filterValues)
+    }
+  }
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      setSearch(searchInput)
+      applyQuery(searchInput, filterValues)
+    }
   }
 
   // Filter modalini ochish — variantlar bu yerda YUKLANMAYDI.
@@ -744,7 +749,7 @@ const ReferencePage = () => {
       error={!!errors[f.name]}
       errorText={errors[f.name] ? t("field_required") : null}
       labelClassName="text-[#737373]! dark:text-[#A3A3A3]! font-normal"
-      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />}
+      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
     />
   )
 
@@ -760,6 +765,7 @@ const ReferencePage = () => {
             type="text"
             value={searchInput}
             onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
             placeholder={t("search") || "Qidirish..."}
             className="h-9! rounded-md w-[320px] shadow-sm border-[#e5e5e5] dark:border-[#404040]! dark:bg-[#0a0a0a]!"
           />
@@ -1123,13 +1129,42 @@ const ReferencePage = () => {
               if (f.type === "date" && datePair) {
                 return (
                   <div key={i} className="grid grid-cols-2 gap-3">
-                    <DatePicker className="w-full" inputClassName="h-11" currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
-                    <DatePicker className="w-full" inputClassName="h-11" currentLang={currentLang} label={t(datePair.labelKey)} placeholder={t(datePair.phKey)} value={editForm[datePair.name]} onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))} error={!!editErrors[datePair.name]} />
+                    <DatePicker
+                      className="w-full"
+                      inputClassName="h-11"
+                      currentLang={currentLang}
+                      label={t(f.labelKey)}
+                      placeholder={t(f.phKey)}
+                      value={editForm[f.name]}
+                      onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))}
+                      error={!!editErrors[f.name]}
+                      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
+                    />
+                    <DatePicker
+                      className="w-full"
+                      inputClassName="h-11"
+                      currentLang={currentLang}
+                      label={t(datePair.labelKey)}
+                      placeholder={t(datePair.phKey)}
+                      value={editForm[datePair.name]}
+                      onChange={(d) => setEditForm(p => ({ ...p, [datePair.name]: d }))}
+                      error={!!editErrors[datePair.name]}
+                      calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
+                    />
                   </div>
                 )
               }
               if (f.type === "date") {
-                return <DatePicker key={i} currentLang={currentLang} label={t(f.labelKey)} placeholder={t(f.phKey)} value={editForm[f.name]} onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))} error={!!editErrors[f.name]} />
+                return <DatePicker
+                  key={i}
+                  currentLang={currentLang}
+                  label={t(f.labelKey)}
+                  placeholder={t(f.phKey)}
+                  value={editForm[f.name]}
+                  onChange={(d) => setEditForm(p => ({ ...p, [f.name]: d }))}
+                  error={!!editErrors[f.name]}
+                  calendarIcon={<HugeIcon icon={Calendar02Icon} size={18} />}
+                />
               }
               if (f.type === "select") {
                 return (
